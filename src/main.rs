@@ -1,3 +1,6 @@
+use rust_boy::cpu::*;
+
 fn main() {
-    println!("Hello, world!");
+    let cpu = Cpu::new();
+    cpu.reg.F.z;
 }

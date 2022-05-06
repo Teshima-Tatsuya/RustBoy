@@ -2,69 +2,69 @@ use crate::types::*;
 use bitvec::prelude::*;
 
 #[derive(Default)]
-struct Cpu {
-    reg: Register,
+pub struct Cpu {
+    pub reg: Register,
 }
 
 #[derive(Default)]
 #[allow(non_snake_case)]
-struct Register {
-    A: Byte,
-    B: Byte,
-    C: Byte,
-    D: Byte,
-    E: Byte,
-    F: Flags,
-    H: Byte,
-    L: Byte,
-    SP: Word,
-    PC: Word,
+pub struct Register {
+    pub A: Byte,
+    pub B: Byte,
+    pub C: Byte,
+    pub D: Byte,
+    pub E: Byte,
+    pub F: Flags,
+    pub H: Byte,
+    pub L: Byte,
+    pub SP: Word,
+    pub PC: Word,
 }
 
 impl Register {
-    fn af(&self) -> Word {
+    pub fn af(&self) -> Word {
         ((self.A as Word) << 8) | (self.F.pack() as Word)
     }
 
-    fn af_mut(&mut self, value: Word) {
+    pub fn af_mut(&mut self, value: Word) {
         self.A = (value >> 8) as Byte;
         self.F.unpack((value & 0xFF) as Byte);
     }
 
-    fn bc(&self) -> Word {
+    pub fn bc(&self) -> Word {
         ((self.B as Word) << 8) | (self.C as Word)
     }
 
-    fn bc_mut(&mut self, value: Word) {
+    pub fn bc_mut(&mut self, value: Word) {
         self.B = (value >> 8) as Byte;
         self.C = (value & 0xFF) as Byte;
     }
 
-    fn de(&self) -> Word {
+    pub fn de(&self) -> Word {
         ((self.D as Word) << 8) | (self.E as Word)
     }
 
-    fn de_mut(&mut self, value: Word) {
+    pub fn de_mut(&mut self, value: Word) {
         self.D = (value >> 8) as Byte;
         self.E = (value & 0xFF) as Byte;
     }
 
-    fn hl(&self) -> Word {
+    pub fn hl(&self) -> Word {
         ((self.H as Word) << 8) | (self.L as Word)
     }
 
-    fn hl_mut(&mut self, value: Word) {
+    pub fn hl_mut(&mut self, value: Word) {
         self.H = (value >> 8) as Byte;
         self.L = (value & 0xFF) as Byte;
     }
 }
 
 #[derive(Default)]
-struct Flags {
-    z: bool,
-    n: bool,
-    h: bool,
-    c: bool,
+pub struct Flags {
+    pub z: bool,
+    pub n: bool,
+    pub h: bool,
+    pub c: bool,
 }
 
 impl Flags {
