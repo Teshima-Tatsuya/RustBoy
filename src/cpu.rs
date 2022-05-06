@@ -1,4 +1,5 @@
 use crate::types::*;
+use bitvec::prelude::*;
 
 #[derive(Default)]
 struct Cpu {
@@ -22,7 +23,12 @@ struct Register {
 
 impl Register {
     fn af(&self) -> Word {
-        100
+        ((self.A as Word) << 8) | (self.F.pack() as Word)
+    }
+
+    fn af_mut(&mut self, value: Word) {
+        self.A = (value >> 8) as Byte;
+        self.F.unpack((value & 0xFF) as Byte);
     }
 
     fn bc(&self) -> Word {
@@ -55,10 +61,31 @@ impl Register {
 
 #[derive(Default)]
 struct Flags {
-    z: u8,
-    n: u8,
-    h: u8,
-    c: u8,
+    z: bool,
+    n: bool,
+    h: bool,
+    c: bool,
+}
+
+impl Flags {
+    fn pack(&self) -> Byte {
+        let mut data = 0;
+        let v = data.view_bits_mut::<Lsb0>();
+        v.set(7, self.z);
+        v.set(6, self.n);
+        v.set(5, self.h);
+        v.set(4, self.c);
+
+        data
+    }
+
+    fn unpack(&mut self, value: Byte) {
+        let v = value.view_bits::<Lsb0>();
+        self.z = v[7];
+        self.n = v[6];
+        self.h = v[5];
+        self.c = v[4];
+    }
 }
 
 impl Cpu {
@@ -80,5 +107,7 @@ mod tests {
         assert_eq!(reg.de(), 0x5678);
         reg.hl_mut(0x9012);
         assert_eq!(reg.hl(), 0x9012);
+        reg.af_mut(0x1357);
+        assert_eq!(reg.af(), 0x1350);
     }
 }
