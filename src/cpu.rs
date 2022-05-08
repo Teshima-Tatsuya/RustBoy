@@ -1,3 +1,4 @@
+use crate::opcode::*;
 use crate::types::*;
 use bitvec::prelude::*;
 
@@ -92,6 +93,8 @@ impl Cpu {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn step() {}
 }
 
 #[cfg(test)]
