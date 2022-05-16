@@ -1,6 +1,9 @@
 use crate::types::*;
 
-pub trait ReaderWriter {
-    fn read(addr: Word) -> Byte;
-    fn write(addr: Word);
+pub trait Reader {
+    fn read(&self, addr: Word) -> Byte;
+}
+
+pub trait Writer {
+    fn write(&mut self, addr: Word, value: Byte);
 }

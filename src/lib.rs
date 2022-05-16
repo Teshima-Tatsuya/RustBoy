@@ -1,5 +1,7 @@
 pub mod bus;
 pub mod cpu;
+pub mod mbc;
+pub mod memory;
 pub mod opcode;
 pub mod rom;
 pub mod traits;

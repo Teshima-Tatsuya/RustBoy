@@ -113,7 +113,6 @@ enum Mbc {
     Mbc1,
     Mbc2,
     Mbc3,
-    Mbc4,
     Mbc5,
     Mbc6,
     Mbc7,
