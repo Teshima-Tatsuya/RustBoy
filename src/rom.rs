@@ -181,7 +181,6 @@ impl Rom {
         let mask_rom_version_number = buf[0x014C];
 
         let header_checksum = buf[0x14D];
-        todo!("calc headker checksum");
         let global_checksum = buf[0x014E..=0x014F].try_into()?;
 
         Ok(Rom {
