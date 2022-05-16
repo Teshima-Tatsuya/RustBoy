@@ -1,22 +1,24 @@
 use crate::traits::*;
 use crate::types::*;
 
-struct ROM {
+#[derive(Default)]
+pub struct ROM {
     buf: Vec<Byte>,
 }
 
-struct RAM {
+#[derive(Default)]
+pub struct RAM {
     buf: Vec<Byte>,
 }
 
 impl ROM {
-    fn new(buf: &[Byte]) -> Self {
+    pub fn new(buf: &[Byte]) -> Self {
         ROM { buf: buf.to_vec() }
     }
 }
 
 impl RAM {
-    fn new(buf: &[Byte]) -> Self {
+    pub fn new(buf: &[Byte]) -> Self {
         RAM { buf: buf.to_vec() }
     }
 }

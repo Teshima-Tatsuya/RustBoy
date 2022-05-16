@@ -1,8 +1,9 @@
+use crate::memory::ROM;
 use crate::types::*;
 use anyhow::{bail, Result};
 
 #[derive(Default)]
-pub struct Rom {
+pub struct Cartridge {
     entry_point: [Byte; 4],
     logo: [Byte; 30],
     /// 0x013F-0x0142 Manufacturer Code
@@ -19,7 +20,7 @@ pub struct Rom {
     header_checksum: Byte,
     global_checksum: [Byte; 2],
 
-    data: Vec<Byte>,
+    data: ROM,
 }
 
 #[derive(Default)]
@@ -132,7 +133,7 @@ impl Default for DestinationCode {
     }
 }
 
-impl Rom {
+impl Cartridge {
     pub fn new(buf: &[Byte]) -> Result<Self> {
         let entry_point = buf[0x100..=0x103].try_into()?;
         let logo = buf[0x104..=0x133].try_into()?;
@@ -157,7 +158,7 @@ impl Rom {
             0x52 => 72 * 16 * 1024,
             0x53 => 80 * 16 * 1024,
             0x54 => 96 * 16 * 1024,
-            v => bail!("Invalid Rom Size ${v:02X}"),
+            v => bail!("Invalid Cartridge Size ${v:02X}"),
         };
 
         let ram_size = match buf[0x0149] {
@@ -182,7 +183,7 @@ impl Rom {
         let header_checksum = buf[0x14D];
         let global_checksum = buf[0x014E..=0x014F].try_into()?;
 
-        Ok(Rom {
+        Ok(Cartridge {
             entry_point,
             logo,
             title,
@@ -196,7 +197,7 @@ impl Rom {
             mask_rom_version_number,
             header_checksum,
             global_checksum,
-            data: buf.to_vec(),
+            data: ROM::new(buf),
         })
     }
 }

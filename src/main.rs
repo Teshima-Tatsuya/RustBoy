@@ -1,5 +1,5 @@
+use rust_boy::cartridge::*;
 use rust_boy::cpu::*;
-use rust_boy::rom::*;
 use rust_boy::types::*;
 use std::env;
 use std::fs::File;
@@ -9,7 +9,7 @@ fn main() {
 
     let bytes = std::fs::read(&args[0]).unwrap();
 
-    let rom = Rom::new(&bytes);
+    let cart = Cartridge::new(&bytes);
 
     let cpu = Cpu::new();
     cpu.reg.F.z;

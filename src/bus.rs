@@ -1,7 +1,7 @@
-use crate::rom::Rom;
+use crate::cartridge::Cartridge;
 use crate::traits::*;
 use crate::types::*;
 
 struct Bus {
-    rom: Rom,
+    cartridge: Cartridge,
 }
