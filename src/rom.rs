@@ -1,7 +1,5 @@
 use crate::types::*;
 use anyhow::{bail, Result};
-use std::fs::File;
-use std::io::{BufReader, Read};
 
 #[derive(Default)]
 pub struct Rom {
@@ -15,7 +13,7 @@ pub struct Rom {
     cartridge_type: CartridgeType,
     rom_size: u64,
     ram_size: u64,
-    destination_code: Byte,
+    destination_code: DestinationCode,
     old_licensee_code: Byte,
     mask_rom_version_number: Byte,
     header_checksum: Byte,
@@ -43,7 +41,7 @@ impl CartridgeType {
         };
 
         use Mbc::*;
-        match code {
+        Ok(match code {
             0x00 => ct,
             0x01 => ct.with_mbc(Mbc1),
             0x02 => ct.with_mbc(Mbc1).with_ram(),
@@ -76,9 +74,7 @@ impl CartridgeType {
             0xFE => ct.with_mbc(HuC3),
             0xFF => ct.with_mbc(HuC1).with_ram().with_battery(),
             v => bail!("Unsupported Cartridge Type ${v:02X}"),
-        };
-
-        Ok(ct)
+        })
     }
 
     fn with_mbc(mut self, mbc: Mbc) -> Self {
@@ -126,6 +122,17 @@ enum Mbc {
     Mmm01,
 }
 
+enum DestinationCode {
+    Japanese,
+    NonJapanese,
+}
+
+impl Default for DestinationCode {
+    fn default() -> Self {
+        Self::Japanese
+    }
+}
+
 impl Rom {
     pub fn new(buf: &[Byte]) -> Result<Self> {
         let entry_point = buf[0x100..=0x103].try_into()?;
@@ -151,6 +158,7 @@ impl Rom {
             0x52 => 72 * 16 * 1024,
             0x53 => 80 * 16 * 1024,
             0x54 => 96 * 16 * 1024,
+            v => bail!("Invalid Rom Size ${v:02X}"),
         };
 
         let ram_size = match buf[0x0149] {
@@ -160,7 +168,21 @@ impl Rom {
             0x03 => 4 * 8 * 1024,
             0x04 => 16 * 8 * 1024,
             0x05 => 8 * 8 * 1024,
+            v => bail!("Invalid Ram Size ${v:02X}"),
         };
+
+        let destination_code = match buf[0x014A] {
+            0x00 => DestinationCode::Japanese,
+            0x01 => DestinationCode::NonJapanese,
+            v => bail!("Invalid Destination Code ${v:02X}"),
+        };
+
+        let old_licensee_code = buf[0x014B];
+        let mask_rom_version_number = buf[0x014C];
+
+        let header_checksum = buf[0x14D];
+        todo!("calc headker checksum");
+        let global_checksum = buf[0x014E..=0x014F].try_into()?;
 
         Ok(Rom {
             entry_point,
@@ -171,6 +193,12 @@ impl Rom {
             cartridge_type,
             rom_size,
             ram_size,
+            destination_code,
+            old_licensee_code,
+            mask_rom_version_number,
+            header_checksum,
+            global_checksum,
+            data: buf.to_vec(),
         })
     }
 }
