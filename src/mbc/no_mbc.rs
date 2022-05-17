@@ -15,7 +15,7 @@ impl NoMbc {
     }
 }
 
-impl super::Mbc for NoMbc {
+impl super::MbcTrait for NoMbc {
     fn read(&self, addr: Word) -> Byte {
         self.cartridge.rom.read(addr)
     }
