@@ -20,7 +20,7 @@ pub struct Cartridge {
     header_checksum: Byte,
     global_checksum: [Byte; 2],
 
-    data: ROM,
+    pub rom: ROM,
 }
 
 #[derive(Default)]
@@ -42,7 +42,7 @@ impl CartridgeType {
         };
 
         use Mbc::*;
-        Ok(match code {
+        let ct = match code {
             0x00 => ct,
             0x01 => ct.with_mbc(Mbc1),
             0x02 => ct.with_mbc(Mbc1).with_ram(),
@@ -75,7 +75,9 @@ impl CartridgeType {
             0xFE => ct.with_mbc(HuC3),
             0xFF => ct.with_mbc(HuC1).with_ram().with_battery(),
             v => bail!("Unsupported Cartridge Type ${v:02X}"),
-        })
+        };
+
+        Ok(ct)
     }
 
     fn with_mbc(mut self, mbc: Mbc) -> Self {
@@ -197,7 +199,7 @@ impl Cartridge {
             mask_rom_version_number,
             header_checksum,
             global_checksum,
-            data: ROM::new(buf),
+            rom: ROM::new(buf),
         })
     }
 }
