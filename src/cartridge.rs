@@ -111,7 +111,7 @@ impl CartridgeType {
     }
 }
 
-enum Mbc {
+pub enum Mbc {
     NoMbc,
     Mbc1,
     Mbc2,

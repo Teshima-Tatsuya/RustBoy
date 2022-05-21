@@ -15,7 +15,7 @@ impl Bus {
 impl Reader for Bus {
     fn read(&self, addr: Word) -> Byte {
         match addr {
-            0x0000..=0x7FFF => self.mbc.read(addr),
+            //            0x0000..=0x7FFF => self.mbc.read(addr),
             _ => 0x00,
         }
     }
