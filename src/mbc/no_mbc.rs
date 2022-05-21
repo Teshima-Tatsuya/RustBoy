@@ -19,16 +19,4 @@ impl super::MbcTrait for NoMbc {
     fn read(&self, addr: Word) -> Byte {
         self.cartridge.rom.read(addr)
     }
-
-    fn write(&mut self, addr: Word, value: Byte) {
-        unreachable!();
-    }
-
-    fn switch_rom_bank(&mut self, bank: u16) {
-        unreachable!();
-    }
-
-    fn switch_ram_bank(&mut self, bank: u16) {
-        unreachable!();
-    }
 }
