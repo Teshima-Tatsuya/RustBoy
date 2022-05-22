@@ -7,7 +7,7 @@ use ambassador::{delegatable_trait, Delegate};
 
 #[delegatable_trait]
 pub trait MbcTrait {
-    fn read(&mut self, addr: Word) -> Byte;
+    fn read(&self, addr: Word) -> Byte;
     fn write(&mut self, addr: Word, value: Byte) {}
     fn switch_rom_bank(&mut self, bank: u16) {}
     fn switch_ram_bank(&mut self, bank: u16) {}
