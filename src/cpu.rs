@@ -1,10 +1,11 @@
+use crate::bus::Bus;
 use crate::opcode::*;
 use crate::types::*;
 use bitvec::prelude::*;
 
-#[derive(Default)]
 pub struct Cpu {
     pub reg: Register,
+    pub bus: Bus,
 }
 
 #[derive(Default)]
@@ -90,8 +91,11 @@ impl Flags {
 }
 
 impl Cpu {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(bus: Bus) -> Self {
+        Self {
+            bus: bus,
+            reg: Register::default(),
+        }
     }
 
     pub fn step() {}

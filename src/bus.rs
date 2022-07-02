@@ -2,12 +2,12 @@ use crate::traits::*;
 use crate::types::*;
 use crate::{mbc::Mbc, mbc::MbcTrait};
 
-struct Bus {
+pub struct Bus {
     mbc: Mbc,
 }
 
 impl Bus {
-    fn new(mbc: Mbc) -> Self {
+    pub fn new(mbc: Mbc) -> Self {
         Bus { mbc }
     }
 }
