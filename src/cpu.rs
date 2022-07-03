@@ -1,5 +1,6 @@
 use crate::bus::Bus;
 use crate::opcode::*;
+use crate::traits::Reader;
 use crate::types::*;
 use bitvec::prelude::*;
 
@@ -98,7 +99,10 @@ impl Cpu {
         }
     }
 
-    pub fn step() {}
+    pub fn step(&self) {
+        let buf = self.bus.read(0x100);
+        println!("{}", buf);
+    }
 }
 
 #[cfg(test)]

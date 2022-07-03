@@ -9,11 +9,13 @@ use std::fs::File;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let bytes = std::fs::read(&args[0]).unwrap();
+    let bytes = std::fs::read(&args[1]).unwrap();
 
-    let cart = Cartridge::new(&bytes);
-    let bus = Bus::new(new_mbc(cart.unwrap()));
+    let cart = Cartridge::new(&bytes).unwrap();
+    println!("{}", cart);
+
+    let bus = Bus::new(new_mbc(cart));
 
     let cpu = Cpu::new(bus);
-    cpu.reg.F.z;
+    cpu.step();
 }

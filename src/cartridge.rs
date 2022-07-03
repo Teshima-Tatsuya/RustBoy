@@ -1,6 +1,7 @@
 use crate::memory::ROM;
 use crate::types::*;
 use anyhow::{bail, Result};
+use std::fmt;
 
 #[derive(Default)]
 pub struct Cartridge {
@@ -132,6 +133,12 @@ enum DestinationCode {
 impl Default for DestinationCode {
     fn default() -> Self {
         Self::Japanese
+    }
+}
+
+impl fmt::Display for Cartridge {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Catridge title:{}", self.title)
     }
 }
 
