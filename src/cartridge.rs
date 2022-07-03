@@ -145,8 +145,11 @@ impl fmt::Display for Cartridge {
 impl Cartridge {
     pub fn new(buf: &[Byte]) -> Result<Self> {
         let entry_point = buf[0x100..=0x103].try_into()?;
+        println!("entry_point {:?}", entry_point);
         let logo = buf[0x104..=0x133].try_into()?;
+        println!("logo {:?}", logo);
         let title = String::from_utf8_lossy(&buf[0x13f..=0x142]).to_string();
+        println!("title {:?}", title);
         let new_licensee_code = buf[0x144..=0x145].try_into()?;
         let sgb_flag = match buf[0x146] {
             0x00 => false,

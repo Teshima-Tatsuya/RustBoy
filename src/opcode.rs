@@ -2,30 +2,30 @@ use crate::cpu::Cpu;
 use crate::types::*;
 use once_cell::sync::Lazy;
 
-struct OpCode {
-    Code: Byte,
-    Mnemonic: String,
-    R1: String,
-    R2: String,
-    Cycles: u8,
-    Handler: fn(Cpu, String, String),
+pub struct OpCode {
+	pub code: Byte,
+	pub mnemonic: String,
+	pub r1: String,
+	pub r2: String,
+	pub cycles: u8,
+	pub handler: fn(Cpu, String, String),
 }
 
 macro_rules! make_opcode {
-    ($code:expr, $mnemonic:expr, $r1:expr, $r2:expr, $cycle:expr, $handler:expr) => {
-        OpCode {
-            Code: $code,
-            Mnemonic: String::from($mnemonic),
-            R1: String::from($r1),
-            R2: String::from($r2),
-            Cycles: $cycle,
-            Handler: $handler,
-        }
-    };
+	($code:expr, $mnemonic:expr, $r1:expr, $r2:expr, $cycle:expr, $handler:expr) => {
+		OpCode {
+			code: $code,
+			mnemonic: String::from($mnemonic),
+			r1: String::from($r1),
+			r2: String::from($r2),
+			cycles: $cycle,
+			handler: $handler,
+		}
+	};
 }
 
 #[rustfmt::skip]
-static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
+pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
     make_opcode! {0x00, "NOP", "", "", 1, nop},
 	make_opcode! {0x01, "LD BC,d16", "BC", "",   3, empty},
 	make_opcode! {0x02, "LD (BC),A", "BC", "A",  2, empty},
@@ -285,7 +285,7 @@ static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 ]);
 
 fn empty(c: Cpu, _: String, _: String) {
-    unreachable!("this is empty!");
+	unreachable!("this is empty!");
 }
 
-fn nop(c: Cpu, _: String, _: String) {}
+fn nop(_: Cpu, _: String, _: String) {}

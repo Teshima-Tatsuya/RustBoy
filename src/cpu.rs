@@ -1,5 +1,5 @@
 use crate::bus::Bus;
-use crate::opcode::*;
+use crate::opcode::OPCODES;
 use crate::traits::Reader;
 use crate::types::*;
 use bitvec::prelude::*;
@@ -101,6 +101,8 @@ impl Cpu {
 
     pub fn step(&self) {
         let buf = self.bus.read(0x100);
+        let opcodes = &OPCODES[0];
+        println!("{:?}", opcodes.code);
         println!("{}", buf);
     }
 }
