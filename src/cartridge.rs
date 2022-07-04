@@ -145,7 +145,7 @@ impl Cartridge {
     pub fn new(buf: &[Byte]) -> Result<Self> {
         let entry_point: [u8; 4] = buf[0x100..=0x103].try_into()?;
         let logo: [u8; 0x30] = buf[0x104..=0x133].try_into()?;
-        let title = String::from_utf8_lossy(&buf[0x13f..=0x142]).to_string();
+        let title = String::from_utf8_lossy(&buf[0x134..=0x143]).to_string();
         let new_licensee_code: [u8; 2] = buf[0x144..=0x145].try_into()?;
         let sgb_flag = match buf[0x146] {
             0x00 => false,
@@ -189,7 +189,7 @@ impl Cartridge {
         let mask_rom_version_number = buf[0x014C];
 
         let header_checksum = buf[0x14D];
-        let global_checksum = buf[0x014E..=0x014F].try_into()?;
+        let global_checksum: [u8; 2] = buf[0x014E..=0x014F].try_into()?;
 
         Ok(Cartridge {
             entry_point,

@@ -16,6 +16,7 @@ fn main() {
 
     let wraped_cart = Cartridge::new(&bytes);
     let cart = wraped_cart.unwrap();
+    println!("{}", cart);
 
     let bus = Bus::new(new_mbc(cart));
 
