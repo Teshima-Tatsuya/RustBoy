@@ -3,10 +3,9 @@ use crate::types::*;
 use anyhow::{bail, Result};
 use std::fmt;
 
-#[derive(Default)]
 pub struct Cartridge {
     entry_point: [Byte; 4],
-    logo: [Byte; 30],
+    logo: [Byte; 0x30],
     /// 0x013F-0x0142 Manufacturer Code
     /// 0x0143        CGB Flag
     title: String,
@@ -144,13 +143,10 @@ impl fmt::Display for Cartridge {
 
 impl Cartridge {
     pub fn new(buf: &[Byte]) -> Result<Self> {
-        let entry_point = buf[0x100..=0x103].try_into()?;
-        println!("entry_point {:?}", entry_point);
-        let logo = buf[0x104..=0x133].try_into()?;
-        println!("logo {:?}", logo);
+        let entry_point: [u8; 4] = buf[0x100..=0x103].try_into()?;
+        let logo: [u8; 0x30] = buf[0x104..=0x133].try_into()?;
         let title = String::from_utf8_lossy(&buf[0x13f..=0x142]).to_string();
-        println!("title {:?}", title);
-        let new_licensee_code = buf[0x144..=0x145].try_into()?;
+        let new_licensee_code: [u8; 2] = buf[0x144..=0x145].try_into()?;
         let sgb_flag = match buf[0x146] {
             0x00 => false,
             0x03 => true,
