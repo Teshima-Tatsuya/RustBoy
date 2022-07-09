@@ -4,6 +4,7 @@ mod no_mbc;
 use crate::cartridge::Cartridge;
 use crate::types::*;
 use ambassador::{delegatable_trait, Delegate};
+use anyhow::{bail, Result};
 
 #[delegatable_trait]
 pub trait MbcTrait {
@@ -21,5 +22,10 @@ pub enum Mbc {
 }
 
 pub fn new_mbc(cartridge: Cartridge) -> Mbc {
-    Mbc::NoMbc(no_mbc::NoMbc::new(cartridge))
+    match cartridge.cartridge_type.mbc {
+        Some(crate::cartridge::Mbc::NoMbc) => Mbc::NoMbc(no_mbc::NoMbc::new(cartridge)),
+        Some(crate::cartridge::Mbc::Mbc1) => Mbc::Mbc1(mbc1::Mbc1::new(cartridge)),
+        Some(v) => todo!("type hasn't implemented"),
+        None => todo!("type hasn't implemented"),
+    }
 }

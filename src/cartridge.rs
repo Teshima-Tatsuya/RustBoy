@@ -4,29 +4,28 @@ use anyhow::{bail, Result};
 use std::fmt;
 
 pub struct Cartridge {
-    entry_point: [Byte; 4],
-    logo: [Byte; 0x30],
+    pub entry_point: [Byte; 4],
+    pub logo: [Byte; 0x30],
     /// 0x013F-0x0142 Manufacturer Code
     /// 0x0143        CGB Flag
-    title: String,
-    new_licensee_code: [Byte; 2],
-    sgb_flag: bool,
-    cartridge_type: CartridgeType,
-    rom_size: u64,
-    ram_size: u64,
-    destination_code: DestinationCode,
-    old_licensee_code: Byte,
-    mask_rom_version_number: Byte,
-    header_checksum: Byte,
-    global_checksum: [Byte; 2],
-
+    pub title: String,
+    pub new_licensee_code: [Byte; 2],
+    pub sgb_flag: bool,
+    pub cartridge_type: CartridgeType,
+    pub rom_size: u64,
+    pub ram_size: u64,
+    pub destination_code: DestinationCode,
+    pub old_licensee_code: Byte,
+    pub mask_rom_version_number: Byte,
+    pub header_checksum: Byte,
+    pub global_checksum: [Byte; 2],
     pub rom: ROM,
 }
 
-#[derive(Default)]
-struct CartridgeType {
-    code: Byte,
-    mbc: Option<Mbc>,
+#[derive(Default, Clone)]
+pub struct CartridgeType {
+    pub code: Byte,
+    pub mbc: Option<Mbc>,
     has_ram: bool,
     has_battery: bool,
     has_timer: bool,
@@ -111,6 +110,18 @@ impl CartridgeType {
     }
 }
 
+impl fmt::Display for CartridgeType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut result = String::from("CartridgeType:\n");
+        result += format!(" code:{}\n", self.code).as_str();
+
+        let mbc = self.mbc.clone();
+        result += format!(" mbc:{}\n", mbc.unwrap()).as_str();
+        write!(f, "{}", &result.as_str())
+    }
+}
+
+#[derive(Clone)]
 pub enum Mbc {
     NoMbc,
     Mbc1,
@@ -124,7 +135,25 @@ pub enum Mbc {
     Mmm01,
 }
 
-enum DestinationCode {
+impl fmt::Display for Mbc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Mbc::NoMbc => "NoMbc",
+            Mbc::Mbc1 => "MBC1",
+            Mbc::Mbc2 => "MBC2",
+            Mbc::Mmm01 => "MMM01",
+            Mbc::Mbc3 => "MBC3",
+            Mbc::Mbc5 => "MBC5",
+            Mbc::Mbc6 => "MBC6",
+            Mbc::Mbc7 => "MBC7",
+            Mbc::HuC1 => "HuC1",
+            Mbc::HuC3 => "HuC3",
+        };
+        write!(f, "{s}")
+    }
+}
+
+pub enum DestinationCode {
     Japanese,
     NonJapanese,
 }
@@ -137,7 +166,10 @@ impl Default for DestinationCode {
 
 impl fmt::Display for Cartridge {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Catridge title:{}", self.title)
+        let mut result = String::from("Cartridge:\n");
+        result += format!(" title:{}\n", self.title).as_str();
+        result += format!(" {}", self.cartridge_type).as_str();
+        write!(f, "{}", &result.as_str())
     }
 }
 
