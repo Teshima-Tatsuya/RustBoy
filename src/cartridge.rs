@@ -112,12 +112,21 @@ impl CartridgeType {
 
 impl fmt::Display for CartridgeType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut result = String::from("CartridgeType:\n");
-        result += format!(" code:{}\n", self.code).as_str();
+        let mut result = String::from("CartridgeType:");
+        result += format!(" {:02X}", self.code).as_str();
 
         let mbc = self.mbc.clone();
-        result += format!(" mbc:{}\n", mbc.unwrap()).as_str();
-        write!(f, "{}", &result.as_str())
+        result += format!(" {}", mbc.unwrap()).as_str();
+        write!(
+            f,
+            "{}{}{}{}{}{}",
+            &result.as_str(),
+            if self.has_ram { " +RAM" } else { "" },
+            if self.has_battery { " +BATTERY" } else { "" },
+            if self.has_timer { " +TIMER" } else { "" },
+            if self.has_rumble { " +RUNBLE" } else { "" },
+            if self.has_sensor { " +SENSOR" } else { "" },
+        )
     }
 }
 
