@@ -1,6 +1,7 @@
 use crate::cpu::Cpu;
 use crate::types::*;
 use once_cell::sync::Lazy;
+use std::fmt;
 
 pub struct OpCode {
 	pub code: Byte,
@@ -8,7 +9,18 @@ pub struct OpCode {
 	pub r1: String,
 	pub r2: String,
 	pub cycles: u8,
-	pub handler: fn(Cpu, String, String),
+	pub handler: fn(*mut Cpu, String, String),
+}
+
+impl fmt::Display for OpCode {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		let mut result = String::from("OpCode:");
+		write!(
+			f,
+			"OpCode: {} {} {} {} {}",
+			self.code, self.mnemonic, self.r1, self.r2, self.cycles
+		)
+	}
 }
 
 macro_rules! make_opcode {
@@ -284,8 +296,10 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFF, "RST 38H", "0x38", "",   4, empty},
 ]);
 
-fn empty(c: Cpu, _: String, _: String) {
+fn empty(c: *mut Cpu, _: String, _: String) {
 	unreachable!("this is empty!");
 }
 
-fn nop(_: Cpu, _: String, _: String) {}
+fn nop(_: *mut Cpu, _: String, _: String) {
+	println!("nop");
+}

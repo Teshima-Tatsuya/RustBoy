@@ -3,13 +3,13 @@ use crate::opcode::OPCODES;
 use crate::traits::Reader;
 use crate::types::*;
 use bitvec::prelude::*;
+use std::fmt;
 
 pub struct Cpu {
     pub reg: Register,
     pub bus: Bus,
 }
 
-#[derive(Default)]
 #[allow(non_snake_case)]
 pub struct Register {
     pub A: Byte,
@@ -24,6 +24,32 @@ pub struct Register {
     pub PC: Word,
 }
 
+impl fmt::Display for Register {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Register: SP:{:02X} PC{:02X} A{:02X} B{:02X} C{:02X} D{:02X} E{:02X} H{:02X} L{:02X}",
+            self.SP, self.PC, self.A, self.B, self.C, self.D, self.E, self.H, self.L
+        )
+    }
+}
+
+impl Default for Register {
+    fn default() -> Self {
+        Self {
+            A: 0x01,
+            B: 0x00,
+            C: 0x13,
+            D: 0x00,
+            E: 0xD8,
+            F: Flags::default(),
+            H: 0x01,
+            L: 0x4D,
+            SP: 0xFFFE,
+            PC: 0x0100,
+        }
+    }
+}
 impl Register {
     pub fn af(&self) -> Word {
         ((self.A as Word) << 8) | (self.F.pack() as Word)
@@ -60,14 +86,30 @@ impl Register {
         self.H = (value >> 8) as Byte;
         self.L = (value & 0xFF) as Byte;
     }
+    pub fn pc_mut(&mut self, value: Word) {
+        self.PC = value;
+    }
+    pub fn sp_mut(&mut self, value: Word) {
+        self.SP = value;
+    }
 }
 
-#[derive(Default)]
 pub struct Flags {
     pub z: bool,
     pub n: bool,
     pub h: bool,
     pub c: bool,
+}
+
+impl Default for Flags {
+    fn default() -> Self {
+        Self {
+            z: true,
+            n: true,
+            h: false,
+            c: false,
+        }
+    }
 }
 
 impl Flags {
@@ -99,11 +141,19 @@ impl Cpu {
         }
     }
 
-    pub fn step(&self) {
-        let buf = self.bus.read(0x100);
-        let opcodes = &OPCODES[0];
-        println!("{:?}", opcodes.code);
-        println!("{}", buf);
+    pub fn step(&mut self) {
+        let buf = self.fetch();
+        let opcode = &OPCODES[buf as usize];
+        println!(" {}", opcode);
+        println!(" {}", self.reg);
+        let handler = &opcode.handler;
+        handler(self, opcode.r1.to_string(), opcode.r2.to_string());
+    }
+
+    pub fn fetch(&mut self) -> Byte {
+        let buf = self.bus.read(self.reg.PC);
+        self.reg.PC += 1;
+        return buf;
     }
 }
 

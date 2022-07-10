@@ -1,4 +1,5 @@
 use crate::cartridge::Cartridge;
+use crate::traits::*;
 use crate::types::*;
 
 pub struct Mbc1 {
@@ -15,6 +16,6 @@ impl Mbc1 {
 
 impl super::MbcTrait for Mbc1 {
     fn read(&self, addr: Word) -> Byte {
-        0
+        self.cartridge.rom.read(addr)
     }
 }
