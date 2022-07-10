@@ -29,7 +29,7 @@ impl fmt::Display for Register {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Register: SP:{:02X} PC{:02X} A{:02X} B{:02X} C{:02X} D{:02X} E{:02X} H{:02X} L{:02X}",
+            "Register: SP:{:04X} PC:{:04X} A:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X}",
             self.SP, self.PC, self.A, self.B, self.C, self.D, self.E, self.H, self.L
         )
     }
@@ -147,8 +147,13 @@ impl Cpu {
         let opcode = &OPCODES[buf as usize];
         println!(" {}", opcode);
         println!(" {}", self.reg);
+        println!(
+            "  data: {:02X}{:02X}",
+            self.bus.read(self.reg.PC),
+            self.bus.read(self.reg.PC + 1)
+        );
         let handler = &opcode.handler;
-        handler(*self, opcode.r1.to_string(), opcode.r2.to_string());
+        handler(self, opcode.r1.to_string(), opcode.r2.to_string());
     }
 
     pub fn fetch(&mut self) -> Byte {

@@ -9,7 +9,7 @@ pub struct OpCode {
 	pub r1: String,
 	pub r2: String,
 	pub cycles: u8,
-	pub handler: fn(Cpu, String, String),
+	pub handler: fn(c: &mut Cpu, String, String),
 }
 
 impl fmt::Display for OpCode {
@@ -281,7 +281,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xF0, "LDH A,(a8)", "A", "",   3, empty},
 	make_opcode! {0xF1, "POP AF", "AF",  "",   3, empty},
 	make_opcode! {0xF2, "LD A,(C)", "A", "C",  2, empty},
-	make_opcode! {0xF3, "DI", "",  "",   1, empty},
+	make_opcode! {0xF3, "DI", "",  "",   1, di},
 	make_opcode! {0xF4, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xF5, "PUSH AF", "AF",  "",   4, empty},
 	make_opcode! {0xF6, "OR d8", "",  "",   2, empty},
@@ -296,36 +296,38 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFF, "RST 38H", "0x38", "",   4, empty},
 ]);
 
-fn empty(c: Cpu, _: String, _: String) {
+fn empty(c: &mut Cpu, _: String, _: String) {
 	unreachable!("this is empty!");
 }
 
-fn nop(_: Cpu, _: String, _: String) {
+fn nop(_: &mut Cpu, _: String, _: String) {
 	println!("nop");
 }
 
 // jp
-fn _jp(c: Cpu, addr: Word) {
+fn _jp(c: &mut Cpu, addr: Word) {
 	c.reg.PC = addr
 }
 
 // JP a16
-fn jpa16(c: Cpu, _: String, _: String) {
-	_jp(c, c.fetch16())
+fn jpa16(c: &mut Cpu, _: String, _: String) {
+	let addr = c.fetch16();
+	_jp(c, addr)
 }
 
 // JP flag, a16
 // jump when flag = 1
-fn jpfa16(c: Cpu, flag: String, _: String) {
+fn jpfa16(c: &mut Cpu, flag: String, _: String) {
 	let addr = c.fetch16();
 
 	let flag_str: &str = &flag;
-	let flag_b = false;
+	let mut flag_b = false;
 	match flag_str {
 		"flagZ" => flag_b = c.reg.F.z,
 		"flagN" => flag_b = c.reg.F.n,
 		"flagH" => flag_b = c.reg.F.h,
 		"flagC" => flag_b = c.reg.F.c,
+		_ => unreachable!(),
 	}
 
 	if flag_b {
@@ -335,16 +337,17 @@ fn jpfa16(c: Cpu, flag: String, _: String) {
 
 // JP Nflag, a16
 // jump when flag = 0
-fn jpnfa16(c: Cpu, flag: String, _: String) {
+fn jpnfa16(c: &mut Cpu, flag: String, _: String) {
 	let addr = c.fetch16();
 
 	let flag_str: &str = &flag;
-	let flag_b = false;
+	let mut flag_b = false;
 	match flag_str {
 		"flagZ" => flag_b = c.reg.F.z,
 		"flagN" => flag_b = c.reg.F.n,
 		"flagH" => flag_b = c.reg.F.h,
 		"flagC" => flag_b = c.reg.F.c,
+		_ => unreachable!(),
 	}
 	if !flag_b {
 		_jp(c, addr)
@@ -352,7 +355,12 @@ fn jpnfa16(c: Cpu, flag: String, _: String) {
 }
 
 // JP (r16)
-fn jpm16(c: Cpu, R1: String, _: String) {
-	todo!("not implemented jpm16:")
+fn jpm16(c: &mut Cpu, R1: String, _: String) {
+	// todo!("not implemented jpm16")
 	//	_jp(c, c.reg.R16(int(R1)))
+}
+
+fn di(c: &mut Cpu, _: String, _: String) {
+	// todo!("not implemented di")
+	//	c.IRQ.Disable()
 }
