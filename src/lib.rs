@@ -6,3 +6,4 @@ pub mod memory;
 pub mod opcode;
 pub mod traits;
 pub mod types;
+pub mod util;

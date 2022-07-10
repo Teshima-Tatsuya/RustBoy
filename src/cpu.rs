@@ -2,6 +2,7 @@ use crate::bus::Bus;
 use crate::opcode::OPCODES;
 use crate::traits::Reader;
 use crate::types::*;
+use crate::util::*;
 use bitvec::prelude::*;
 use std::fmt;
 
@@ -147,13 +148,19 @@ impl Cpu {
         println!(" {}", opcode);
         println!(" {}", self.reg);
         let handler = &opcode.handler;
-        handler(self, opcode.r1.to_string(), opcode.r2.to_string());
+        handler(*self, opcode.r1.to_string(), opcode.r2.to_string());
     }
 
     pub fn fetch(&mut self) -> Byte {
         let buf = self.bus.read(self.reg.PC);
         self.reg.PC += 1;
         return buf;
+    }
+
+    pub fn fetch16(&mut self) -> Word {
+        let lower = self.fetch();
+        let upper = self.fetch();
+        return Bytes2Word(lower, upper);
     }
 }
 

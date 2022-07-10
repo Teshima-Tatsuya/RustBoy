@@ -9,7 +9,7 @@ pub struct OpCode {
 	pub r1: String,
 	pub r2: String,
 	pub cycles: u8,
-	pub handler: fn(*mut Cpu, String, String),
+	pub handler: fn(Cpu, String, String),
 }
 
 impl fmt::Display for OpCode {
@@ -232,15 +232,15 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xBF, "CP A", "A", "",   1, empty},
 	make_opcode! {0xC0, "RET NZ", "flagZ", "",   2, empty},
 	make_opcode! {0xC1, "POP BC", "BC", "",   3, empty},
-	make_opcode! {0xC2, "JP NZ,a16", "flagZ", "",   3, empty},
-	make_opcode! {0xC3, "JP a16", "",  "",   4, empty},
+	make_opcode! {0xC2, "JP NZ,a16", "flagZ", "",   3, jpnfa16},
+	make_opcode! {0xC3, "JP a16", "",  "",   4, jpa16},
 	make_opcode! {0xC4, "CALL NZ,a16", "flagZ", "",   3, empty},
 	make_opcode! {0xC5, "PUSH BC", "BC", "",   4, empty},
 	make_opcode! {0xC6, "ADD A,d8", "A", "",   2, empty},
 	make_opcode! {0xC7, "RST 00H", "0x00", "",   4, empty},
 	make_opcode! {0xC8, "RET Z", "flagZ", "",   2, empty},
 	make_opcode! {0xC9, "RET", "",  "",   4, empty},
-	make_opcode! {0xCA, "JP Z,a16", "flagZ", "",   3, empty},
+	make_opcode! {0xCA, "JP Z,a16", "flagZ", "",   3, jpfa16},
 	make_opcode! {0xCB, "PREFIX CB", "",  "",   1, empty},
 	make_opcode! {0xCC, "CALL Z,a16", "flagZ", "",   3, empty},
 	make_opcode! {0xCD, "CALL a16", "",  "",   6, empty},
@@ -248,7 +248,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xCF, "RST 08H", "0x08", "",   4, empty},
 	make_opcode! {0xD0, "RET NC", "flagC", "",   2, empty},
 	make_opcode! {0xD1, "POP DE", "DE", "",   3, empty},
-	make_opcode! {0xD2, "JP NC,a16", "flagC", "",   3, empty},
+	make_opcode! {0xD2, "JP NC,a16", "flagC", "",   3, jpnfa16},
 	make_opcode! {0xD3, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xD4, "CALL NC,a16", "flagC", "",   3, empty},
 	make_opcode! {0xD5, "PUSH DE", "DE", "",   4, empty},
@@ -256,7 +256,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xD7, "RST 10H", "0x10", "",   4, empty},
 	make_opcode! {0xD8, "RET C", "flagC", "",   2, empty},
 	make_opcode! {0xD9, "RETI", "",  "",   4, empty},
-	make_opcode! {0xDA, "JP C,a16", "flagC", "",   3, empty},
+	make_opcode! {0xDA, "JP C,a16", "flagC", "",   3, jpfa16},
 	make_opcode! {0xDB, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xDC, "CALL C,a16", "flagC", "",   3, empty},
 	make_opcode! {0xDD, "EMPTY", "",  "",   0,  empty},
@@ -271,7 +271,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xE6, "AND d8", "",  "",   2, empty},
 	make_opcode! {0xE7, "RST 20H", "0x20", "",   4, empty},
 	make_opcode! {0xE8, "ADD SP,r8", "SP", "",   4, empty},
-	make_opcode! {0xE9, "JP (HL)", "HL", "",   1, empty},
+	make_opcode! {0xE9, "JP (HL)", "HL", "",   1, jpm16},
 	make_opcode! {0xEA, "LD (a16),A", "",  "A",  4, empty},
 	make_opcode! {0xEB, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xEC, "EMPTY", "",  "",   0,  empty},
@@ -296,10 +296,63 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFF, "RST 38H", "0x38", "",   4, empty},
 ]);
 
-fn empty(c: *mut Cpu, _: String, _: String) {
+fn empty(c: Cpu, _: String, _: String) {
 	unreachable!("this is empty!");
 }
 
-fn nop(_: *mut Cpu, _: String, _: String) {
+fn nop(_: Cpu, _: String, _: String) {
 	println!("nop");
+}
+
+// jp
+fn _jp(c: Cpu, addr: Word) {
+	c.reg.PC = addr
+}
+
+// JP a16
+fn jpa16(c: Cpu, _: String, _: String) {
+	_jp(c, c.fetch16())
+}
+
+// JP flag, a16
+// jump when flag = 1
+fn jpfa16(c: Cpu, flag: String, _: String) {
+	let addr = c.fetch16();
+
+	let flag_str: &str = &flag;
+	let flag_b = false;
+	match flag_str {
+		"flagZ" => flag_b = c.reg.F.z,
+		"flagN" => flag_b = c.reg.F.n,
+		"flagH" => flag_b = c.reg.F.h,
+		"flagC" => flag_b = c.reg.F.c,
+	}
+
+	if flag_b {
+		_jp(c, addr)
+	}
+}
+
+// JP Nflag, a16
+// jump when flag = 0
+fn jpnfa16(c: Cpu, flag: String, _: String) {
+	let addr = c.fetch16();
+
+	let flag_str: &str = &flag;
+	let flag_b = false;
+	match flag_str {
+		"flagZ" => flag_b = c.reg.F.z,
+		"flagN" => flag_b = c.reg.F.n,
+		"flagH" => flag_b = c.reg.F.h,
+		"flagC" => flag_b = c.reg.F.c,
+	}
+	if !flag_b {
+		_jp(c, addr)
+	}
+}
+
+// JP (r16)
+fn jpm16(c: Cpu, R1: String, _: String) {
+	todo!("not implemented jpm16:")
+	//	_jp(c, c.reg.R16(int(R1)))
 }
