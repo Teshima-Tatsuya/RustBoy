@@ -52,21 +52,18 @@ impl Default for Register {
     }
 }
 impl Register {
-    pub fn r(&mut self, r: String) -> Byte {
-        let res;
+    pub fn r(&self, r: String) -> Byte {
         match r.as_str() {
-            "A" => res = self.A,
-            "B" => res = self.B,
-            "C" => res = self.C,
-            "D" => res = self.D,
-            "E" => res = self.E,
-            "H" => res = self.H,
-            "L" => res = self.L,
-            "F" => res = self.F.pack(),
+            "A" => self.A,
+            "B" => self.B,
+            "C" => self.C,
+            "D" => self.D,
+            "E" => self.E,
+            "H" => self.H,
+            "L" => self.L,
+            "F" => self.F.pack(),
             _ => unreachable!(),
         }
-
-        return res;
     }
 
     pub fn r_mut(&mut self, r: String, value: Byte) {
@@ -84,24 +81,23 @@ impl Register {
     }
 
     pub fn r16(&mut self, r: String) -> Word {
-        let res: Word;
         match r.as_str() {
-            "AF" => res = self.af(),
-            "BC" => res = self.bc(),
-            "DE" => res = self.de(),
-            "HL" => res = self.hl(),
+            "AF" => self.af(),
+            "BC" => self.bc(),
+            "DE" => self.de(),
+            "HL" => self.hl(),
             "HLD" => {
-                res = self.hl();
+                let res = self.hl();
                 self.hl_mut(res - 1);
+                res
             }
             "HLI" => {
-                res = self.hl();
+                let res = self.hl();
                 self.hl_mut(res + 1);
+                res
             }
             _ => unreachable!(),
         }
-
-        return res;
     }
 
     pub fn r16_mut(&mut self, r16: String, value: Word) {
