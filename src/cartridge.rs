@@ -1,4 +1,4 @@
-use crate::memory::ROM;
+use crate::memory::{RAM, ROM};
 use crate::types::*;
 use anyhow::{bail, Result};
 use std::fmt;
@@ -20,6 +20,7 @@ pub struct Cartridge {
     pub header_checksum: Byte,
     pub global_checksum: [Byte; 2],
     pub rom: ROM,
+    pub ram: RAM,
 }
 
 #[derive(Default, Clone)]
@@ -247,6 +248,7 @@ impl Cartridge {
             header_checksum,
             global_checksum,
             rom: ROM::new(buf),
+            ram: RAM::new(ram_size as usize),
         })
     }
 }

@@ -1,5 +1,6 @@
 use crate::cpu::Cpu;
 use crate::types::*;
+use log::warn;
 use once_cell::sync::Lazy;
 use std::fmt;
 
@@ -356,11 +357,11 @@ fn jpnfa16(c: &mut Cpu, flag: String, _: String) {
 
 // JP (r16)
 fn jpm16(c: &mut Cpu, R1: String, _: String) {
-	// todo!("not implemented jpm16")
+	warn!("not implemented jpm16")
 	//	_jp(c, c.reg.R16(int(R1)))
 }
 
 fn di(c: &mut Cpu, _: String, _: String) {
-	// todo!("not implemented di")
+	warn!("not implemented di")
 	//	c.IRQ.Disable()
 }

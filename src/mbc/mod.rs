@@ -4,7 +4,6 @@ mod no_mbc;
 use crate::cartridge::Cartridge;
 use crate::types::*;
 use ambassador::{delegatable_trait, Delegate};
-use anyhow::{bail, Result};
 
 #[delegatable_trait]
 pub trait MbcTrait {

@@ -20,3 +20,12 @@ impl Reader for Bus {
         }
     }
 }
+
+impl Writer for Bus {
+    fn write(&mut self, addr: Word, value: Byte) {
+        match addr {
+            0x0000..=0x7FFF => self.mbc.write(addr, value),
+            v => todo!("addr {} is not writable", v),
+        }
+    }
+}

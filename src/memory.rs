@@ -13,13 +13,13 @@ pub struct RAM {
 
 impl ROM {
     pub fn new(buf: &[Byte]) -> Self {
-        ROM { buf: buf.to_vec() }
+        Self { buf: buf.to_vec() }
     }
 }
 
 impl RAM {
-    pub fn new(buf: &[Byte]) -> Self {
-        RAM { buf: buf.to_vec() }
+    pub fn new(size: usize) -> Self {
+        Self { buf: vec![0; size] }
     }
 }
 
