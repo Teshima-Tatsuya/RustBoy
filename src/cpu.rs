@@ -52,7 +52,7 @@ impl Default for Register {
     }
 }
 impl Register {
-    pub fn r(&self, r: String) -> Byte {
+    pub fn r(&self, r: &String) -> Byte {
         match r.as_str() {
             "A" => self.A,
             "B" => self.B,
@@ -66,7 +66,7 @@ impl Register {
         }
     }
 
-    pub fn r_mut(&mut self, r: String, value: Byte) {
+    pub fn r_mut(&mut self, r: &String, value: Byte) {
         match r.as_str() {
             "A" => self.A = value,
             "B" => self.B = value,
@@ -80,7 +80,7 @@ impl Register {
         }
     }
 
-    pub fn r16(&mut self, r: String) -> Word {
+    pub fn r16(&mut self, r: &String) -> Word {
         match r.as_str() {
             "AF" => self.af(),
             "BC" => self.bc(),
@@ -100,7 +100,7 @@ impl Register {
         }
     }
 
-    pub fn r16_mut(&mut self, r16: String, value: Word) {
+    pub fn r16_mut(&mut self, r16: &String, value: Word) {
         match r16.as_str() {
             "AF" => self.af_mut(value),
             "BC" => self.bc_mut(value),

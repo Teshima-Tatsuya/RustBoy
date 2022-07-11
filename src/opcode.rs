@@ -40,65 +40,65 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
     make_opcode! {0x00, "NOP", "", "", 1, nop},
 	make_opcode! {0x01, "LD BC,d16", "BC", "",   3, ldr16d16},
 	make_opcode! {0x02, "LD (BC),A", "BC", "A",  2, ldm16r},
-	make_opcode! {0x03, "INC BC", "BC", "",   2, empty},
-	make_opcode! {0x04, "INC B", "B", "",   1, empty},
-	make_opcode! {0x05, "DEC B", "B", "",   1, empty},
+	make_opcode! {0x03, "INC BC", "BC", "",   2, incr16},
+	make_opcode! {0x04, "INC B", "B", "",   1, incr},
+	make_opcode! {0x05, "DEC B", "B", "",   1, decr},
 	make_opcode! {0x06, "LD B,d8", "B", "",   2, ldrd},
 	make_opcode! {0x07, "RLCA", "",  "",   1, empty},
 	make_opcode! {0x08, "LD (a16),SP", "",  "SP",  5, lda16r16},
 	make_opcode! {0x09, "ADD HL,BC", "HL", "BC",  2, addr16r16},
 	make_opcode! {0x0A, "LD A,(BC)", "A", "BC",  2, ldrm16},
-	make_opcode! {0x0B, "DEC BC", "BC", "",   2, empty},
-	make_opcode! {0x0C, "INC C", "C", "",   1, empty},
-	make_opcode! {0x0D, "DEC C", "C", "",   1, empty},
+	make_opcode! {0x0B, "DEC BC", "BC", "",   2, decr16},
+	make_opcode! {0x0C, "INC C", "C", "",   1, incr},
+	make_opcode! {0x0D, "DEC C", "C", "",   1, decr},
 	make_opcode! {0x0E, "LD C,d8", "C", "",   2, ldrd},
 	make_opcode! {0x0F, "RRCA", "",  "",   1, empty},
-	make_opcode! {0x10, "STOP 0", "",  "",   1, empty},
+	make_opcode! {0x10, "STOP 0", "",  "",   1, stop},
 	make_opcode! {0x11, "LD DE,d16", "DE", "",   3, ldr16d16},
 	make_opcode! {0x12, "LD (DE),A", "DE", "A",  2, ldm16r},
-	make_opcode! {0x13, "INC DE", "DE", "",   2, empty},
-	make_opcode! {0x14, "INC D", "D", "",   1, empty},
-	make_opcode! {0x15, "DEC D", "D", "",   1, empty},
+	make_opcode! {0x13, "INC DE", "DE", "",   2, incr16},
+	make_opcode! {0x14, "INC D", "D", "",   1, incr},
+	make_opcode! {0x15, "DEC D", "D", "",   1, decr},
 	make_opcode! {0x16, "LD D,d8", "D", "",   2, ldrd},
 	make_opcode! {0x17, "RLA", "",  "",   1, empty},
 	make_opcode! {0x18, "JR r8", "",  "",   3, jrr8},
 	make_opcode! {0x19, "ADD HL,DE", "HL", "DE",  2, addr16r16},
 	make_opcode! {0x1A, "LD A,(DE)", "A", "DE",  2, ldrm16},
-	make_opcode! {0x1B, "DEC DE", "DE", "",   2, empty},
-	make_opcode! {0x1C, "INC E", "E", "",   1, empty},
-	make_opcode! {0x1D, "DEC E", "E", "",   1, empty},
+	make_opcode! {0x1B, "DEC DE", "DE", "",   2, decr16},
+	make_opcode! {0x1C, "INC E", "E", "",   1, incr},
+	make_opcode! {0x1D, "DEC E", "E", "",   1, decr},
 	make_opcode! {0x1E, "LD E,d8", "E", "",   2, ldrd},
 	make_opcode! {0x1F, "RRA", "",  "",   1, empty},
 	make_opcode! {0x20, "JR NZ,r8", "Z", "",   2, jrnfr8},
 	make_opcode! {0x21, "LD HL,d16", "HL", "",   3, ldr16d16},
 	make_opcode! {0x22, "LD (HL+),A", "HLI", "A",  2, ldm16r},
-	make_opcode! {0x23, "INC HL", "HL", "",   2, empty},
-	make_opcode! {0x24, "INC H", "H", "",   1, empty},
-	make_opcode! {0x25, "DEC H", "H", "",   1, empty},
+	make_opcode! {0x23, "INC HL", "HL", "",   2, incr16},
+	make_opcode! {0x24, "INC H", "H", "",   1, incr},
+	make_opcode! {0x25, "DEC H", "H", "",   1, decr},
 	make_opcode! {0x26, "LD H,d8", "H", "",   2, ldrd},
 	make_opcode! {0x27, "DAA", "",  "",   1, empty},
 	make_opcode! {0x28, "JR Z,r8", "Z", "",   2, jrfr8},
 	make_opcode! {0x29, "ADD HL,HL", "HL", "HL",  2, addr16r16},
 	make_opcode! {0x2A, "LD A,(HL+)", "A", "HLI",  2, ldrm16},
-	make_opcode! {0x2B, "DEC HL", "HL", "",   2, empty},
-	make_opcode! {0x2C, "INC L", "L", "",   1, empty},
-	make_opcode! {0x2D, "DEC L", "L", "",   1, empty},
+	make_opcode! {0x2B, "DEC HL", "HL", "",   2, decr16},
+	make_opcode! {0x2C, "INC L", "L", "",   1, incr},
+	make_opcode! {0x2D, "DEC L", "L", "",   1, decr},
 	make_opcode! {0x2E, "LD L,d8", "L", "",   2, ldrd},
 	make_opcode! {0x2F, "CPL", "",  "",   1, cpl},
 	make_opcode! {0x30, "JR NC,r8", "C", "",   2, jrnfr8},
 	make_opcode! {0x31, "LD SP,d16", "SP", "",   3, ldr16d16},
 	make_opcode! {0x32, "LD (HL-),A", "HLD", "A",  2, ldm16r},
-	make_opcode! {0x33, "INC SP", "SP", "",   2, empty},
-	make_opcode! {0x34, "INC (HL)", "HL", "",   3, empty},
-	make_opcode! {0x35, "DEC (HL)", "HL", "",   3, empty},
+	make_opcode! {0x33, "INC SP", "SP", "",   2, incr16},
+	make_opcode! {0x34, "INC (HL)", "HL", "",   3, incm16},
+	make_opcode! {0x35, "DEC (HL)", "HL", "",   3, decm16},
 	make_opcode! {0x36, "LD (HL),d8", "HL", "",   3, ldm16d},
 	make_opcode! {0x37, "SCF", "",  "",   1, scf},
 	make_opcode! {0x38, "JR C,r8", "C", "",   2, jrfr8},
 	make_opcode! {0x39, "ADD HL,SP", "HL", "SP",  2, addr16r16},
 	make_opcode! {0x3A, "LD A,(HL-)", "A", "HLD",  2, ldrm16},
-	make_opcode! {0x3B, "DEC SP", "SP", "",   2, empty},
-	make_opcode! {0x3C, "INC A", "A", "",   1, empty},
-	make_opcode! {0x3D, "DEC A", "A", "",   1, empty},
+	make_opcode! {0x3B, "DEC SP", "SP", "",   2, decr16},
+	make_opcode! {0x3C, "INC A", "A", "",   1, incr},
+	make_opcode! {0x3D, "DEC A", "A", "",   1, decr},
 	make_opcode! {0x3E, "LD A,d8", "A", "",   2, ldrd},
 	make_opcode! {0x3F, "CCF", "",  "",   1, ccf},
 	make_opcode! {0x40, "LD B, B", "B", "B",  1, ldrr},
@@ -304,49 +304,53 @@ fn nop(_: &mut Cpu, _: String, _: String) {
 	println!("nop");
 }
 
+fn stop(_: &mut Cpu, _: String, _: String) {
+	todo!("stop impl");
+}
+
 fn ldrr(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.reg.r(r2);
-	c.reg.r_mut(r1, value);
+	let value = c.reg.r(&r2);
+	c.reg.r_mut(&r1, value);
 }
 
 // LD r1, (r2)
 // Write r2 value into r1
 fn ldrm(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.bus.read(0xFF00 as Word | (c.reg.r(r2) as Word));
-	c.reg.r_mut(r1, value);
+	let value = c.bus.read(0xFF00 as Word | (c.reg.r(&r2) as Word));
+	c.reg.r_mut(&r1, value);
 }
 
 // LD r1, (r2)
 // Write r2 value into r1
 fn ldrm16(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.bus.read(c.reg.r16(r2));
-	c.reg.r_mut(r1, value);
+	let value = c.bus.read(c.reg.r16(&r2));
+	c.reg.r_mut(&r1, value);
 }
 
 // LD r1, d8
 fn ldrd(c: &mut Cpu, r1: String, _: String) {
 	let value = c.fetch();
-	c.reg.r_mut(r1, value);
+	c.reg.r_mut(&r1, value);
 }
 
 // LDH R,(a8)
 fn ldra(c: &mut Cpu, r1: String, _: String) {
 	let addr = c.fetch();
 	let value = c.bus.read(bytes_2_word(0xFF as Byte, addr));
-	c.reg.r_mut(r1, value);
+	c.reg.r_mut(&r1, value);
 }
 
 fn ldra16(c: &mut Cpu, r1: String, _: String) {
 	let addr = c.fetch16();
 	let value = c.bus.read(addr);
-	c.reg.r_mut(r1, value);
+	c.reg.r_mut(&r1, value);
 }
 
 // fn ldr16(r16, r16d, d16)
 // LD r1, r2
 fn ldr16r16(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.reg.r16(r2);
-	c.reg.r16_mut(r1, value);
+	let value = c.reg.r16(&r2);
+	c.reg.r16_mut(&r1, value);
 }
 
 // LD r1, r2+d
@@ -364,30 +368,30 @@ fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
 // LD r1, d16
 fn ldr16d16(c: &mut Cpu, r1: String, _: String) {
 	let value = c.fetch16();
-	c.reg.r16_mut(r1, value)
+	c.reg.r16_mut(&r1, value)
 }
 
 // fn ldm(r)
 
 // LD (C), A
 fn ldmr(c: &mut Cpu, r1: String, r2: String) {
-	let addr = bytes_2_word(0xFF, c.reg.r(r1));
-	c.bus.write(addr, c.reg.r(r2));
+	let addr = bytes_2_word(0xFF, c.reg.r(&r1));
+	c.bus.write(addr, c.reg.r(&r2));
 }
 
 // fn ldm16(r, d)
 
 // LD (r1), r2
 fn ldm16r(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.reg.r(r2);
-	let addr = c.reg.r16(r1);
+	let value = c.reg.r(&r2);
+	let addr = c.reg.r16(&r1);
 	c.bus.write(addr, value);
 }
 
 // LD (HL),d8
 fn ldm16d(c: &mut Cpu, r1: String, _: String) {
 	let value = c.fetch();
-	let addr = c.reg.r16(r1);
+	let addr = c.reg.r16(&r1);
 	c.bus.write(addr, value)
 }
 
@@ -395,27 +399,85 @@ fn ldm16d(c: &mut Cpu, r1: String, _: String) {
 
 fn ldar(c: &mut Cpu, _: String, r2: String) {
 	let addr = bytes_2_word(0xFF, c.fetch());
-	c.bus.write(addr, c.reg.r(r2));
+	c.bus.write(addr, c.reg.r(&r2));
 }
 
 // fn lda16(r, r16)
 
 fn lda16r(c: &mut Cpu, _: String, r2: String) {
 	let addr = c.fetch16();
-	c.bus.write(addr, c.reg.r(r2));
+	c.bus.write(addr, c.reg.r(&r2));
 }
 
 fn lda16r16(c: &mut Cpu, _: String, r2: String) {
 	let addr = c.fetch16();
-	let r16 = c.reg.r16(r2);
+	let r16 = c.reg.r16(&r2);
 	c.bus.write(addr, extract_lower(r16));
 	c.bus.write(addr + 1, extract_upper(r16));
 }
 
+// arithmetic
+fn incr(c: &mut Cpu, r8: String, _: String) {
+	let r = c.reg.r(&&r8);
+
+	let v = r.wrapping_add(0x01);
+
+	c.reg.F.z = v == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = (r ^ v) & 0x10 != 0;
+
+	c.reg.r_mut(&&r8, v);
+}
+
+fn incr16(c: &mut Cpu, r16: String, _: String) {
+	let r = c.reg.r16(&r16);
+	let v = r.wrapping_add(1);
+	c.reg.r16_mut(&r16, v);
+}
+
+fn incm16(c: &mut Cpu, r16: String, _: String) {
+	let r = c.bus.read(c.reg.r16(&r16));
+	let v = r.wrapping_add(1);
+
+	c.reg.F.z = v == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = (r ^ v) & 0x10 != 0;
+
+	c.bus.write(c.reg.r16(&r16), v);
+}
+
+fn decr(c: &mut Cpu, r8: String, _: String) {
+	let r = c.reg.r(&r8);
+	let v = r.wrapping_sub(0x01);
+
+	c.reg.F.z = v == 0;
+	c.reg.F.n = true;
+	c.reg.F.h = (r ^ v) & 0x10 != 0;
+
+	c.reg.r_mut(&r8, v);
+}
+
+fn decr16(c: &mut Cpu, r16: String, _: String) {
+	let r = c.reg.r16(&r16);
+	let v = r.wrapping_sub(1);
+	c.reg.r16_mut(&r16, v);
+}
+
+fn decm16(c: &mut Cpu, r16: String, _: String) {
+	let r = c.bus.read(c.reg.r16(&r16));
+	let v = r.wrapping_sub(1);
+
+	c.reg.F.z = v == 0;
+	c.reg.F.n = true;
+	c.reg.F.h = (r ^ v) & 0x10 != 0;
+
+	c.bus.write(c.reg.r16(&r16), v);
+}
+
 fn _and(c: &mut Cpu, buf: Byte) {
-	let a = c.reg.r("A".to_string());
+	let a = c.reg.r(&"A".to_string());
 	let value = a & buf;
-	c.reg.r_mut("A".to_string(), value);
+	c.reg.r_mut(&"A".to_string(), value);
 
 	let z = if a == 0 { 1 } else { 0 };
 	let znhc = (z << 7) & 0xA0;
@@ -423,12 +485,12 @@ fn _and(c: &mut Cpu, buf: Byte) {
 }
 
 fn andr(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r(r);
+	let buf = c.reg.r(&r);
 	_and(c, buf)
 }
 
 fn and_hl(c: &mut Cpu, r: String, _: String) {
-	let buf = c.bus.read(c.reg.r16(r));
+	let buf = c.bus.read(c.reg.r16(&r));
 	_and(c, buf)
 }
 
@@ -438,9 +500,9 @@ fn andd8(c: &mut Cpu, _: String, _: String) {
 }
 
 fn _or(c: &mut Cpu, buf: Byte) {
-	let a = c.reg.r("A".to_string());
+	let a = c.reg.r(&"A".to_string());
 	let value = a | buf;
-	c.reg.r_mut("A".to_string(), value);
+	c.reg.r_mut(&"A".to_string(), value);
 
 	let z = if a == 0 { 1 } else { 0 };
 	let znhc = (z << 7) & 0x80;
@@ -448,12 +510,12 @@ fn _or(c: &mut Cpu, buf: Byte) {
 }
 
 fn orr(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r(r);
+	let buf = c.reg.r(&r);
 	_or(c, buf)
 }
 
 fn or_hl(c: &mut Cpu, r: String, _: String) {
-	let buf = c.bus.read(c.reg.r16(r));
+	let buf = c.bus.read(c.reg.r16(&r));
 	_or(c, buf)
 }
 
@@ -463,9 +525,9 @@ fn ord8(c: &mut Cpu, _: String, _: String) {
 }
 
 fn _xor(c: &mut Cpu, buf: Byte) {
-	let a = c.reg.r("A".to_string());
+	let a = c.reg.r(&"A".to_string());
 	let value = a ^ buf;
-	c.reg.r_mut("A".to_string(), value);
+	c.reg.r_mut(&"A".to_string(), value);
 
 	let z = if a == 0 { 1 } else { 0 };
 	let znhc = (z << 7) & 0x80;
@@ -473,12 +535,12 @@ fn _xor(c: &mut Cpu, buf: Byte) {
 }
 
 fn xorr(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r(r);
+	let buf = c.reg.r(&r);
 	_xor(c, buf)
 }
 
 fn xor_hl(c: &mut Cpu, r: String, _: String) {
-	let buf = c.bus.read(c.reg.r16(r));
+	let buf = c.bus.read(c.reg.r16(&r));
 	_xor(c, buf)
 }
 
@@ -488,7 +550,7 @@ fn xord8(c: &mut Cpu, _: String, _: String) {
 }
 
 fn _cp(cpu: &mut Cpu, v: Byte) {
-	let a = cpu.reg.r("A".to_string());
+	let a = cpu.reg.r(&"A".to_string());
 
 	let z = if a == v { 1 } else { 0 };
 	let h = if a & 0x0F < v & 0x0F { 1 } else { 0 };
@@ -498,12 +560,12 @@ fn _cp(cpu: &mut Cpu, v: Byte) {
 }
 
 fn cpr(c: &mut Cpu, r: String, _: String) {
-	let v = c.reg.r(r);
+	let v = c.reg.r(&r);
 	_cp(c, v)
 }
 
 fn cp_hl(c: &mut Cpu, r: String, _: String) {
-	let v = c.bus.read(c.reg.r16(r));
+	let v = c.bus.read(c.reg.r16(&r));
 	_cp(c, v)
 }
 
@@ -524,13 +586,13 @@ fn _add(c: &mut Cpu, b: Byte) {
 }
 
 fn addr(c: &mut Cpu, _: String, r: String) {
-	let r = c.reg.r(r);
+	let r = c.reg.r(&r);
 	_add(c, r)
 }
 
 fn addr16r16(c: &mut Cpu, r1: String, r2: String) {
-	let a = c.reg.r16(r1.clone());
-	let b = c.reg.r16(r2);
+	let a = c.reg.r16(&r1);
+	let b = c.reg.r16(&r2);
 
 	let (v, overflow) = a.overflowing_add(b);
 
@@ -538,23 +600,23 @@ fn addr16r16(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.h = (a ^ b ^ v) & 0x1000 != 0;
 	c.reg.F.c = overflow;
 
-	c.reg.r16_mut(r1, v);
+	c.reg.r16_mut(&r1, v);
 }
 
 fn addr16d(c: &mut Cpu, r: String, _: String) {
-	// v1 := c.reg.R16(r16)
-	// v2 := int8(c.fetch())
+	// v1 = c.reg.R16(r16)
+	// v2 = int8(c.fetch())
 
-	// v := uint32(v1) + uint32(v2)
+	// v = uint32(v1) + uint32(v2)
 
-	// carry := uint32(v1) ^ uint32(v2) ^ v
+	// carry = uint32(v1) ^ uint32(v2) ^ v
 
 	// c.reg.setR16(r16, types.Addr(v))
 	// c.reg.setZNHC(false, false, carry&0x10 == 0x10, carry&0x100 == 0x100)
 }
 
 fn add_hl(c: &mut Cpu, _: String, r: String) {
-	let v = c.bus.read(c.reg.r16(r));
+	let v = c.bus.read(c.reg.r16(&r));
 	_add(c, v);
 }
 
@@ -564,25 +626,25 @@ fn addd8(c: &mut Cpu, _: String, _: String) {
 }
 
 fn _adc(c: &mut Cpu, r: Byte) {
-	// a := c.reg.R[A]
-	// carry := c.reg.isSet(C)
+	// a = c.reg.R[A]
+	// carry = c.reg.isSet(C)
 
-	// v := a + r + byte(util.Bool2Int8(carry))
+	// v = a + r + byte(util.Bool2Int8(carry))
 
 	// c.reg.R[A] = v
-	// flag_h := a&0x0F+r&0x0F+byte(util.Bool2Int8(carry)) > 0x0F
-	// flag_c := uint(a&0xFF)+uint(r&0xFF)+uint(util.Bool2Int8(carry)) > 0xFF
+	// flag_h = a&0x0F+r&0x0F+byte(util.Bool2Int8(carry)) > 0x0F
+	// flag_c = uint(a&0xFF)+uint(r&0xFF)+uint(util.Bool2Int8(carry)) > 0xFF
 	// c.reg.setZNHC(v == 0, false, flag_h, flag_c)
 }
 
 // ADC A,R
 fn adcr(c: &mut Cpu, _: String, r2: String) {
-	let r = c.reg.r(r2);
+	let r = c.reg.r(&r2);
 	_adc(c, r)
 }
 
 fn adcm16(c: &mut Cpu, _: String, r2: String) {
-	let r = c.bus.read(c.reg.r16(r2));
+	let r = c.bus.read(c.reg.r16(&r2));
 	_adc(c, r)
 }
 
@@ -592,23 +654,23 @@ fn adcd(c: &mut Cpu, _: String, _: String) {
 }
 
 fn _sub(c: &mut Cpu, b: Byte) {
-	// a := c.reg.R[A]
-	// v := a - b
-	// carryBits := a ^ b ^ v
-	// flag_h := carryBits&(1<<4) != 0
-	// flag_c := a < v
+	// a = c.reg.R[A]
+	// v = a - b
+	// carryBits = a ^ b ^ v
+	// flag_h = carryBits&(1<<4) != 0
+	// flag_c = a < v
 
 	// c.reg.R[A] = v
 	// c.reg.setZNHC(byte(v) == 0, true, flag_h, flag_c)
 }
 
 fn subr(c: &mut Cpu, r: String, _: String) {
-	let v = c.reg.r(r);
+	let v = c.reg.r(&r);
 	_sub(c, v);
 }
 
 fn sub_hl(c: &mut Cpu, r: String, _: String) {
-	let v = c.bus.read(c.reg.r16(r));
+	let v = c.bus.read(c.reg.r16(&r));
 	_sub(c, v);
 }
 
@@ -618,25 +680,25 @@ fn subd8(c: &mut Cpu, _: String, _: String) {
 }
 
 fn _sbc(c: &mut Cpu, r: Byte) {
-	// a := c.reg.R[A]
-	// carry := util.Bool2Int8(c.reg.isSet(C))
+	// a = c.reg.R[A]
+	// carry = util.Bool2Int8(c.reg.isSet(C))
 
-	// v := a - (r + byte(carry))
+	// v = a - (r + byte(carry))
 	// c.reg.R[A] = byte(v)
 
-	// flag_h := a&0x0F < r&0x0F+byte(carry)
-	// flag_c := uint16(a) < uint16(r)+uint16(carry)
+	// flag_h = a&0x0F < r&0x0F+byte(carry)
+	// flag_c = uint16(a) < uint16(r)+uint16(carry)
 	// c.reg.setZNHC(byte(v) == 0, true, flag_h, flag_c)
 }
 
 // SBC A,R
 fn sbcr(c: &mut Cpu, _: String, r2: String) {
-	let r = c.reg.r(r2);
+	let r = c.reg.r(&r2);
 	_sbc(c, r);
 }
 
 fn sbcm16(c: &mut Cpu, _: String, r2: String) {
-	let r = c.reg.r16(r2);
+	let r = c.reg.r16(&r2);
 	let v = c.bus.read(r);
 	_sbc(c, v);
 }
@@ -698,7 +760,7 @@ fn jpnfa16(c: &mut Cpu, flag: String, _: String) {
 
 // JP (r16)
 fn jpm16(c: &mut Cpu, r1: String, _: String) {
-	let addr = c.reg.r16(r1);
+	let addr = c.reg.r16(&r1);
 	_jp(c, addr);
 }
 
@@ -764,7 +826,7 @@ fn rst(c: &mut Cpu, n: String, _: String) {
 
 // -----push-----
 fn push(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r16(r);
+	let buf = c.reg.r16(&r);
 	let upper = extract_upper(buf as Word);
 	let lower = extract_lower(buf as Word);
 	c.push(upper);
@@ -781,7 +843,7 @@ fn pop(c: &mut Cpu, r: String, _: String) {
 	}
 
 	let value = ((upper as i16) << 8 | (lower as i16)) as Word;
-	c.reg.r16_mut(r, value);
+	c.reg.r16_mut(&r, value);
 }
 
 // -----call-----
@@ -812,8 +874,8 @@ fn callnf(c: &mut Cpu, flag: String, _: String) {
 // -----misc-----
 
 fn cpl(c: &mut Cpu, _: String, _: String) {
-	let a = c.reg.r("A".to_string());
-	c.reg.r_mut("A".to_string(), a ^ a);
+	let a = c.reg.r(&"A".to_string());
+	c.reg.r_mut(&"A".to_string(), a ^ a);
 
 	let znhc = c.reg.F.pack() | 0x60;
 	c.reg.F.unpack(znhc);
