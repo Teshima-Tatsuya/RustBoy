@@ -52,11 +52,67 @@ impl Default for Register {
     }
 }
 impl Register {
+    pub fn r(&mut self, r: String) -> Byte {
+        let res;
+        match r.as_str() {
+            "A" => res = self.A,
+            "B" => res = self.B,
+            "C" => res = self.C,
+            "D" => res = self.D,
+            "E" => res = self.E,
+            "H" => res = self.H,
+            "L" => res = self.L,
+            "F" => res = self.F.pack(),
+            _ => unreachable!(),
+        }
+
+        return res;
+    }
+
+    pub fn r_mut(&mut self, r: String, value: Byte) {
+        match r.as_str() {
+            "A" => self.A = value,
+            "B" => self.B = value,
+            "C" => self.C = value,
+            "D" => self.D = value,
+            "E" => self.E = value,
+            "H" => self.H = value,
+            "L" => self.L = value,
+            "F" => self.F.unpack(value),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn r16(&mut self, r: String) -> Word {
+        let res: Word;
+        match r.as_str() {
+            "AF" => res = self.af(),
+            "BC" => res = self.bc(),
+            "DE" => res = self.de(),
+            "HL" => res = self.hl(),
+            _ => unreachable!(),
+        }
+
+        return res;
+    }
+
+    pub fn r16_mut(&mut self, r16: String, value: Word) {
+        match r16.as_str() {
+            "AF" => self.af_mut(value),
+            "BC" => self.bc_mut(value),
+            "DE" => self.de_mut(value),
+            "HL" => self.hl_mut(value),
+            "PC" => self.pc_mut(value),
+            "SP" => self.sp_mut(value),
+            _ => unreachable!(),
+        }
+    }
+
     pub fn af(&self) -> Word {
         ((self.A as Word) << 8) | (self.F.pack() as Word)
     }
 
-    pub fn af_mut(&mut self, value: Word) {
+    fn af_mut(&mut self, value: Word) {
         self.A = (value >> 8) as Byte;
         self.F.unpack((value & 0xFF) as Byte);
     }
@@ -65,7 +121,7 @@ impl Register {
         ((self.B as Word) << 8) | (self.C as Word)
     }
 
-    pub fn bc_mut(&mut self, value: Word) {
+    fn bc_mut(&mut self, value: Word) {
         self.B = (value >> 8) as Byte;
         self.C = (value & 0xFF) as Byte;
     }
@@ -74,7 +130,7 @@ impl Register {
         ((self.D as Word) << 8) | (self.E as Word)
     }
 
-    pub fn de_mut(&mut self, value: Word) {
+    fn de_mut(&mut self, value: Word) {
         self.D = (value >> 8) as Byte;
         self.E = (value & 0xFF) as Byte;
     }
@@ -83,14 +139,14 @@ impl Register {
         ((self.H as Word) << 8) | (self.L as Word)
     }
 
-    pub fn hl_mut(&mut self, value: Word) {
+    fn hl_mut(&mut self, value: Word) {
         self.H = (value >> 8) as Byte;
         self.L = (value & 0xFF) as Byte;
     }
-    pub fn pc_mut(&mut self, value: Word) {
+    fn pc_mut(&mut self, value: Word) {
         self.PC = value;
     }
-    pub fn sp_mut(&mut self, value: Word) {
+    fn sp_mut(&mut self, value: Word) {
         self.SP = value;
     }
 }
@@ -125,7 +181,7 @@ impl Flags {
         data
     }
 
-    fn unpack(&mut self, value: Byte) {
+    pub fn unpack(&mut self, value: Byte) {
         let v = value.view_bits::<Lsb0>();
         self.z = v[7];
         self.n = v[6];
