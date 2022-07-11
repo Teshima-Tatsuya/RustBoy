@@ -1,6 +1,6 @@
 use crate::bus::Bus;
 use crate::opcode::OPCODES;
-use crate::traits::Reader;
+use crate::traits::{Reader, Writer};
 use crate::types::*;
 use crate::util::*;
 use bitvec::prelude::*;
@@ -170,7 +170,7 @@ impl Default for Flags {
 }
 
 impl Flags {
-    fn pack(&self) -> Byte {
+    pub fn pack(&self) -> Byte {
         let mut data = 0;
         let v = data.view_bits_mut::<Lsb0>();
         v.set(7, self.z);
@@ -187,6 +187,16 @@ impl Flags {
         self.n = v[6];
         self.h = v[5];
         self.c = v[4];
+    }
+
+    pub fn f(&self, flag: String) -> bool {
+        match flag.as_str() {
+            "Z" => self.z,
+            "N" => self.n,
+            "H" => self.h,
+            "C" => self.c,
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -222,6 +232,30 @@ impl Cpu {
         let lower = self.fetch();
         let upper = self.fetch();
         return Bytes2Word(lower, upper);
+    }
+
+    pub fn push(&mut self, buf: Byte) {
+        self.reg.SP -= 1;
+        self.bus.write(self.reg.SP, buf)
+    }
+
+    // push PC
+    pub fn pushPC(&mut self) {
+        self.push(ExtractUpper(self.reg.PC));
+        self.push(ExtractLower(self.reg.PC));
+    }
+
+    pub fn pop(&mut self) -> Byte {
+        let d = self.bus.read(self.reg.SP);
+        self.reg.SP += 1;
+        return d;
+    }
+
+    pub fn popPC(&mut self) {
+        let lower = self.pop();
+        let upper = self.pop();
+
+        self.reg.PC = Bytes2Word(upper, lower)
     }
 }
 

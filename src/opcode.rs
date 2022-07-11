@@ -62,7 +62,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x15, "DEC D", "D", "",   1, empty},
 	make_opcode! {0x16, "LD D,d8", "D", "",   2, ldrd},
 	make_opcode! {0x17, "RLA", "",  "",   1, empty},
-	make_opcode! {0x18, "JR r8", "",  "",   3, empty},
+	make_opcode! {0x18, "JR r8", "",  "",   3, jrr8},
 	make_opcode! {0x19, "ADD HL,DE", "HL", "DE",  2, empty},
 	make_opcode! {0x1A, "LD A,(DE)", "A", "DE",  2, ldrm16},
 	make_opcode! {0x1B, "DEC DE", "DE", "",   2, empty},
@@ -70,7 +70,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x1D, "DEC E", "E", "",   1, empty},
 	make_opcode! {0x1E, "LD E,d8", "E", "",   2, ldrd},
 	make_opcode! {0x1F, "RRA", "",  "",   1, empty},
-	make_opcode! {0x20, "JR NZ,r8", "flagZ", "",   2, empty},
+	make_opcode! {0x20, "JR NZ,r8", "Z", "",   2, jrnfr8},
 	make_opcode! {0x21, "LD HL,d16", "HL", "",   3, ldr16d16},
 	make_opcode! {0x22, "LD (HL+),A", "HLI", "A",  2, ldm16r},
 	make_opcode! {0x23, "INC HL", "HL", "",   2, empty},
@@ -78,30 +78,30 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x25, "DEC H", "H", "",   1, empty},
 	make_opcode! {0x26, "LD H,d8", "H", "",   2, ldrd},
 	make_opcode! {0x27, "DAA", "",  "",   1, empty},
-	make_opcode! {0x28, "JR Z,r8", "flagZ", "",   2, empty},
+	make_opcode! {0x28, "JR Z,r8", "Z", "",   2, jrfr8},
 	make_opcode! {0x29, "ADD HL,HL", "HL", "HL",  2, empty},
 	make_opcode! {0x2A, "LD A,(HL+)", "A", "HLI",  2, ldrm16},
 	make_opcode! {0x2B, "DEC HL", "HL", "",   2, empty},
 	make_opcode! {0x2C, "INC L", "L", "",   1, empty},
 	make_opcode! {0x2D, "DEC L", "L", "",   1, empty},
 	make_opcode! {0x2E, "LD L,d8", "L", "",   2, ldrd},
-	make_opcode! {0x2F, "CPL", "",  "",   1, empty},
-	make_opcode! {0x30, "JR NC,r8", "flagC", "",   2, empty},
+	make_opcode! {0x2F, "CPL", "",  "",   1, cpl},
+	make_opcode! {0x30, "JR NC,r8", "C", "",   2, jrnfr8},
 	make_opcode! {0x31, "LD SP,d16", "SP", "",   3, ldr16d16},
 	make_opcode! {0x32, "LD (HL-),A", "HLD", "A",  2, ldm16r},
 	make_opcode! {0x33, "INC SP", "SP", "",   2, empty},
 	make_opcode! {0x34, "INC (HL)", "HL", "",   3, empty},
 	make_opcode! {0x35, "DEC (HL)", "HL", "",   3, empty},
 	make_opcode! {0x36, "LD (HL),d8", "HL", "",   3, ldm16d},
-	make_opcode! {0x37, "SCF", "",  "",   1, empty},
-	make_opcode! {0x38, "JR C,r8", "flagC", "",   2, empty},
+	make_opcode! {0x37, "SCF", "",  "",   1, scf},
+	make_opcode! {0x38, "JR C,r8", "C", "",   2, jrfr8},
 	make_opcode! {0x39, "ADD HL,SP", "HL", "SP",  2, empty},
 	make_opcode! {0x3A, "LD A,(HL-)", "A", "HLD",  2, ldrm16},
 	make_opcode! {0x3B, "DEC SP", "SP", "",   2, empty},
 	make_opcode! {0x3C, "INC A", "A", "",   1, empty},
 	make_opcode! {0x3D, "DEC A", "A", "",   1, empty},
 	make_opcode! {0x3E, "LD A,d8", "A", "",   2, ldrd},
-	make_opcode! {0x3F, "CCF", "",  "",   1, empty},
+	make_opcode! {0x3F, "CCF", "",  "",   1, ccf},
 	make_opcode! {0x40, "LD B, B", "B", "B",  1, ldrr},
 	make_opcode! {0x41, "LD B, C", "B", "C",  1, ldrr},
 	make_opcode! {0x42, "LD B, D", "B", "D",  1, ldrr},
@@ -230,35 +230,35 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xBD, "CP L", "L", "",   1, cpr},
 	make_opcode! {0xBE, "CP (HL)", "HL", "",   2, cpHL},
 	make_opcode! {0xBF, "CP A", "A", "",   1, cpr},
-	make_opcode! {0xC0, "RET NZ", "flagZ", "",   2, empty},
+	make_opcode! {0xC0, "RET NZ", "Z", "",   2, retnf},
 	make_opcode! {0xC1, "POP BC", "BC", "",   3, empty},
-	make_opcode! {0xC2, "JP NZ,a16", "flagZ", "",   3, jpnfa16},
+	make_opcode! {0xC2, "JP NZ,a16", "Z", "",   3, jpnfa16},
 	make_opcode! {0xC3, "JP a16", "",  "",   4, jpa16},
-	make_opcode! {0xC4, "CALL NZ,a16", "flagZ", "",   3, empty},
+	make_opcode! {0xC4, "CALL NZ,a16", "Z", "",   3, callnf},
 	make_opcode! {0xC5, "PUSH BC", "BC", "",   4, empty},
 	make_opcode! {0xC6, "ADD A,d8", "A", "",   2, addd8},
 	make_opcode! {0xC7, "RST 00H", "0x00", "",   4, empty},
-	make_opcode! {0xC8, "RET Z", "flagZ", "",   2, empty},
-	make_opcode! {0xC9, "RET", "",  "",   4, empty},
-	make_opcode! {0xCA, "JP Z,a16", "flagZ", "",   3, jpfa16},
+	make_opcode! {0xC8, "RET Z", "Z", "",   2, retf},
+	make_opcode! {0xC9, "RET", "",  "",   4, ret},
+	make_opcode! {0xCA, "JP Z,a16", "Z", "",   3, jpfa16},
 	make_opcode! {0xCB, "PREFIX CB", "",  "",   1, empty},
-	make_opcode! {0xCC, "CALL Z,a16", "flagZ", "",   3, empty},
-	make_opcode! {0xCD, "CALL a16", "",  "",   6, empty},
+	make_opcode! {0xCC, "CALL Z,a16", "Z", "",   3, callf},
+	make_opcode! {0xCD, "CALL a16", "",  "",   6, call},
 	make_opcode! {0xCE, "ADC A,d8", "A", "",   2, adcd},
 	make_opcode! {0xCF, "RST 08H", "0x08", "",   4, empty},
-	make_opcode! {0xD0, "RET NC", "flagC", "",   2, empty},
+	make_opcode! {0xD0, "RET NC", "C", "",   2, retnf},
 	make_opcode! {0xD1, "POP DE", "DE", "",   3, empty},
-	make_opcode! {0xD2, "JP NC,a16", "flagC", "",   3, jpnfa16},
+	make_opcode! {0xD2, "JP NC,a16", "C", "",   3, jpnfa16},
 	make_opcode! {0xD3, "EMPTY", "",  "",   0,  empty},
-	make_opcode! {0xD4, "CALL NC,a16", "flagC", "",   3, empty},
+	make_opcode! {0xD4, "CALL NC,a16", "C", "",   3, callnf},
 	make_opcode! {0xD5, "PUSH DE", "DE", "",   4, empty},
 	make_opcode! {0xD6, "SUB d8", "",  "",   2, subd8},
 	make_opcode! {0xD7, "RST 10H", "0x10", "",   4, empty},
-	make_opcode! {0xD8, "RET C", "flagC", "",   2, empty},
-	make_opcode! {0xD9, "RETI", "",  "",   4, empty},
-	make_opcode! {0xDA, "JP C,a16", "flagC", "",   3, jpfa16},
+	make_opcode! {0xD8, "RET C", "C", "",   2, retf},
+	make_opcode! {0xD9, "RETI", "",  "",   4, reti},
+	make_opcode! {0xDA, "JP C,a16", "C", "",   3, jpfa16},
 	make_opcode! {0xDB, "EMPTY", "",  "",   0,  empty},
-	make_opcode! {0xDC, "CALL C,a16", "flagC", "",   3, empty},
+	make_opcode! {0xDC, "CALL C,a16", "C", "",   3, callf},
 	make_opcode! {0xDD, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xDE, "SBC A,d8", "A", "",   2, sbcd},
 	make_opcode! {0xDF, "RST 18H", "0x18", "",   4, empty},
@@ -572,7 +572,7 @@ fn addd8(c: &mut Cpu, _: String, r: String) {
 
 fn _adc(c: &mut Cpu, r: Byte) {
 	// a := c.reg.R[A]
-	// carry := c.reg.isSet(flagC)
+	// carry := c.reg.isSet(C)
 
 	// v := a + r + byte(util.Bool2Int8(carry))
 
@@ -626,7 +626,7 @@ fn subd8(c: &mut Cpu, _: String, _: String) {
 
 fn _sbc(c: &mut Cpu, r: Byte) {
 	// a := c.reg.R[A]
-	// carry := util.Bool2Int8(c.reg.isSet(flagC))
+	// carry := util.Bool2Int8(c.reg.isSet(C))
 
 	// v := a - (r + byte(carry))
 	// c.reg.R[A] = byte(v)
@@ -671,10 +671,10 @@ fn jpfa16(c: &mut Cpu, flag: String, _: String) {
 	let flag_str: &str = &flag;
 	let flag_b;
 	match flag_str {
-		"flagZ" => flag_b = c.reg.F.z,
-		"flagN" => flag_b = c.reg.F.n,
-		"flagH" => flag_b = c.reg.F.h,
-		"flagC" => flag_b = c.reg.F.c,
+		"Z" => flag_b = c.reg.F.z,
+		"N" => flag_b = c.reg.F.n,
+		"H" => flag_b = c.reg.F.h,
+		"C" => flag_b = c.reg.F.c,
 		_ => unreachable!(),
 	}
 
@@ -691,10 +691,10 @@ fn jpnfa16(c: &mut Cpu, flag: String, _: String) {
 	let flag_str: &str = &flag;
 	let flag_b;
 	match flag_str {
-		"flagZ" => flag_b = c.reg.F.z,
-		"flagN" => flag_b = c.reg.F.n,
-		"flagH" => flag_b = c.reg.F.h,
-		"flagC" => flag_b = c.reg.F.c,
+		"Z" => flag_b = c.reg.F.z,
+		"N" => flag_b = c.reg.F.n,
+		"H" => flag_b = c.reg.F.h,
+		"C" => flag_b = c.reg.F.c,
 		_ => unreachable!(),
 	}
 	if !flag_b {
@@ -706,6 +706,134 @@ fn jpnfa16(c: &mut Cpu, flag: String, _: String) {
 fn jpm16(c: &mut Cpu, R1: String, _: String) {
 	warn!("not implemented jpm16")
 	//	_jp(c, c.reg.R16(int(R1)))
+}
+
+// ret
+fn ret(c: &mut Cpu, _: String, _: String) {
+	c.popPC()
+}
+
+fn retf(c: &mut Cpu, r: String, _: String) {
+	if c.reg.F.f(r) {
+		c.popPC()
+	}
+}
+
+fn retnf(c: &mut Cpu, r: String, _: String) {
+	if !c.reg.F.f(r) {
+		c.popPC()
+	}
+}
+
+fn reti(c: &mut Cpu, _: String, _: String) {
+	c.popPC();
+	// c.IRQ.Enable();
+}
+
+// -----jr-----
+fn _jr(c: &mut Cpu, addr: i8) {
+	c.reg.PC = ((c.reg.PC as i32) + (addr as i32)) as Word;
+}
+
+// r8 is a signed data, which are added to PC
+fn jrr8(c: &mut Cpu, _: String, _: String) {
+	let n = c.fetch();
+	_jr(c, n as i8)
+}
+
+// r8 is a signed data, which are added to PC
+fn jrfr8(c: &mut Cpu, flag: String, _: String) {
+	let n = c.fetch();
+	// flag is set
+	if c.reg.F.f(flag) {
+		_jr(c, n as i8)
+	}
+}
+
+// r8 is a signed data, which are added to PC
+fn jrnfr8(c: &mut Cpu, flag: String, _: String) {
+	let n = c.fetch();
+	// flag is not set
+	if !c.reg.F.f(flag) {
+		_jr(c, n as i8)
+	}
+}
+
+// -----rst------
+
+// RST n
+// push and jump to n
+fn rst(c: &mut Cpu, n: String, _: String) {
+	c.pushPC();
+	c.reg.PC = n.parse::<i32>().unwrap() as Word
+}
+
+// -----push-----
+fn push(c: &mut Cpu, r: String, _: String) {
+	let buf = c.reg.r16(r);
+	let upper = ExtractUpper(buf as Word);
+	let lower = ExtractLower(buf as Word);
+	c.push(upper);
+	c.push(lower);
+}
+
+// -----pop------
+fn pop(c: &mut Cpu, r: String, _: String) {
+	let mut lower = c.pop();
+	let upper = c.pop();
+
+	if r == "AF" {
+		lower &= 0xF0
+	}
+
+	let value = ((upper as i16) << 8 | (lower as i16)) as Word;
+	c.reg.r16_mut(r, value);
+}
+
+// -----call-----
+fn _call(c: &mut Cpu, dest: Word) {
+	c.pushPC();
+	c.reg.PC = dest
+}
+
+fn call(c: &mut Cpu, _: String, _: String) {
+	let dest = c.fetch16();
+	_call(c, dest)
+}
+
+fn callf(c: &mut Cpu, flag: String, _: String) {
+	let dest = c.fetch16();
+	if c.reg.F.f(flag) {
+		_call(c, dest)
+	}
+}
+
+fn callnf(c: &mut Cpu, flag: String, _: String) {
+	let dest = c.fetch16();
+	if !c.reg.F.f(flag) {
+		_call(c, dest)
+	}
+}
+
+// -----misc-----
+
+fn cpl(c: &mut Cpu, _: String, _: String) {
+	let A = c.reg.r("A".to_string());
+	c.reg.r_mut("A".to_string(), A ^ A);
+
+	let znhc = c.reg.F.pack() | 0x60;
+	c.reg.F.unpack(znhc);
+}
+
+fn scf(c: &mut Cpu, _: String, _: String) {
+	let znhc = (c.reg.F.pack() & 0x80) | 0x10;
+	c.reg.F.unpack(znhc);
+}
+
+fn ccf(cpu: &mut Cpu, _: String, _: String) {
+	let c = if !cpu.reg.F.f("C".to_string()) { 1 } else { 0 };
+	let znhc = (cpu.reg.F.pack() & 0x80) | (c << 4);
+	cpu.reg.F.unpack(znhc);
 }
 
 fn di(c: &mut Cpu, _: String, _: String) {
