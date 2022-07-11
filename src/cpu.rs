@@ -90,6 +90,14 @@ impl Register {
             "BC" => res = self.bc(),
             "DE" => res = self.de(),
             "HL" => res = self.hl(),
+            "HLD" => {
+                res = self.hl();
+                self.hl_mut(res - 1);
+            }
+            "HLI" => {
+                res = self.hl();
+                self.hl_mut(res + 1);
+            }
             _ => unreachable!(),
         }
 
