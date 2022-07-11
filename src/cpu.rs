@@ -1,6 +1,6 @@
 use crate::bus::Bus;
 use crate::opcode::OPCODES;
-use crate::traits::{Reader, Writer};
+use crate::traits::*;
 use crate::types::*;
 use crate::util::*;
 use bitvec::prelude::*;

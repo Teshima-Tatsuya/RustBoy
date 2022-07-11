@@ -896,3 +896,11 @@ fn di(c: &mut Cpu, _: String, _: String) {
 	warn!("not implemented di")
 	//	c.IRQ.Disable()
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_register_set_get() {}
+}
