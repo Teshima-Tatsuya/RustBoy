@@ -20,7 +20,7 @@ fn main() {
 
     let bus = Bus::new(new_mbc(cart));
 
-    let mut cpu = Cpu::new(bus);
+    let mut cpu = Cpu::new(Box::new(bus));
 
     loop {
         cpu.step();

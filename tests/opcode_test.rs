@@ -13,7 +13,8 @@ speculate! {
         describe "LD R1, R1" {
             #[test]
             fn test() {
-                let a = common::mock::MockBus::new();
+                let mut cpu = common::fixture::setup_cpu();
+                cpu.step();
 
             }
 

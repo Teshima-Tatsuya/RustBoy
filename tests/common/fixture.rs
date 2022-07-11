@@ -1,9 +1,11 @@
 use super::mock::*;
-use rust_boy::cpu::Cpu;
+use rust_boy::cpu::*;
+use rust_boy::traits::*;
 
 pub fn setup_cpu() -> Cpu {
     let bus = MockBus::new();
     Cpu {
-        bus: bus as rust_boy::bus::Bus,
+        reg: Register::default(),
+        bus: Box::new(bus),
     }
 }

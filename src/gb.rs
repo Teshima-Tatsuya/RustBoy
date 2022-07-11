@@ -18,7 +18,7 @@ impl GB {
 
         let bus = Bus::new(new_mbc(cartridge));
 
-        let cpu = Cpu::new(bus);
+        let cpu = Cpu::new(Box::new(bus));
 
         Self { cpu }
     }

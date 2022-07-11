@@ -6,9 +6,11 @@ use crate::util::*;
 use bitvec::prelude::*;
 use std::fmt;
 
+trait_alias!(pub trait BusTrait = Reader + Writer);
+
 pub struct Cpu {
     pub reg: Register,
-    pub bus: Bus,
+    pub bus: Box<dyn BusTrait>,
 }
 
 #[allow(non_snake_case)]
@@ -205,7 +207,7 @@ impl Flags {
 }
 
 impl Cpu {
-    pub fn new(bus: Bus) -> Self {
+    pub fn new(bus: Box<dyn BusTrait>) -> Self {
         Self {
             bus: bus,
             reg: Register::default(),
