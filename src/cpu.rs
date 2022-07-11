@@ -231,7 +231,7 @@ impl Cpu {
     pub fn fetch16(&mut self) -> Word {
         let lower = self.fetch();
         let upper = self.fetch();
-        return Bytes2Word(lower, upper);
+        return bytes_2_word(lower, upper);
     }
 
     pub fn push(&mut self, buf: Byte) {
@@ -240,9 +240,9 @@ impl Cpu {
     }
 
     // push PC
-    pub fn pushPC(&mut self) {
-        self.push(ExtractUpper(self.reg.PC));
-        self.push(ExtractLower(self.reg.PC));
+    pub fn push_pc(&mut self) {
+        self.push(extract_upper(self.reg.PC));
+        self.push(extract_lower(self.reg.PC));
     }
 
     pub fn pop(&mut self) -> Byte {
@@ -251,11 +251,11 @@ impl Cpu {
         return d;
     }
 
-    pub fn popPC(&mut self) {
+    pub fn pop_pc(&mut self) {
         let lower = self.pop();
         let upper = self.pop();
 
-        self.reg.PC = Bytes2Word(upper, lower)
+        self.reg.PC = bytes_2_word(upper, lower)
     }
 }
 

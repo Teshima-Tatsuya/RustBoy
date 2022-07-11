@@ -332,7 +332,7 @@ fn ldrd(c: &mut Cpu, r1: String, _: String) {
 // LDH R,(a8)
 fn ldra(c: &mut Cpu, r1: String, _: String) {
 	let addr = c.fetch();
-	let value = c.bus.read(Bytes2Word(0xFF as Byte, addr));
+	let value = c.bus.read(bytes_2_word(0xFF as Byte, addr));
 	c.reg.r_mut(r1, value);
 }
 
@@ -408,8 +408,8 @@ fn lda16r(c: &mut Cpu, _: String, r2: String) {
 fn lda16r16(c: &mut Cpu, _: String, r2: String) {
 	// addr := c.fetch16()
 	// r16 := c.reg.R16(int(R2))
-	// c.Bus.WriteByte(addr, util.ExtractLower(r16))
-	// c.Bus.WriteByte(addr+1, util.ExtractUpper(r16))
+	// c.Bus.WriteByte(addr, util.extract_lower(r16))
+	// c.Bus.WriteByte(addr+1, util.extract_upper(r16))
 }
 
 fn _and(c: &mut Cpu, buf: Byte) {
@@ -710,23 +710,23 @@ fn jpm16(c: &mut Cpu, R1: String, _: String) {
 
 // ret
 fn ret(c: &mut Cpu, _: String, _: String) {
-	c.popPC()
+	c.pop_pc()
 }
 
 fn retf(c: &mut Cpu, r: String, _: String) {
 	if c.reg.F.f(r) {
-		c.popPC()
+		c.pop_pc()
 	}
 }
 
 fn retnf(c: &mut Cpu, r: String, _: String) {
 	if !c.reg.F.f(r) {
-		c.popPC()
+		c.pop_pc()
 	}
 }
 
 fn reti(c: &mut Cpu, _: String, _: String) {
-	c.popPC();
+	c.pop_pc();
 	// c.IRQ.Enable();
 }
 
@@ -764,15 +764,15 @@ fn jrnfr8(c: &mut Cpu, flag: String, _: String) {
 // RST n
 // push and jump to n
 fn rst(c: &mut Cpu, n: String, _: String) {
-	c.pushPC();
+	c.push_pc();
 	c.reg.PC = n.parse::<i32>().unwrap() as Word
 }
 
 // -----push-----
 fn push(c: &mut Cpu, r: String, _: String) {
 	let buf = c.reg.r16(r);
-	let upper = ExtractUpper(buf as Word);
-	let lower = ExtractLower(buf as Word);
+	let upper = extract_upper(buf as Word);
+	let lower = extract_lower(buf as Word);
 	c.push(upper);
 	c.push(lower);
 }
@@ -792,7 +792,7 @@ fn pop(c: &mut Cpu, r: String, _: String) {
 
 // -----call-----
 fn _call(c: &mut Cpu, dest: Word) {
-	c.pushPC();
+	c.push_pc();
 	c.reg.PC = dest
 }
 
