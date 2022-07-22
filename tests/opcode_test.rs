@@ -11,7 +11,7 @@ use speculate::speculate;
 
 speculate! {
     describe "LD" {
-        describe "LD R1, R1" {
+        describe "ldrr" {
             struct Args {
                 opcode: Byte,
                 r1: String,
@@ -68,13 +68,6 @@ speculate! {
                 let want = 0x12;
                 cpu.reg.r_mut(&arg.r2, want);
 
-                // println!(" {}", opcode);
-                // println!(" {}", cpu.reg);
-                // println!(
-                //     "  data: {:02X}{:02X}",
-                //     cpu.bus.read(cpu.reg.PC),
-                //     cpu.bus.read(cpu.reg.PC + 1)
-                // );
                 let handler = &opcode.handler;
                 handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
 
@@ -83,6 +76,11 @@ speculate! {
                 assert_eq!(cpu.reg.r(&opcode.r1), want);
                 assert_eq!(cpu.reg.r(&opcode.r2), want);
             }
+        }
+    }
+    describe "JP" {
+        describe "jpa16" {
+
         }
     }
 }

@@ -263,6 +263,26 @@ impl Cpu {
 
         self.reg.PC = bytes_2_word(upper, lower)
     }
+
+    pub fn load(&mut self, reg: &String) -> Word {
+        match reg.as_str() {
+            "A" => return self.reg.A as Word,
+            "B" => return self.reg.B as Word,
+            "C" => return self.reg.C as Word,
+            "D" => return self.reg.D as Word,
+            "E" => return self.reg.E as Word,
+            "H" => return self.reg.H as Word,
+            "L" => return self.reg.L as Word,
+            "F" => return self.reg.F.pack() as Word,
+            "AF" => return self.reg.af(),
+            "BC" => return self.reg.bc(),
+            "DE" => return self.reg.de(),
+            "HL" => return self.reg.hl(),
+            "PC" => return self.reg.PC,
+            "SP" => return self.reg.SP,
+            &_ => unreachable!()
+        }
+    }
 }
 
 #[cfg(test)]
