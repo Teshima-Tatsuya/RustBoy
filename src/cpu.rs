@@ -1,4 +1,3 @@
-use crate::bus::Bus;
 use crate::opcode::{OPCODES, CB_OPCODES};
 use crate::traits::*;
 use crate::types::*;
