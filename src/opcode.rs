@@ -205,30 +205,30 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xA5, "AND L", "L", "",   1, and},
 	make_opcode! {0xA6, "AND (HL)", "HL", "",   2, and},
 	make_opcode! {0xA7, "AND A", "A", "",   1, and},
-	make_opcode! {0xA8, "XOR B", "B", "",   1, xorr},
-	make_opcode! {0xA9, "XOR C", "C", "",   1, xorr},
-	make_opcode! {0xAA, "XOR D", "D", "",   1, xorr},
-	make_opcode! {0xAB, "XOR E", "E", "",   1, xorr},
-	make_opcode! {0xAC, "XOR H", "H", "",   1, xorr},
-	make_opcode! {0xAD, "XOR L", "L", "",   1, xorr},
-	make_opcode! {0xAE, "XOR (HL)", "HL", "",   2, xor_hl},
-	make_opcode! {0xAF, "XOR A", "A", "",   1, xorr},
-	make_opcode! {0xB0, "OR B", "B", "",   1, orr},
-	make_opcode! {0xB1, "OR C", "C", "",   1, orr},
-	make_opcode! {0xB2, "OR D", "D", "",   1, orr},
-	make_opcode! {0xB3, "OR E", "E", "",   1, orr},
-	make_opcode! {0xB4, "OR H", "H", "",   1, orr},
-	make_opcode! {0xB5, "OR L", "L", "",   1, orr},
-	make_opcode! {0xB6, "OR (HL)", "HL", "",   2, or_hl},
-	make_opcode! {0xB7, "OR A", "A", "",   1, orr},
-	make_opcode! {0xB8, "CP B", "B", "",   1, cpr},
-	make_opcode! {0xB9, "CP C", "C", "",   1, cpr},
-	make_opcode! {0xBA, "CP D", "D", "",   1, cpr},
-	make_opcode! {0xBB, "CP E", "E", "",   1, cpr},
-	make_opcode! {0xBC, "CP H", "H", "",   1, cpr},
-	make_opcode! {0xBD, "CP L", "L", "",   1, cpr},
-	make_opcode! {0xBE, "CP (HL)", "HL", "",   2, cp_hl},
-	make_opcode! {0xBF, "CP A", "A", "",   1, cpr},
+	make_opcode! {0xA8, "XOR B", "B", "",   1, xor},
+	make_opcode! {0xA9, "XOR C", "C", "",   1, xor},
+	make_opcode! {0xAA, "XOR D", "D", "",   1, xor},
+	make_opcode! {0xAB, "XOR E", "E", "",   1, xor},
+	make_opcode! {0xAC, "XOR H", "H", "",   1, xor},
+	make_opcode! {0xAD, "XOR L", "L", "",   1, xor},
+	make_opcode! {0xAE, "XOR (HL)", "HL", "",   2, xor},
+	make_opcode! {0xAF, "XOR A", "A", "",   1, xor},
+	make_opcode! {0xB0, "OR B", "B", "",   1, or},
+	make_opcode! {0xB1, "OR C", "C", "",   1, or},
+	make_opcode! {0xB2, "OR D", "D", "",   1, or},
+	make_opcode! {0xB3, "OR E", "E", "",   1, or},
+	make_opcode! {0xB4, "OR H", "H", "",   1, or},
+	make_opcode! {0xB5, "OR L", "L", "",   1, or},
+	make_opcode! {0xB6, "OR (HL)", "HL", "",   2, or},
+	make_opcode! {0xB7, "OR A", "A", "",   1, or},
+	make_opcode! {0xB8, "CP B", "B", "",   1, cp},
+	make_opcode! {0xB9, "CP C", "C", "",   1, cp},
+	make_opcode! {0xBA, "CP D", "D", "",   1, cp},
+	make_opcode! {0xBB, "CP E", "E", "",   1, cp},
+	make_opcode! {0xBC, "CP H", "H", "",   1, cp},
+	make_opcode! {0xBD, "CP L", "L", "",   1, cp},
+	make_opcode! {0xBE, "CP (HL)", "HL", "",   2, cp},
+	make_opcode! {0xBF, "CP A", "A", "",   1, cp},
 	make_opcode! {0xC0, "RET NZ", "Z", "",   2, retnf},
 	make_opcode! {0xC1, "POP BC", "BC", "",   3, pop},
 	make_opcode! {0xC2, "JP NZ,a16", "Z", "",   3, jpnfa16},
@@ -275,7 +275,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xEB, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xEC, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xED, "EMPTY", "",  "",   0,  empty},
-	make_opcode! {0xEE, "XOR d8", "",  "",   2, xord8},
+	make_opcode! {0xEE, "XOR d8", "",  "",   2, xor},
 	make_opcode! {0xEF, "RST 28H", "0x28", "",   4, rst},
 	make_opcode! {0xF0, "LDH A,(a8)", "A", "(a)",   3, ld},
 	make_opcode! {0xF1, "POP AF", "AF",  "",   3, pop},
@@ -283,7 +283,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xF3, "DI", "",  "",   1, di},
 	make_opcode! {0xF4, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xF5, "PUSH AF", "AF",  "",   4, push},
-	make_opcode! {0xF6, "OR d8", "",  "",   2, ord8},
+	make_opcode! {0xF6, "OR d8", "",  "",   2, or},
 	make_opcode! {0xF7, "RST 30H", "0x30", "",   4, rst},
 	make_opcode! {0xF8, "LD HL,SP+r8", "HL", "SP",  3, ldr16r16d},
 	make_opcode! {0xF9, "LD SP,HL", "SP", "HL",  2, ld},
@@ -291,7 +291,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFB, "EI", "",  "",   1, empty},
 	make_opcode! {0xFC, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xFD, "EMPTY", "",  "",   0,  empty},
-	make_opcode! {0xFE, "CP d8", "",  "",   2, cpd8},
+	make_opcode! {0xFE, "CP d8", "",  "",   2, cp},
 	make_opcode! {0xFF, "RST 38H", "0x38", "",   4, rst},
 ]);
 
@@ -353,8 +353,8 @@ fn dec(c: &mut Cpu, r1: String, _: String) {
 
 fn and(c: &mut Cpu, r1: String, _: String) {
 	let r = c.load(&r1);
-	let a = c.reg.r(&"A".to_string());
-	let value = a & r as Byte;
+	let a = c.load(&"A".to_string());
+	let value = a & r;
 	c.store(&"A".to_string(), value as Word);
 
 	c.reg.F.z = value == 0;
@@ -363,79 +363,40 @@ fn and(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = false;
 }
 
-fn _or(c: &mut Cpu, buf: Byte) {
-	let a = c.reg.r(&"A".to_string());
-	let value = a | buf;
-	c.reg.r_mut(&"A".to_string(), value);
+fn or(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let a = c.load(&"A".to_string());
+	let value = a | r;
+	c.store(&"A".to_string(), value as Word);
 
-	let z = if a == 0 { 1 } else { 0 };
-	let znhc = (z << 7) & 0x80;
-	c.reg.F.unpack(znhc);
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = false;
 }
 
-fn orr(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r(&r);
-	_or(c, buf)
+fn xor(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let a = c.load(&"A".to_string());
+	let value = a ^ r;
+	c.store(&"A".to_string(), value as Word);
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = false;
 }
 
-fn or_hl(c: &mut Cpu, r: String, _: String) {
-	let buf = c.bus.read(c.reg.r16(&r));
-	_or(c, buf)
-}
+fn cp(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let a = c.load(&"A".to_string());
 
-fn ord8(c: &mut Cpu, _: String, _: String) {
-	let buf = c.fetch();
-	_or(c, buf)
-}
+	let (res, overflow) = a.overflowing_sub(r);
 
-fn _xor(c: &mut Cpu, buf: Byte) {
-	let a = c.reg.r(&"A".to_string());
-	let value = a ^ buf;
-	c.reg.r_mut(&"A".to_string(), value);
-
-	let z = if a == 0 { 1 } else { 0 };
-	let znhc = (z << 7) & 0x80;
-	c.reg.F.unpack(znhc);
-}
-
-fn xorr(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r(&r);
-	_xor(c, buf)
-}
-
-fn xor_hl(c: &mut Cpu, r: String, _: String) {
-	let buf = c.bus.read(c.reg.r16(&r));
-	_xor(c, buf)
-}
-
-fn xord8(c: &mut Cpu, _: String, _: String) {
-	let buf = c.fetch();
-	_xor(c, buf)
-}
-
-fn _cp(cpu: &mut Cpu, v: Byte) {
-	let a = cpu.reg.r(&"A".to_string());
-
-	let z = if a == v { 1 } else { 0 };
-	let h = if a & 0x0F < v & 0x0F { 1 } else { 0 };
-	let c = if a < v { 1 } else { 0 };
-	let znhc = (z << 7) | 0x40 | (h << 6) | (c << 4);
-	cpu.reg.F.unpack(znhc);
-}
-
-fn cpr(c: &mut Cpu, r: String, _: String) {
-	let v = c.reg.r(&r);
-	_cp(c, v)
-}
-
-fn cp_hl(c: &mut Cpu, r: String, _: String) {
-	let v = c.bus.read(c.reg.r16(&r));
-	_cp(c, v)
-}
-
-fn cpd8(c: &mut Cpu, _: String, _: String) {
-	let v = c.fetch();
-	_cp(c, v)
+	c.reg.F.z = a == r;
+	c.reg.F.n = true;
+	c.reg.F.h = (a ^ r ^ res) & 0x10 != 0;
+	c.reg.F.c = overflow;
 }
 
 fn _add(c: &mut Cpu, b: Byte) {
