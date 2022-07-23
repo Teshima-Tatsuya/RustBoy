@@ -100,6 +100,7 @@ speculate! {
                 case(Args{opcode: 0xEA, r1: "(aa)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0xF0, r1: "A".to_string(), r2: "(a)".to_string()}),
                 case(Args{opcode: 0xF2, r1: "A".to_string(), r2: "(C)".to_string()}),
+                case(Args{opcode: 0xF9, r1: "SP".to_string(), r2: "HL".to_string()}),
                 case(Args{opcode: 0xFA, r1: "A".to_string(), r2: "(aa)".to_string()}),
             )]
             fn test(arg: Args) {
@@ -139,7 +140,7 @@ speculate! {
                 assert_eq!(opcode.r2, arg.r2);
                 
                 let rr_array = ["BC", "DE", "HL", "AF", "HL", "SP"];
-                if rr_array.contains(&opcode.r1.as_str()) {
+                if rr_array.contains(&opcode.r1.as_str()) && &opcode.r2.as_str() != &"HL" {
                     assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want, want + 1));
                 } else {
                     assert_eq!(cpu.load(&opcode.r1), want as Word);

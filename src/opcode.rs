@@ -286,7 +286,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xF6, "OR d8", "",  "",   2, ord8},
 	make_opcode! {0xF7, "RST 30H", "0x30", "",   4, rst},
 	make_opcode! {0xF8, "LD HL,SP+r8", "HL", "SP",  3, ldr16r16d},
-	make_opcode! {0xF9, "LD SP,HL", "SP", "HL",  2, ldr16r16},
+	make_opcode! {0xF9, "LD SP,HL", "SP", "HL",  2, ld},
 	make_opcode! {0xFA, "LD A,(a16)", "A", "(aa)",   4, ld},
 	make_opcode! {0xFB, "EI", "",  "",   1, empty},
 	make_opcode! {0xFC, "EMPTY", "",  "",   0,  empty},
@@ -312,13 +312,6 @@ fn ld(c: &mut Cpu, r1: String, r2: String) {
 	c.store(&r1, value);
 }
 
-
-// fn ldr16(r16, r16d, d16)
-// LD r1, r2
-fn ldr16r16(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.reg.r16(&r2);
-	c.reg.r16_mut(&r1, value);
-}
 
 // LD r1, r2+d
 fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
