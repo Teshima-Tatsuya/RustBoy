@@ -293,6 +293,24 @@ impl Cpu {
             &_ => unreachable!()
         }
     }
+
+    pub fn store(&mut self, reg: &String, value: Word) {
+        match reg.as_str() {
+            "A" => self.reg.A = value as Byte,
+            "B" => self.reg.B = value as Byte,
+            "C" => self.reg.C = value as Byte,
+            "D" => self.reg.D = value as Byte,
+            "E" => self.reg.E = value as Byte,
+            "H" => self.reg.H = value as Byte,
+            "L" => self.reg.L = value as Byte,
+            "F" => self.reg.F.unpack(value as Byte),
+            "AF" => self.reg.af_mut(value),
+            "BC" => self.reg.bc_mut(value),
+            "DE" => self.reg.de_mut(value),
+            "HL" => self.reg.hl_mut(value),
+            &_ => unreachable!()
+        }
+    }
 }
 
 #[cfg(test)]

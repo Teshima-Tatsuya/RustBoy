@@ -15,11 +15,11 @@ speculate! {
             fn test() {
                 let mut cpu = common::fixture::setup_cpu();
                 let value = cpu.load(&"A".to_string());
-                assert_eq!(cpu.reg.A ,value);
+                assert_eq!(cpu.reg.A ,value as Byte);
                 let value = cpu.load(&"B".to_string());
-                assert_eq!(cpu.reg.B ,value);
+                assert_eq!(cpu.reg.B ,value as Byte);
                 let value = cpu.load(&"C".to_string());
-                assert_eq!(cpu.reg.C ,value);
+                assert_eq!(cpu.reg.C ,value as Byte);
             }
     }
 }
