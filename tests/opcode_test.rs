@@ -22,6 +22,7 @@ speculate! {
                 case(Args{opcode: 0x01, r1: "BC".to_string(), r2: "dd".to_string()}),
                 case(Args{opcode: 0x02, r1: "(BC)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0x06, r1: "B".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x08, r1: "(aa)".to_string(), r2: "SP".to_string()}),
                 case(Args{opcode: 0x0A, r1: "A".to_string(), r2: "(BC)".to_string()}),
                 case(Args{opcode: 0x0E, r1: "C".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x11, r1: "DE".to_string(), r2: "dd".to_string()}),
@@ -96,8 +97,10 @@ speculate! {
                 case(Args{opcode: 0x77, r1: "(HL)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0xE0, r1: "(a)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0xE2, r1: "(C)".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0xEA, r1: "(aa)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0xF0, r1: "A".to_string(), r2: "(a)".to_string()}),
                 case(Args{opcode: 0xF2, r1: "A".to_string(), r2: "(C)".to_string()}),
+                case(Args{opcode: 0xFA, r1: "A".to_string(), r2: "(aa)".to_string()}),
             )]
             fn test(arg: Args) {
                 let mut cpu = common::fixture::setup_cpu();
