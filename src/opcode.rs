@@ -38,7 +38,7 @@ macro_rules! make_opcode {
 #[rustfmt::skip]
 pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
     make_opcode! {0x00, "NOP", "", "", 1, nop},
-	make_opcode! {0x01, "LD BC,d16", "BC", "",   3, ldr16d16},
+	make_opcode! {0x01, "LD BC,d16", "BC", "dd",   3, ld},
 	make_opcode! {0x02, "LD (BC),A", "(BC)", "A",  2, ld},
 	make_opcode! {0x03, "INC BC", "BC", "",   2, incr16},
 	make_opcode! {0x04, "INC B", "B", "",   1, incr},
@@ -54,7 +54,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x0E, "LD C,d8", "C", "d",   2, ld},
 	make_opcode! {0x0F, "RRCA", "",  "",   1, empty},
 	make_opcode! {0x10, "STOP 0", "",  "",   1, stop},
-	make_opcode! {0x11, "LD DE,d16", "DE", "",   3, ldr16d16},
+	make_opcode! {0x11, "LD DE,d16", "DE", "dd",   3, ld},
 	make_opcode! {0x12, "LD (DE),A", "(DE)", "A",  2, ld},
 	make_opcode! {0x13, "INC DE", "DE", "",   2, incr16},
 	make_opcode! {0x14, "INC D", "D", "",   1, incr},
@@ -70,7 +70,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x1E, "LD E,d8", "E", "d",   2, ld},
 	make_opcode! {0x1F, "RRA", "",  "",   1, empty},
 	make_opcode! {0x20, "JR NZ,r8", "Z", "",   2, jrnfr8},
-	make_opcode! {0x21, "LD HL,d16", "HL", "",   3, ldr16d16},
+	make_opcode! {0x21, "LD HL,d16", "HL", "dd",   3, ld},
 	make_opcode! {0x22, "LD (HL+),A", "(HLI)", "A",  2, ld},
 	make_opcode! {0x23, "INC HL", "HL", "",   2, incr16},
 	make_opcode! {0x24, "INC H", "H", "",   1, incr},
@@ -86,7 +86,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x2E, "LD L,d8", "L", "d",   2, ld},
 	make_opcode! {0x2F, "CPL", "",  "",   1, cpl},
 	make_opcode! {0x30, "JR NC,r8", "C", "",   2, jrnfr8},
-	make_opcode! {0x31, "LD SP,d16", "SP", "",   3, ldr16d16},
+	make_opcode! {0x31, "LD SP,d16", "SP", "dd",   3, ld},
 	make_opcode! {0x32, "LD (HL-),A", "(HLD)", "A",  2, ld},
 	make_opcode! {0x33, "INC SP", "SP", "",   2, incr16},
 	make_opcode! {0x34, "INC (HL)", "HL", "",   3, incm16},
@@ -335,12 +335,6 @@ fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
 	// carry = sp ^ types.Addr(d) ^ (sp + types.Addr(d))
 
 	// c.reg.setZNHC(false, false, carry&0x10 == 0x10, carry&0x100 == 0x100)
-}
-
-// LD r1, d16
-fn ldr16d16(c: &mut Cpu, r1: String, _: String) {
-	let value = c.fetch16();
-	c.reg.r16_mut(&r1, value)
 }
 
 // fn lda16(r, r16)
@@ -836,12 +830,4 @@ fn ccf(cpu: &mut Cpu, _: String, _: String) {
 fn di(c: &mut Cpu, _: String, _: String) {
 	warn!("not implemented di")
 	//	c.IRQ.Disable()
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	#[test]
-	fn test_register_set_get() {}
 }

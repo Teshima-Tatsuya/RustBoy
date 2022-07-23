@@ -7,6 +7,7 @@ use rstest::*;
 use rust_boy::cpu::*;
 use rust_boy::opcode::*;
 use rust_boy::types::*;
+use rust_boy::util::*;
 use speculate::speculate;
 
 speculate! {
@@ -18,18 +19,22 @@ speculate! {
                 r2: String,
             }
             #[rstest(arg,
+                case(Args{opcode: 0x01, r1: "BC".to_string(), r2: "dd".to_string()}),
                 case(Args{opcode: 0x02, r1: "(BC)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0x06, r1: "B".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x0A, r1: "A".to_string(), r2: "(BC)".to_string()}),
                 case(Args{opcode: 0x0E, r1: "C".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x11, r1: "DE".to_string(), r2: "dd".to_string()}),
                 case(Args{opcode: 0x12, r1: "(DE)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0x16, r1: "D".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x1A, r1: "A".to_string(), r2: "(DE)".to_string()}),
                 case(Args{opcode: 0x1E, r1: "E".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x21, r1: "HL".to_string(), r2: "dd".to_string()}),
                 case(Args{opcode: 0x22, r1: "(HLI)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0x26, r1: "H".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x2A, r1: "A".to_string(), r2: "(HLI)".to_string()}),
                 case(Args{opcode: 0x2E, r1: "L".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x31, r1: "SP".to_string(), r2: "dd".to_string()}),
                 case(Args{opcode: 0x32, r1: "(HLD)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0x3A, r1: "A".to_string(), r2: "(HLD)".to_string()}),
                 case(Args{opcode: 0x36, r1: "(HL)".to_string(), r2: "d".to_string()}),
@@ -104,7 +109,7 @@ speculate! {
                     cpu.bus.write(cpu.reg.PC, want);
                 } else if &arg.r2 == "dd" {
                     cpu.bus.write(cpu.reg.PC, want);
-                    cpu.bus.write(cpu.reg.PC, want + 1);
+                    cpu.bus.write(cpu.reg.PC + 1, want + 1);
                 } else {
                     cpu.store(&arg.r2, want as Word);
                 }
@@ -129,7 +134,13 @@ speculate! {
 
                 assert_eq!(opcode.r1, arg.r1);
                 assert_eq!(opcode.r2, arg.r2);
-                assert_eq!(cpu.load(&opcode.r1), want as Word);
+                
+                let rr_array = ["BC", "DE", "HL", "AF", "HL", "SP"];
+                if rr_array.contains(&opcode.r1.as_str()) {
+                    assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want, want + 1));
+                } else {
+                    assert_eq!(cpu.load(&opcode.r1), want as Word);
+                }
             }
         }
     }

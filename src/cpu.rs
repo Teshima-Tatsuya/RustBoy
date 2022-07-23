@@ -92,12 +92,14 @@ impl Register {
                 let res = self.hl();
                 self.hl_mut(res - 1);
                 res
-            }
+            },
             "HLI" => {
                 let res = self.hl();
                 self.hl_mut(res + 1);
                 res
-            }
+            },
+            "PC" => self.PC,
+            "SP" => self.SP,
             _ => unreachable!(),
         }
     }
@@ -277,6 +279,9 @@ impl Cpu {
             "d" => {
                 self.fetch() as Word
             },
+            "dd" => {
+                self.fetch16()
+            },
             // a
             "(a)" => {
                 let addr = self.fetch();
@@ -311,7 +316,7 @@ impl Cpu {
                 self.bus.write(bytes_2_word(0xFF as Byte, addr), value as Byte);
             },
             // rr
-            "AF" | "BC" | "DE" | "HL" => self.reg.r16_mut(reg, value),
+            "AF" | "BC" | "DE" | "HL" | "SP" => self.reg.r16_mut(reg, value),
             // mm
             "(BC)" | "(DE)" | "(HL)" | "(HLI)" | "(HLD)" => {
                 let mut s = reg.replace("(", "");
