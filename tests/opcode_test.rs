@@ -18,10 +18,22 @@ speculate! {
                 r2: String,
             }
             #[rstest(arg,
+                case(Args{opcode: 0x02, r1: "(BC)".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0x06, r1: "B".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x0A, r1: "A".to_string(), r2: "(BC)".to_string()}),
+                case(Args{opcode: 0x0E, r1: "C".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x12, r1: "(DE)".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0x16, r1: "D".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x1A, r1: "A".to_string(), r2: "(DE)".to_string()}),
+                case(Args{opcode: 0x1E, r1: "E".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x22, r1: "(HLI)".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0x26, r1: "H".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x2A, r1: "A".to_string(), r2: "(HLI)".to_string()}),
+                case(Args{opcode: 0x2E, r1: "L".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x32, r1: "(HLD)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0x3A, r1: "A".to_string(), r2: "(HLD)".to_string()}),
+                case(Args{opcode: 0x36, r1: "(HL)".to_string(), r2: "d".to_string()}),
+                case(Args{opcode: 0x3E, r1: "A".to_string(), r2: "d".to_string()}),
                 case(Args{opcode: 0x40, r1: "B".to_string(), r2: "B".to_string()}),
                 case(Args{opcode: 0x41, r1: "B".to_string(), r2: "C".to_string()}),
                 case(Args{opcode: 0x42, r1: "B".to_string(), r2: "D".to_string()}),
@@ -70,6 +82,14 @@ speculate! {
                 case(Args{opcode: 0x6D, r1: "L".to_string(), r2: "L".to_string()}),
                 case(Args{opcode: 0x6E, r1: "L".to_string(), r2: "(HL)".to_string()}),
                 case(Args{opcode: 0x6F, r1: "L".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0x70, r1: "(HL)".to_string(), r2: "B".to_string()}),
+                case(Args{opcode: 0x71, r1: "(HL)".to_string(), r2: "C".to_string()}),
+                case(Args{opcode: 0x72, r1: "(HL)".to_string(), r2: "D".to_string()}),
+                case(Args{opcode: 0x73, r1: "(HL)".to_string(), r2: "E".to_string()}),
+                case(Args{opcode: 0x74, r1: "(HL)".to_string(), r2: "H".to_string()}),
+                case(Args{opcode: 0x75, r1: "(HL)".to_string(), r2: "L".to_string()}),
+                case(Args{opcode: 0x77, r1: "(HL)".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0xE2, r1: "(C)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0xF2, r1: "A".to_string(), r2: "(C)".to_string()}),
             )]
             fn test(arg: Args) {
@@ -78,7 +98,15 @@ speculate! {
                 let opcode = &OPCODES[arg.opcode as usize];
                 let want = 0x12;
 
-                cpu.store(&arg.r2, want as Word);
+                if &arg.r2 == "d" {
+                    cpu.bus.write(cpu.reg.PC, want);
+                } else if &arg.r2 == "dd" {
+                    cpu.bus.write(cpu.reg.PC, want);
+                    cpu.bus.write(cpu.reg.PC, want + 1);
+                } else {
+                    cpu.store(&arg.r2, want as Word);
+                }
+
                 if arg.r2.contains("HLI") {
                     let value = cpu.reg.r16(&"HL".to_string()) - 1;
                     cpu.reg.r16_mut(&"HL".to_string(), value);
@@ -89,6 +117,13 @@ speculate! {
 
                 let handler = &opcode.handler;
                 handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                if arg.r1.contains("HLI") {
+                    let value = cpu.reg.r16(&"HL".to_string()) - 1;
+                    cpu.reg.r16_mut(&"HL".to_string(), value);
+                } else if arg.r1.contains("HLD") {
+                    let value = cpu.reg.r16(&"HL".to_string()) + 1;
+                    cpu.reg.r16_mut(&"HL".to_string(), value);
+                }
 
                 assert_eq!(opcode.r1, arg.r1);
                 assert_eq!(opcode.r2, arg.r2);

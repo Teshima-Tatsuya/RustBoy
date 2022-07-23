@@ -273,6 +273,10 @@ impl Cpu {
                 let r = self.reg.C;
                 self.bus.read(bytes_2_word(0xFF, r)) as Word
             },
+            // d
+            "d" => {
+                self.fetch() as Word
+            },
             // rr
             "AF" | "BC" | "DE" | "HL" | "HLD" | "HLI" | "PC" | "SP" => self.reg.r16(reg),
             // mm
