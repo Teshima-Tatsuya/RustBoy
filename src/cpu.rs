@@ -1,5 +1,5 @@
 use crate::bus::Bus;
-use crate::opcode::OPCODES;
+use crate::opcode::{OPCODES, CB_OPCODES};
 use crate::traits::*;
 use crate::types::*;
 use crate::util::*;
@@ -217,17 +217,24 @@ impl Cpu {
     }
 
     pub fn step(&mut self) {
-        let buf = self.fetch();
-        let opcode = &OPCODES[buf as usize];
-        println!(" {}", opcode);
+        let mut opcode = self.fetch();
+
+        let op;
+        if opcode == 0xCB {
+            opcode = self.fetch();
+            op = &CB_OPCODES[opcode as usize];
+        } else {
+            op = &OPCODES[opcode as usize];
+        }
+        println!(" {}", op);
         println!(" {}", self.reg);
         println!(
             "  data: {:02X}{:02X}",
             self.bus.read(self.reg.PC),
             self.bus.read(self.reg.PC + 1)
         );
-        let handler = &opcode.handler;
-        handler(self, opcode.r1.to_string(), opcode.r2.to_string());
+        let handler = &op.handler;
+        handler(self, op.r1.to_string(), op.r2.to_string());
     }
 
     pub fn fetch(&mut self) -> Byte {

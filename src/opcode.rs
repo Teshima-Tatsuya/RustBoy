@@ -808,7 +808,7 @@ fn di(c: &mut Cpu, _: String, _: String) {
 }
 
 #[rustfmt::skip]
-pub static CP_OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
+pub static CB_OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x00, "RLC B", "B", "", 2, rlc},
 	make_opcode! {0x01, "RLC C", "C", "", 2, rlc},
 	make_opcode! {0x02, "RLC D", "D", "", 2, rlc},
