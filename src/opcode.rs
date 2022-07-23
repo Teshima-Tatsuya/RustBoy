@@ -197,14 +197,14 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x9D, "SBC A, L", "A", "L",  1, sbcr},
 	make_opcode! {0x9E, "SBC A, (HL)", "A", "HL",  2, sbcm16},
 	make_opcode! {0x9F, "SBC A, A", "A", "A",  1, sbcr},
-	make_opcode! {0xA0, "AND B", "B", "",   1, andr},
-	make_opcode! {0xA1, "AND C", "C", "",   1, andr},
-	make_opcode! {0xA2, "AND D", "D", "",   1, andr},
-	make_opcode! {0xA3, "AND E", "E", "",   1, andr},
-	make_opcode! {0xA4, "AND H", "H", "",   1, andr},
-	make_opcode! {0xA5, "AND L", "L", "",   1, andr},
-	make_opcode! {0xA6, "AND (HL)", "HL", "",   2, and_hl},
-	make_opcode! {0xA7, "AND A", "A", "",   1, andr},
+	make_opcode! {0xA0, "AND B", "B", "",   1, and},
+	make_opcode! {0xA1, "AND C", "C", "",   1, and},
+	make_opcode! {0xA2, "AND D", "D", "",   1, and},
+	make_opcode! {0xA3, "AND E", "E", "",   1, and},
+	make_opcode! {0xA4, "AND H", "H", "",   1, and},
+	make_opcode! {0xA5, "AND L", "L", "",   1, and},
+	make_opcode! {0xA6, "AND (HL)", "HL", "",   2, and},
+	make_opcode! {0xA7, "AND A", "A", "",   1, and},
 	make_opcode! {0xA8, "XOR B", "B", "",   1, xorr},
 	make_opcode! {0xA9, "XOR C", "C", "",   1, xorr},
 	make_opcode! {0xAA, "XOR D", "D", "",   1, xorr},
@@ -267,7 +267,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xE3, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xE4, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xE5, "PUSH HL", "HL", "",   4, push},
-	make_opcode! {0xE6, "AND d8", "",  "",   2, andd8},
+	make_opcode! {0xE6, "AND d8", "",  "",   2, and},
 	make_opcode! {0xE7, "RST 20H", "0x20", "",   4, rst},
 	make_opcode! {0xE8, "ADD SP,r8", "SP", "",   4, addr16d},
 	make_opcode! {0xE9, "JP (HL)", "HL", "",   1, jpm16},
@@ -351,29 +351,16 @@ fn dec(c: &mut Cpu, r1: String, _: String) {
 	c.store(&r1, value);
 }
 
-fn _and(c: &mut Cpu, buf: Byte) {
+fn and(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
 	let a = c.reg.r(&"A".to_string());
-	let value = a & buf;
-	c.reg.r_mut(&"A".to_string(), value);
+	let value = a & r as Byte;
+	c.store(&"A".to_string(), value as Word);
 
-	let z = if a == 0 { 1 } else { 0 };
-	let znhc = (z << 7) & 0xA0;
-	c.reg.F.unpack(znhc);
-}
-
-fn andr(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r(&r);
-	_and(c, buf)
-}
-
-fn and_hl(c: &mut Cpu, r: String, _: String) {
-	let buf = c.bus.read(c.reg.r16(&r));
-	_and(c, buf)
-}
-
-fn andd8(c: &mut Cpu, _: String, _: String) {
-	let buf = c.fetch();
-	_and(c, buf)
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = true;
+	c.reg.F.c = false;
 }
 
 fn _or(c: &mut Cpu, buf: Byte) {
