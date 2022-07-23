@@ -89,7 +89,9 @@ speculate! {
                 case(Args{opcode: 0x74, r1: "(HL)".to_string(), r2: "H".to_string()}),
                 case(Args{opcode: 0x75, r1: "(HL)".to_string(), r2: "L".to_string()}),
                 case(Args{opcode: 0x77, r1: "(HL)".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0xE0, r1: "(a)".to_string(), r2: "A".to_string()}),
                 case(Args{opcode: 0xE2, r1: "(C)".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0xF0, r1: "A".to_string(), r2: "(a)".to_string()}),
                 case(Args{opcode: 0xF2, r1: "A".to_string(), r2: "(C)".to_string()}),
             )]
             fn test(arg: Args) {

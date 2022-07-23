@@ -261,7 +261,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xDD, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xDE, "SBC A,d8", "A", "",   2, sbcd},
 	make_opcode! {0xDF, "RST 18H", "0x18", "",   4, rst},
-	make_opcode! {0xE0, "LDH (a8),A", "",  "A",  3, ldar},
+	make_opcode! {0xE0, "LDH (a8),A", "(a)",  "A",  3, ld},
 	make_opcode! {0xE1, "POP HL", "HL", "",   3, pop},
 	make_opcode! {0xE2, "LD (C),A", "(C)", "A",  2, ld},
 	make_opcode! {0xE3, "EMPTY", "",  "",   0,  empty},
@@ -277,7 +277,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xED, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xEE, "XOR d8", "",  "",   2, xord8},
 	make_opcode! {0xEF, "RST 28H", "0x28", "",   4, rst},
-	make_opcode! {0xF0, "LDH A,(a8)", "A", "",   3, ldra},
+	make_opcode! {0xF0, "LDH A,(a8)", "A", "(a)",   3, ld},
 	make_opcode! {0xF1, "POP AF", "AF",  "",   3, pop},
 	make_opcode! {0xF2, "LD A,(C)", "A", "(C)",  2, ld},
 	make_opcode! {0xF3, "DI", "",  "",   1, di},
@@ -312,13 +312,6 @@ fn ld(c: &mut Cpu, r1: String, r2: String) {
 	c.store(&r1, value);
 }
 
-// LDH R,(a8)
-fn ldra(c: &mut Cpu, r1: String, _: String) {
-	let addr = c.fetch();
-	let value = c.bus.read(bytes_2_word(0xFF as Byte, addr));
-	c.reg.r_mut(&r1, value);
-}
-
 fn ldra16(c: &mut Cpu, r1: String, _: String) {
 	let addr = c.fetch16();
 	let value = c.bus.read(addr);
@@ -348,13 +341,6 @@ fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
 fn ldr16d16(c: &mut Cpu, r1: String, _: String) {
 	let value = c.fetch16();
 	c.reg.r16_mut(&r1, value)
-}
-
-// fn lda(r)
-
-fn ldar(c: &mut Cpu, _: String, r2: String) {
-	let addr = bytes_2_word(0xFF, c.fetch());
-	c.bus.write(addr, c.reg.r(&r2));
 }
 
 // fn lda16(r, r16)

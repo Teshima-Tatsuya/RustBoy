@@ -277,6 +277,11 @@ impl Cpu {
             "d" => {
                 self.fetch() as Word
             },
+            // a
+            "(a)" => {
+                let addr = self.fetch();
+                self.bus.read(bytes_2_word(0xFF as Byte, addr)) as Word
+            },
             // rr
             "AF" | "BC" | "DE" | "HL" | "HLD" | "HLI" | "PC" | "SP" => self.reg.r16(reg),
             // mm
@@ -299,6 +304,11 @@ impl Cpu {
                 s = s.replace(")", "");
                 let addr = bytes_2_word(0xFF, self.reg.r(&s));
                 self.bus.write(addr, value as Byte);
+            },
+            // a
+            "(a)" => {
+                let addr = self.fetch();
+                self.bus.write(bytes_2_word(0xFF as Byte, addr), value as Byte);
             },
             // rr
             "AF" | "BC" | "DE" | "HL" => self.reg.r16_mut(reg, value),
