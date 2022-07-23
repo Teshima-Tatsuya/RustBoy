@@ -47,7 +47,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x07, "RLCA", "",  "",   1, empty},
 	make_opcode! {0x08, "LD (a16),SP", "",  "SP",  5, lda16r16},
 	make_opcode! {0x09, "ADD HL,BC", "HL", "BC",  2, addr16r16},
-	make_opcode! {0x0A, "LD A,(BC)", "A", "BC",  2, ldrm16},
+	make_opcode! {0x0A, "LD A,(BC)", "A", "(BC)",  2, ld},
 	make_opcode! {0x0B, "DEC BC", "BC", "",   2, decr16},
 	make_opcode! {0x0C, "INC C", "C", "",   1, incr},
 	make_opcode! {0x0D, "DEC C", "C", "",   1, decr},
@@ -63,7 +63,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x17, "RLA", "",  "",   1, empty},
 	make_opcode! {0x18, "JR r8", "",  "",   3, jrr8},
 	make_opcode! {0x19, "ADD HL,DE", "HL", "DE",  2, addr16r16},
-	make_opcode! {0x1A, "LD A,(DE)", "A", "DE",  2, ldrm16},
+	make_opcode! {0x1A, "LD A,(DE)", "A", "(DE)",  2, ld},
 	make_opcode! {0x1B, "DEC DE", "DE", "",   2, decr16},
 	make_opcode! {0x1C, "INC E", "E", "",   1, incr},
 	make_opcode! {0x1D, "DEC E", "E", "",   1, decr},
@@ -79,7 +79,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x27, "DAA", "",  "",   1, empty},
 	make_opcode! {0x28, "JR Z,r8", "Z", "",   2, jrfr8},
 	make_opcode! {0x29, "ADD HL,HL", "HL", "HL",  2, addr16r16},
-	make_opcode! {0x2A, "LD A,(HL+)", "A", "HLI",  2, ldrm16},
+	make_opcode! {0x2A, "LD A,(HL+)", "A", "(HLI)",  2, ld},
 	make_opcode! {0x2B, "DEC HL", "HL", "",   2, decr16},
 	make_opcode! {0x2C, "INC L", "L", "",   1, incr},
 	make_opcode! {0x2D, "DEC L", "L", "",   1, decr},
@@ -95,7 +95,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x37, "SCF", "",  "",   1, scf},
 	make_opcode! {0x38, "JR C,r8", "C", "",   2, jrfr8},
 	make_opcode! {0x39, "ADD HL,SP", "HL", "SP",  2, addr16r16},
-	make_opcode! {0x3A, "LD A,(HL-)", "A", "HLD",  2, ldrm16},
+	make_opcode! {0x3A, "LD A,(HL-)", "A", "(HLD)",  2, ld},
 	make_opcode! {0x3B, "DEC SP", "SP", "",   2, decr16},
 	make_opcode! {0x3C, "INC A", "A", "",   1, incr},
 	make_opcode! {0x3D, "DEC A", "A", "",   1, decr},
@@ -107,7 +107,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x43, "LD B, E", "B", "E",  1, ld},
 	make_opcode! {0x44, "LD B, H", "B", "H",  1, ld},
 	make_opcode! {0x45, "LD B, L", "B", "L",  1, ld},
-	make_opcode! {0x46, "LD B, (HL)", "B", "HL",  2, ldrm16},
+	make_opcode! {0x46, "LD B, (HL)", "B", "(HL)",  2, ld},
 	make_opcode! {0x47, "LD B, A", "B", "A",  1, ld},
 	make_opcode! {0x48, "LD C, B", "C", "B",  1, ld},
 	make_opcode! {0x49, "LD C, C", "C", "C",  1, ld},
@@ -115,7 +115,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x4B, "LD C, E", "C", "E",  1, ld},
 	make_opcode! {0x4C, "LD C, H", "C", "H",  1, ld},
 	make_opcode! {0x4D, "LD C, L", "C", "L",  1, ld},
-	make_opcode! {0x4E, "LD C, (HL)", "C", "HL",  2, ldrm16},
+	make_opcode! {0x4E, "LD C, (HL)", "C", "(HL)",  2, ld},
 	make_opcode! {0x4F, "LD C, A", "C", "A",  1, ld},
 	make_opcode! {0x50, "LD D, B", "D", "B",  1, ld},
 	make_opcode! {0x51, "LD D, C", "D", "C",  1, ld},
@@ -123,7 +123,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x53, "LD D, E", "D", "E",  1, ld},
 	make_opcode! {0x54, "LD D, H", "D", "H",  1, ld},
 	make_opcode! {0x55, "LD D, L", "D", "L",  1, ld},
-	make_opcode! {0x56, "LD D, (HL)", "D", "HL",  2, ldrm16},
+	make_opcode! {0x56, "LD D, (HL)", "D", "(HL)",  2, ld},
 	make_opcode! {0x57, "LD D, A", "D", "A",  1, ld},
 	make_opcode! {0x58, "LD E, B", "E", "B",  1, ld},
 	make_opcode! {0x59, "LD E, C", "E", "C",  1, ld},
@@ -131,7 +131,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x5B, "LD E, E", "E", "E",  1, ld},
 	make_opcode! {0x5C, "LD E, H", "E", "H",  1, ld},
 	make_opcode! {0x5D, "LD E, L", "E", "L",  1, ld},
-	make_opcode! {0x5E, "LD E, (HL)", "E", "HL",  2, ldrm16},
+	make_opcode! {0x5E, "LD E, (HL)", "E", "(HL)",  2, ld},
 	make_opcode! {0x5F, "LD E, A", "E", "A",  1, ld},
 	make_opcode! {0x60, "LD H, B", "H", "B",  1, ld},
 	make_opcode! {0x61, "LD H, C", "H", "C",  1, ld},
@@ -139,7 +139,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x63, "LD H, E", "H", "E",  1, ld},
 	make_opcode! {0x64, "LD H, H", "H", "H",  1, ld},
 	make_opcode! {0x65, "LD H, L", "H", "L",  1, ld},
-	make_opcode! {0x66, "LD H, (HL)", "H", "HL",  2, ldrm16},
+	make_opcode! {0x66, "LD H, (HL)", "H", "(HL)",  2, ld},
 	make_opcode! {0x67, "LD H, A", "H", "A",  1, ld},
 	make_opcode! {0x68, "LD L, B", "L", "B",  1, ld},
 	make_opcode! {0x69, "LD L, C", "L", "C",  1, ld},
@@ -147,7 +147,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x6B, "LD L, E", "L", "E",  1, ld},
 	make_opcode! {0x6C, "LD L, H", "L", "H",  1, ld},
 	make_opcode! {0x6D, "LD L, L", "L", "L",  1, ld},
-	make_opcode! {0x6E, "LD L, (HL)", "L", "HL",  2, ldrm16},
+	make_opcode! {0x6E, "LD L, (HL)", "L", "(HL)",  2, ld},
 	make_opcode! {0x6F, "LD L, A", "L", "A",  1, ld},
 	make_opcode! {0x70, "LD (HL), B", "HL", "B",  2, ldm16r},
 	make_opcode! {0x71, "LD (HL), C", "HL", "C",  2, ldm16r},
@@ -163,7 +163,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x7B, "LD A, E", "A", "E",  1, ld},
 	make_opcode! {0x7C, "LD A, H", "A", "H",  1, ld},
 	make_opcode! {0x7D, "LD A, L", "A", "L",  1, ld},
-	make_opcode! {0x7E, "LD A, (HL)", "A", "HL",  2, ldrm16},
+	make_opcode! {0x7E, "LD A, (HL)", "A", "(HL)",  2, ld},
 	make_opcode! {0x7F, "LD A, A", "A", "A",  1, ld},
 	make_opcode! {0x80, "ADD A, B", "A", "B",  1, addr},
 	make_opcode! {0x81, "ADD A, C", "A", "C",  1, addr},
@@ -171,7 +171,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x83, "ADD A, E", "A", "E",  1, addr},
 	make_opcode! {0x84, "ADD A, H", "A", "H",  1, addr},
 	make_opcode! {0x85, "ADD A, L", "A", "L",  1, addr},
-	make_opcode! {0x86, "ADD A, (HL)", "A", "HL",  2, add_hl},
+	make_opcode! {0x86, "ADD A, (HL)", "A", "(HL)",  2, add_hl},
 	make_opcode! {0x87, "ADD A, A", "A", "A",  1, addr},
 	make_opcode! {0x88, "ADC A, B", "A", "B",  1, adcr},
 	make_opcode! {0x89, "ADC A, C", "A", "C",  1, adcr},
@@ -311,13 +311,6 @@ fn stop(_: &mut Cpu, _: String, _: String) {
 fn ld(c: &mut Cpu, r1: String, r2: String) {
 	let value = c.load(&r2);
 	c.store(&r1, value);
-}
-
-// LD r1, (r2)
-// Write r2 value into r1
-fn ldrm16(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.bus.read(c.reg.r16(&r2));
-	c.reg.r_mut(&r1, value);
 }
 
 // LD r1, d8

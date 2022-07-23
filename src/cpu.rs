@@ -267,54 +267,42 @@ impl Cpu {
     pub fn load(&mut self, reg: &String) -> Word {
         match reg.as_str() {
             // r
-            "A" => self.reg.A as Word,
-            "B" => self.reg.B as Word,
-            "C" => self.reg.C as Word,
-            "D" => self.reg.D as Word,
-            "E" => self.reg.E as Word,
-            "H" => self.reg.H as Word,
-            "L" => self.reg.L as Word,
-            "F" => self.reg.F.pack() as Word,
+            "A" | "B" | "C" | "D" | "E" | "F" | "H" | "L" => self.reg.r(reg) as Word,
             // m
             "(C)" => {
-                let r = self.reg.C as Word;
-                self.bus.read(0xFF00 as Word | r) as Word
+                let r = self.reg.C;
+                self.bus.read(bytes_2_word(0xFF, r)) as Word
             },
             // rr
-            "AF" => self.reg.af(),
-            "BC" => self.reg.bc(),
-            "DE" => self.reg.de(),
-            "HL" => self.reg.hl(),
-            "HLD" => {
-                let res = self.reg.hl();
-                self.reg.hl_mut(res - 1);
-                res
-            }
-            "HLI" => {
-                let res = self.reg.hl();
-                self.reg.hl_mut(res + 1);
-                res
-            }
-            "PC" => self.reg.PC,
-            "SP" => self.reg.SP,
+            "AF" | "BC" | "DE" | "HL" | "HLD" | "HLI" | "PC" | "SP" => self.reg.r16(reg),
+            // mm
+            "(BC)" | "(DE)" | "(HL)" | "(HLI)" | "(HLD)" => {
+                let mut s = reg.replace("(", "");
+                s = s.replace(")", "");
+                self.bus.read(self.reg.r16(&s)) as Word
+            }, 
             &_ => unreachable!()
         }
     }
 
     pub fn store(&mut self, reg: &String, value: Word) {
         match reg.as_str() {
-            "A" => self.reg.A = value as Byte,
-            "B" => self.reg.B = value as Byte,
-            "C" => self.reg.C = value as Byte,
-            "D" => self.reg.D = value as Byte,
-            "E" => self.reg.E = value as Byte,
-            "H" => self.reg.H = value as Byte,
-            "L" => self.reg.L = value as Byte,
-            "F" => self.reg.F.unpack(value as Byte),
-            "AF" => self.reg.af_mut(value),
-            "BC" => self.reg.bc_mut(value),
-            "DE" => self.reg.de_mut(value),
-            "HL" => self.reg.hl_mut(value),
+            // r
+            "A" | "B" | "C" | "D" | "E" | "F" | "H" | "L" => self.reg.r_mut(reg, value as Byte),
+            // m
+            "(C)" => {
+                let addr = bytes_2_word(0xFF, self.reg.r(reg));
+                self.bus.write(addr, value as Byte);
+            },
+            // rr
+            "AF" | "BC" | "DE" | "HL" => self.reg.r16_mut(reg, value),
+            // mm
+            "(BC)" | "(DE)" | "(HL)" | "(HLI)" | "(HLD)" => {
+                let mut s = reg.replace("(", "");
+                s = s.replace(")", "");
+                let addr = self.reg.r16(&s);
+                self.bus.write(addr, value as Byte);
+            }, 
             &_ => unreachable!()
         }
     }
