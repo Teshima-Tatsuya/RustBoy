@@ -11,7 +11,7 @@ use speculate::speculate;
 
 speculate! {
     describe "LD" {
-        describe "ldrr" {
+        describe "ld" {
             struct Args {
                 opcode: Byte,
                 r1: String,
@@ -60,21 +60,31 @@ speculate! {
                 case(Args{opcode: 0x6C, r1: "L".to_string(), r2: "H".to_string()}),
                 case(Args{opcode: 0x6D, r1: "L".to_string(), r2: "L".to_string()}),
                 case(Args{opcode: 0x6F, r1: "L".to_string(), r2: "A".to_string()}),
+                case(Args{opcode: 0xF2, r1: "A".to_string(), r2: "(C)".to_string()}),
             )]
             fn test(arg: Args) {
                 let mut cpu = common::fixture::setup_cpu();
 
                 let opcode = &OPCODES[arg.opcode as usize];
                 let want = 0x12;
-                cpu.reg.r_mut(&arg.r2, want);
+
+                if &arg.r2 >= &"A".to_string() && &arg.r2 <= &"L".to_string() {
+                    // r
+                    cpu.reg.r_mut(&arg.r2, want);
+                } else if &arg.r2 == &"(C)".to_string() {
+                    // (m)
+                    cpu.reg.C = want;
+                    let addr = 0xFF00 | cpu.reg.C as Word;
+                    cpu.bus.write(addr, want);
+                }
 
                 let handler = &opcode.handler;
                 handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
 
                 assert_eq!(opcode.r1, arg.r1);
                 assert_eq!(opcode.r2, arg.r2);
-                assert_eq!(cpu.reg.r(&opcode.r1), want);
-                assert_eq!(cpu.reg.r(&opcode.r2), want);
+                assert_eq!(cpu.load(&opcode.r1), want as Word);
+                assert_eq!(cpu.load(&opcode.r2), want as Word);
             }
         }
     }

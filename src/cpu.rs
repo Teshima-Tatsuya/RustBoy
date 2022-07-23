@@ -266,6 +266,7 @@ impl Cpu {
 
     pub fn load(&mut self, reg: &String) -> Word {
         match reg.as_str() {
+            // r
             "A" => self.reg.A as Word,
             "B" => self.reg.B as Word,
             "C" => self.reg.C as Word,
@@ -274,6 +275,12 @@ impl Cpu {
             "H" => self.reg.H as Word,
             "L" => self.reg.L as Word,
             "F" => self.reg.F.pack() as Word,
+            // m
+            "(C)" => {
+                let r = self.reg.C as Word;
+                self.bus.read(0xFF00 as Word | r) as Word
+            },
+            // rr
             "AF" => self.reg.af(),
             "BC" => self.reg.bc(),
             "DE" => self.reg.de(),

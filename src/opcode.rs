@@ -280,7 +280,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xEF, "RST 28H", "0x28", "",   4, rst},
 	make_opcode! {0xF0, "LDH A,(a8)", "A", "",   3, ldra},
 	make_opcode! {0xF1, "POP AF", "AF",  "",   3, pop},
-	make_opcode! {0xF2, "LD A,(C)", "A", "C",  2, ldrm},
+	make_opcode! {0xF2, "LD A,(C)", "A", "(C)",  2, ld},
 	make_opcode! {0xF3, "DI", "",  "",   1, di},
 	make_opcode! {0xF4, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xF5, "PUSH AF", "AF",  "",   4, push},
@@ -311,13 +311,6 @@ fn stop(_: &mut Cpu, _: String, _: String) {
 fn ld(c: &mut Cpu, r1: String, r2: String) {
 	let value = c.load(&r2);
 	c.store(&r1, value);
-}
-
-// LD r1, (r2)
-// Write r2 value into r1
-fn ldrm(c: &mut Cpu, r1: String, r2: String) {
-	let value = c.bus.read(0xFF00 as Word | (c.reg.r(&r2) as Word));
-	c.reg.r_mut(&r1, value);
 }
 
 // LD r1, (r2)
