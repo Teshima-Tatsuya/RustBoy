@@ -89,18 +89,10 @@ speculate! {
 
                 let handler = &opcode.handler;
                 handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
-                if arg.r2.contains("HLI") {
-                    let value = cpu.reg.r16(&"HL".to_string()) - 1;
-                    cpu.reg.r16_mut(&"HL".to_string(), value);
-                } else if arg.r2.contains("HLD") {
-                    let value = cpu.reg.r16(&"HL".to_string()) + 1;
-                    cpu.reg.r16_mut(&"HL".to_string(), value);
-                }
 
                 assert_eq!(opcode.r1, arg.r1);
                 assert_eq!(opcode.r2, arg.r2);
                 assert_eq!(cpu.load(&opcode.r1), want as Word);
-                assert_eq!(cpu.load(&opcode.r2), want as Word);
             }
         }
     }

@@ -291,7 +291,9 @@ impl Cpu {
             "A" | "B" | "C" | "D" | "E" | "F" | "H" | "L" => self.reg.r_mut(reg, value as Byte),
             // m
             "(C)" => {
-                let addr = bytes_2_word(0xFF, self.reg.r(reg));
+                let mut s = reg.replace("(", "");
+                s = s.replace(")", "");
+                let addr = bytes_2_word(0xFF, self.reg.r(&s));
                 self.bus.write(addr, value as Byte);
             },
             // rr
