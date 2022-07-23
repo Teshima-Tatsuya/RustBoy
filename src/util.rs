@@ -11,3 +11,11 @@ pub fn extract_lower(addr: Word) -> Byte {
 pub fn extract_upper(addr: Word) -> Byte {
     return (addr >> 8) as Byte;
 }
+
+pub fn bit(v: &Byte, i: &u8) -> Byte {
+    (v >> i) & 0x01
+}
+
+pub fn set_bit(v: &Byte, i: &u8) -> Byte {
+    v | (1 << i)
+}

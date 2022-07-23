@@ -806,3 +806,411 @@ fn di(c: &mut Cpu, _: String, _: String) {
 	warn!("not implemented di")
 	//	c.IRQ.Disable()
 }
+
+#[rustfmt::skip]
+pub static CP_OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
+	make_opcode! {0x00, "RLC B", "B", "", 2, rlc},
+	make_opcode! {0x01, "RLC C", "C", "", 2, rlc},
+	make_opcode! {0x02, "RLC D", "D", "", 2, rlc},
+	make_opcode! {0x03, "RLC E", "E", "", 2, rlc},
+	make_opcode! {0x04, "RLC H", "H", "", 2, rlc},
+	make_opcode! {0x05, "RLC L", "L", "", 2, rlc},
+	make_opcode! {0x06, "RLC (HL)", "(HL)", "", 4, rlc},
+	make_opcode! {0x07, "RLC A", "A", "", 2, rlc},
+	make_opcode! {0x08, "RRC B", "B", "", 2, rrc},
+	make_opcode! {0x09, "RRC C", "C", "", 2, rrc},
+	make_opcode! {0x0A, "RRC D", "D", "", 2, rrc},
+	make_opcode! {0x0B, "RRC E", "E", "", 2, rrc},
+	make_opcode! {0x0C, "RRC H", "H", "", 2, rrc},
+	make_opcode! {0x0D, "RRC L", "L", "", 2, rrc},
+	make_opcode! {0x0E, "RRC (HL)", "(HL)", "", 4, rrc},
+	make_opcode! {0x0F, "RRC A", "A", "", 2, rrc},
+	make_opcode! {0x10, "RL B", "B", "", 2, rl},
+	make_opcode! {0x11, "RL C", "C", "", 2, rl},
+	make_opcode! {0x12, "RL D", "D", "", 2, rl},
+	make_opcode! {0x13, "RL E", "E", "", 2, rl},
+	make_opcode! {0x14, "RL H", "H", "", 2, rl},
+	make_opcode! {0x15, "RL L", "L", "", 2, rl},
+	make_opcode! {0x16, "RL (HL)", "(HL)", "", 4, rl},
+	make_opcode! {0x17, "RL A", "A", "", 2, rl},
+	make_opcode! {0x18, "RR B", "B", "", 2, rr},
+	make_opcode! {0x19, "RR C", "C", "", 2, rr},
+	make_opcode! {0x1A, "RR D", "D", "", 2, rr},
+	make_opcode! {0x1B, "RR E", "E", "", 2, rr},
+	make_opcode! {0x1C, "RR H", "H", "", 2, rr},
+	make_opcode! {0x1D, "RR L", "L", "", 2, rr},
+	make_opcode! {0x1E, "RR (HL)", "(HL)", "", 4, rr},
+	make_opcode! {0x1F, "RR A", "A", "", 2, rr},
+	make_opcode! {0x20, "SLA B", "B", "", 2, sla},
+	make_opcode! {0x21, "SLA C", "C", "", 2, sla},
+	make_opcode! {0x22, "SLA D", "D", "", 2, sla},
+	make_opcode! {0x23, "SLA E", "E", "", 2, sla},
+	make_opcode! {0x24, "SLA H", "H", "", 2, sla},
+	make_opcode! {0x25, "SLA L", "L", "", 2, sla},
+	make_opcode! {0x26, "SLA (HL)", "(HL)", "", 4, sla},
+	make_opcode! {0x27, "SLA A", "A", "", 2, sla},
+	make_opcode! {0x28, "SRA B", "B", "", 2, sra},
+	make_opcode! {0x29, "SRA C", "C", "", 2, sra},
+	make_opcode! {0x2A, "SRA D", "D", "", 2, sra},
+	make_opcode! {0x2B, "SRA E", "E", "", 2, sra},
+	make_opcode! {0x2C, "SRA H", "H", "", 2, sra},
+	make_opcode! {0x2D, "SRA L", "L", "", 2, sra},
+	make_opcode! {0x2E, "SRA (HL)", "(HL)", "", 4, sra},
+	make_opcode! {0x2F, "SRA A", "A", "", 2, sra},
+	make_opcode! {0x30, "SWAP B", "B", "", 2, swap},
+	make_opcode! {0x31, "SWAP C", "C", "", 2, swap},
+	make_opcode! {0x32, "SWAP D", "D", "", 2, swap},
+	make_opcode! {0x33, "SWAP E", "E", "", 2, swap},
+	make_opcode! {0x34, "SWAP H", "H", "", 2, swap},
+	make_opcode! {0x35, "SWAP L", "L", "", 2, swap},
+	make_opcode! {0x36, "SWAP (HL)", "(HL)", "", 4, swap},
+	make_opcode! {0x37, "SWAP A", "A", "", 2, swap},
+	make_opcode! {0x38, "SRL B", "B", "", 2, srl},
+	make_opcode! {0x39, "SRL C", "C", "", 2, srl},
+	make_opcode! {0x3A, "SRL D", "D", "", 2, srl},
+	make_opcode! {0x3B, "SRL E", "E", "", 2, srl},
+	make_opcode! {0x3C, "SRL H", "H", "", 2, srl},
+	make_opcode! {0x3D, "SRL L", "L", "", 2, srl},
+	make_opcode! {0x3E, "SRL (HL)", "(HL)", "", 4, srl},
+	make_opcode! {0x3F, "SRL A", "A", "", 2, srl},
+	make_opcode! {0x40, "BIT 0,B", "0", "B", 2, bit},
+	make_opcode! {0x41, "BIT 0,C", "0", "C", 2, bit},
+	make_opcode! {0x42, "BIT 0,D", "0", "D", 2, bit},
+	make_opcode! {0x43, "BIT 0,E", "0", "E", 2, bit},
+	make_opcode! {0x44, "BIT 0,H", "0", "H", 2, bit},
+	make_opcode! {0x45, "BIT 0,L", "0", "L", 2, bit},
+	make_opcode! {0x46, "BIT 0,(HL)", "0", "(HL)", 3, bit},
+	make_opcode! {0x47, "BIT 0,A", "0", "A", 2, bit},
+	make_opcode! {0x48, "BIT 1,B", "1", "B", 2, bit},
+	make_opcode! {0x49, "BIT 1,C", "1", "C", 2, bit},
+	make_opcode! {0x4A, "BIT 1,D", "1", "D", 2, bit},
+	make_opcode! {0x4B, "BIT 1,E", "1", "E", 2, bit},
+	make_opcode! {0x4C, "BIT 1,H", "1", "H", 2, bit},
+	make_opcode! {0x4D, "BIT 1,L", "1", "L", 2, bit},
+	make_opcode! {0x4E, "BIT 1,(HL)", "1", "(HL)", 3, bit},
+	make_opcode! {0x4F, "BIT 1,A", "1", "A", 2, bit},
+	make_opcode! {0x50, "BIT 2,B", "2", "B", 2, bit},
+	make_opcode! {0x51, "BIT 2,C", "2", "C", 2, bit},
+	make_opcode! {0x52, "BIT 2,D", "2", "D", 2, bit},
+	make_opcode! {0x53, "BIT 2,E", "2", "E", 2, bit},
+	make_opcode! {0x54, "BIT 2,H", "2", "H", 2, bit},
+	make_opcode! {0x55, "BIT 2,L", "2", "L", 2, bit},
+	make_opcode! {0x56, "BIT 2,(HL)", "2", "(HL)", 3, bit},
+	make_opcode! {0x57, "BIT 2,A", "2", "A", 2, bit},
+	make_opcode! {0x58, "BIT 3,B", "3", "B", 2, bit},
+	make_opcode! {0x59, "BIT 3,C", "3", "C", 2, bit},
+	make_opcode! {0x5A, "BIT 3,D", "3", "D", 2, bit},
+	make_opcode! {0x5B, "BIT 3,E", "3", "E", 2, bit},
+	make_opcode! {0x5C, "BIT 3,H", "3", "H", 2, bit},
+	make_opcode! {0x5D, "BIT 3,L", "3", "L", 2, bit},
+	make_opcode! {0x5E, "BIT 3,(HL)", "3", "(HL)", 3, bit},
+	make_opcode! {0x5F, "BIT 3,A", "3", "A", 2, bit},
+	make_opcode! {0x60, "BIT 4,B", "4", "B", 2, bit},
+	make_opcode! {0x61, "BIT 4,C", "4", "C", 2, bit},
+	make_opcode! {0x62, "BIT 4,D", "4", "D", 2, bit},
+	make_opcode! {0x63, "BIT 4,E", "4", "E", 2, bit},
+	make_opcode! {0x64, "BIT 4,H", "4", "H", 2, bit},
+	make_opcode! {0x65, "BIT 4,L", "4", "L", 2, bit},
+	make_opcode! {0x66, "BIT 4,(HL)", "4", "(HL)", 3, bit},
+	make_opcode! {0x67, "BIT 4,A", "4", "A", 2, bit},
+	make_opcode! {0x68, "BIT 5,B", "5", "B", 2, bit},
+	make_opcode! {0x69, "BIT 5,C", "5", "C", 2, bit},
+	make_opcode! {0x6A, "BIT 5,D", "5", "D", 2, bit},
+	make_opcode! {0x6B, "BIT 5,E", "5", "E", 2, bit},
+	make_opcode! {0x6C, "BIT 5,H", "5", "H", 2, bit},
+	make_opcode! {0x6D, "BIT 5,L", "5", "L", 2, bit},
+	make_opcode! {0x6E, "BIT 5,(HL)", "5", "(HL)", 3, bit},
+	make_opcode! {0x6F, "BIT 5,A", "5", "A", 2, bit},
+	make_opcode! {0x70, "BIT 6,B", "6", "B", 2, bit},
+	make_opcode! {0x71, "BIT 6,C", "6", "C", 2, bit},
+	make_opcode! {0x72, "BIT 6,D", "6", "D", 2, bit},
+	make_opcode! {0x73, "BIT 6,E", "6", "E", 2, bit},
+	make_opcode! {0x74, "BIT 6,H", "6", "H", 2, bit},
+	make_opcode! {0x75, "BIT 6,L", "6", "L", 2, bit},
+	make_opcode! {0x76, "BIT 6,(HL)", "6", "(HL)", 3, bit},
+	make_opcode! {0x77, "BIT 6,A", "6", "A", 2, bit},
+	make_opcode! {0x78, "BIT 7,B", "7", "B", 2, bit},
+	make_opcode! {0x79, "BIT 7,C", "7", "C", 2, bit},
+	make_opcode! {0x7A, "BIT 7,D", "7", "D", 2, bit},
+	make_opcode! {0x7B, "BIT 7,E", "7", "E", 2, bit},
+	make_opcode! {0x7C, "BIT 7,H", "7", "H", 2, bit},
+	make_opcode! {0x7D, "BIT 7,L", "7", "L", 2, bit},
+	make_opcode! {0x7E, "BIT 7,(HL)", "7", "(HL)", 3, bit},
+	make_opcode! {0x7F, "BIT 7,A", "7", "A", 2, bit},
+	make_opcode! {0x80, "RES 0,B", "0", "B", 2, res},
+	make_opcode! {0x81, "RES 0,C", "0", "C", 2, res},
+	make_opcode! {0x82, "RES 0,D", "0", "D", 2, res},
+	make_opcode! {0x83, "RES 0,E", "0", "E", 2, res},
+	make_opcode! {0x84, "RES 0,H", "0", "H", 2, res},
+	make_opcode! {0x85, "RES 0,L", "0", "L", 2, res},
+	make_opcode! {0x86, "RES 0,(HL)", "0", "(HL)",  4, res},
+	make_opcode! {0x87, "RES 0,A", "0", "A", 2, res},
+	make_opcode! {0x88, "RES 1,B", "1", "B", 2, res},
+	make_opcode! {0x89, "RES 1,C", "1", "C", 2, res},
+	make_opcode! {0x8A, "RES 1,D", "1", "D", 2, res},
+	make_opcode! {0x8B, "RES 1,E", "1", "E", 2, res},
+	make_opcode! {0x8C, "RES 1,H", "1", "H", 2, res},
+	make_opcode! {0x8D, "RES 1,L", "1", "L", 2, res},
+	make_opcode! {0x8E, "RES 1,(HL)", "1", "(HL)",  4, res},
+	make_opcode! {0x8F, "RES 1,A", "1", "A", 2, res},
+	make_opcode! {0x90, "RES 2,B", "2", "B", 2, res},
+	make_opcode! {0x91, "RES 2,C", "2", "C", 2, res},
+	make_opcode! {0x92, "RES 2,D", "2", "D", 2, res},
+	make_opcode! {0x93, "RES 2,E", "2", "E", 2, res},
+	make_opcode! {0x94, "RES 2,H", "2", "H", 2, res},
+	make_opcode! {0x95, "RES 2,L", "2", "L", 2, res},
+	make_opcode! {0x96, "RES 2,(HL)", "2", "(HL)",  4, res},
+	make_opcode! {0x97, "RES 2,A", "2", "A", 2, res},
+	make_opcode! {0x98, "RES 3,B", "3", "B", 2, res},
+	make_opcode! {0x99, "RES 3,C", "3", "C", 2, res},
+	make_opcode! {0x9A, "RES 3,D", "3", "D", 2, res},
+	make_opcode! {0x9B, "RES 3,E", "3", "E", 2, res},
+	make_opcode! {0x9C, "RES 3,H", "3", "H", 2, res},
+	make_opcode! {0x9D, "RES 3,L", "3", "L", 2, res},
+	make_opcode! {0x9E, "RES 3,(HL)", "3", "(HL)",  4, res},
+	make_opcode! {0x9F, "RES 3,A", "3", "A", 2, res},
+	make_opcode! {0xA0, "RES 4,B", "4", "B", 2, res},
+	make_opcode! {0xA1, "RES 4,C", "4", "C", 2, res},
+	make_opcode! {0xA2, "RES 4,D", "4", "D", 2, res},
+	make_opcode! {0xA3, "RES 4,E", "4", "E", 2, res},
+	make_opcode! {0xA4, "RES 4,H", "4", "H", 2, res},
+	make_opcode! {0xA5, "RES 4,L", "4", "L", 2, res},
+	make_opcode! {0xA6, "RES 4,(HL)", "4", "(HL)",  4, res},
+	make_opcode! {0xA7, "RES 4,A", "4", "A", 2, res},
+	make_opcode! {0xA8, "RES 5,B", "5", "B", 2, res},
+	make_opcode! {0xA9, "RES 5,C", "5", "C", 2, res},
+	make_opcode! {0xAA, "RES 5,D", "5", "D", 2, res},
+	make_opcode! {0xAB, "RES 5,E", "5", "E", 2, res},
+	make_opcode! {0xAC, "RES 5,H", "5", "H", 2, res},
+	make_opcode! {0xAD, "RES 5,L", "5", "L", 2, res},
+	make_opcode! {0xAE, "RES 5,(HL)", "5", "(HL)",  4, res},
+	make_opcode! {0xAF, "RES 5,A", "5", "A", 2, res},
+	make_opcode! {0xB0, "RES 6,B", "6", "B", 2, res},
+	make_opcode! {0xB1, "RES 6,C", "6", "C", 2, res},
+	make_opcode! {0xB2, "RES 6,D", "6", "D", 2, res},
+	make_opcode! {0xB3, "RES 6,E", "6", "E", 2, res},
+	make_opcode! {0xB4, "RES 6,H", "6", "H", 2, res},
+	make_opcode! {0xB5, "RES 6,L", "6", "L", 2, res},
+	make_opcode! {0xB6, "RES 6,(HL)", "6", "(HL)",  4, res},
+	make_opcode! {0xB7, "RES 6,A", "6", "A", 2, res},
+	make_opcode! {0xB8, "RES 7,B", "7", "B", 2, res},
+	make_opcode! {0xB9, "RES 7,C", "7", "C", 2, res},
+	make_opcode! {0xBA, "RES 7,D", "7", "D", 2, res},
+	make_opcode! {0xBB, "RES 7,E", "7", "E", 2, res},
+	make_opcode! {0xBC, "RES 7,H", "7", "H", 2, res},
+	make_opcode! {0xBD, "RES 7,L", "7", "L", 2, res},
+	make_opcode! {0xBE, "RES 7,(HL)", "7", "(HL)",  4, res},
+	make_opcode! {0xBF, "RES 7,A", "7", "A", 2, res},
+	make_opcode! {0xC0, "SET 0,B", "0", "B", 2, set},
+	make_opcode! {0xC1, "SET 0,C", "0", "C", 2, set},
+	make_opcode! {0xC2, "SET 0,D", "0", "D", 2, set},
+	make_opcode! {0xC3, "SET 0,E", "0", "E", 2, set},
+	make_opcode! {0xC4, "SET 0,H", "0", "H", 2, set},
+	make_opcode! {0xC5, "SET 0,L", "0", "L", 2, set},
+	make_opcode! {0xC6, "SET 0,(HL)", "0", "(HL)",  4, set},
+	make_opcode! {0xC7, "SET 0,A", "0", "A", 2, set},
+	make_opcode! {0xC8, "SET 1,B", "1", "B", 2, set},
+	make_opcode! {0xC9, "SET 1,C", "1", "C", 2, set},
+	make_opcode! {0xCA, "SET 1,D", "1", "D", 2, set},
+	make_opcode! {0xCB, "SET 1,E", "1", "E", 2, set},
+	make_opcode! {0xCC, "SET 1,H", "1", "H", 2, set},
+	make_opcode! {0xCD, "SET 1,L", "1", "L", 2, set},
+	make_opcode! {0xCE, "SET 1,(HL)", "1", "(HL)",  4, set},
+	make_opcode! {0xCF, "SET 1,A", "1", "A", 2, set},
+	make_opcode! {0xD0, "SET 2,B", "2", "B", 2, set},
+	make_opcode! {0xD1, "SET 2,C", "2", "C", 2, set},
+	make_opcode! {0xD2, "SET 2,D", "2", "D", 2, set},
+	make_opcode! {0xD3, "SET 2,E", "2", "E", 2, set},
+	make_opcode! {0xD4, "SET 2,H", "2", "H", 2, set},
+	make_opcode! {0xD5, "SET 2,L", "2", "L", 2, set},
+	make_opcode! {0xD6, "SET 2,(HL)", "2", "(HL)",  4, set},
+	make_opcode! {0xD7, "SET 2,A", "2", "A", 2, set},
+	make_opcode! {0xD8, "SET 3,B", "3", "B", 2, set},
+	make_opcode! {0xD9, "SET 3,C", "3", "C", 2, set},
+	make_opcode! {0xDA, "SET 3,D", "3", "D", 2, set},
+	make_opcode! {0xDB, "SET 3,E", "3", "E", 2, set},
+	make_opcode! {0xDC, "SET 3,H", "3", "H", 2, set},
+	make_opcode! {0xDD, "SET 3,L", "3", "L", 2, set},
+	make_opcode! {0xDE, "SET 3,(HL)", "3", "(HL)",  4, set},
+	make_opcode! {0xDF, "SET 3,A", "3", "A", 2, set},
+	make_opcode! {0xE0, "SET 4,B", "4", "B", 2, set},
+	make_opcode! {0xE1, "SET 4,C", "4", "C", 2, set},
+	make_opcode! {0xE2, "SET 4,D", "4", "D", 2, set},
+	make_opcode! {0xE3, "SET 4,E", "4", "E", 2, set},
+	make_opcode! {0xE4, "SET 4,H", "4", "H", 2, set},
+	make_opcode! {0xE5, "SET 4,L", "4", "L", 2, set},
+	make_opcode! {0xE6, "SET 4,(HL)", "4", "(HL)",  4, set},
+	make_opcode! {0xE7, "SET 4,A", "4", "A", 2, set},
+	make_opcode! {0xE8, "SET 5,B", "5", "B", 2, set},
+	make_opcode! {0xE9, "SET 5,C", "5", "C", 2, set},
+	make_opcode! {0xEA, "SET 5,D", "5", "D", 2, set},
+	make_opcode! {0xEB, "SET 5,E", "5", "E", 2, set},
+	make_opcode! {0xEC, "SET 5,H", "5", "H", 2, set},
+	make_opcode! {0xED, "SET 5,L", "5", "L", 2, set},
+	make_opcode! {0xEE, "SET 5,(HL)", "5", "(HL)",  4, set},
+	make_opcode! {0xEF, "SET 5,A", "5", "A", 2, set},
+	make_opcode! {0xF0, "SET 6,B", "6", "B", 2, set},
+	make_opcode! {0xF1, "SET 6,C", "6", "C", 2, set},
+	make_opcode! {0xF2, "SET 6,D", "6", "D", 2, set},
+	make_opcode! {0xF3, "SET 6,E", "6", "E", 2, set},
+	make_opcode! {0xF4, "SET 6,H", "6", "H", 2, set},
+	make_opcode! {0xF5, "SET 6,L", "6", "L", 2, set},
+	make_opcode! {0xF6, "SET 6,(HL)", "6", "(HL)",  4, set},
+	make_opcode! {0xF7, "SET 6,A", "6", "A", 2, set},
+	make_opcode! {0xF8, "SET 7,B", "7", "B", 2, set},
+	make_opcode! {0xF9, "SET 7,C", "7", "C", 2, set},
+	make_opcode! {0xFA, "SET 7,D", "7", "D", 2, set},
+	make_opcode! {0xFB, "SET 7,E", "7", "E", 2, set},
+	make_opcode! {0xFC, "SET 7,H", "7", "H", 2, set},
+	make_opcode! {0xFD, "SET 7,L", "7", "L", 2, set},
+	make_opcode! {0xFE, "SET 7,(HL)", "7", "(HL)",  4, set},
+	make_opcode! {0xFF, "SET 7,A", "7", "A", 2, set},
+]);
+
+
+fn rlc(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let value = r.rotate_left(1);
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x80 == 0x80;
+
+	c.store(&r1, value);
+}
+
+fn rrc(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let value = r.rotate_right(1);
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x01 == 0x01;
+
+	c.store(&r1, value);
+}
+
+fn rl(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let carry = c.reg.F.c;
+	let mut value = r << 1;
+
+	if carry {
+		value += 1;
+	}
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x80 == 0x80;
+
+	c.store(&r1, value);
+}
+
+fn rr(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let carry = c.reg.F.c;
+	let mut value = r >> 1;
+
+	if carry {
+		value |= 0x80;
+	}
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x01 == 0x01;
+
+	c.store(&r1, value);
+}
+
+fn sla(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let value = r << 1;
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x80 == 0x80;
+
+	c.store(&r1, value);
+}
+
+fn sra(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	
+	let bit7 = crate::util::bit(&(r as Byte), &7);
+	let mut value = r >> 1;
+
+	if bit7 == 1 {
+		value |= 0x80;
+	}
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x01 == 0x01;
+
+	c.store(&r1, value);
+}
+
+fn swap(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+
+	let upper = ((r >> 4) & 0x0F) as Byte;
+	let lower = (r & 0x0F) as Byte;
+
+	let value = (lower << 4) | upper;
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = false;
+
+	c.store(&r1, value as Word);
+}
+
+
+fn srl(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let value = r >> 1;
+
+	c.reg.F.z = value == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x01 == 0x01;
+
+	c.store(&r1, value);
+}
+
+fn bit(c: &mut Cpu, str_i: String, r1: String) {
+	let r = c.load(&r1);
+	let i: u8 = str_i.parse().unwrap();
+	let bit = crate::util::bit(&(r as Byte), &i);
+
+	c.reg.F.z = bit == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = true;
+}
+
+fn res(c: &mut Cpu, str_i: String, r1: String) {
+	let r = c.load(&r1);
+	let i: u8 = str_i.parse().unwrap();
+	let bit = crate::util::bit(&(r as Byte), &i);
+
+	let value = r & (!(1 << bit));
+
+	c.store(&r1, value);
+}
+
+fn set(c: &mut Cpu, str_i: String, r1: String) {
+	let r = c.load(&r1);
+	let i: u8 = str_i.parse().unwrap();
+	let bit = crate::util::bit(&(r as Byte), &i);
+
+	let value = r | (1 << bit);
+
+	c.store(&r1, value);
+}
