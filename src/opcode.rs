@@ -1,4 +1,4 @@
-use crate::{cpu::Cpu, traits::*, types::*, util::*};
+use crate::{constant::*, cpu::Cpu, traits::*, types::*, util::*};
 use log::warn;
 use once_cell::sync::Lazy;
 use std::fmt;
@@ -40,8 +40,8 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
     make_opcode! {0x00, "NOP", "", "", 1, nop},
 	make_opcode! {0x01, "LD BC,d16", "BC", "dd",   3, ld},
 	make_opcode! {0x02, "LD (BC),A", "(BC)", "A",  2, ld},
-	make_opcode! {0x03, "INC BC", "BC", "",   2, incr16},
-	make_opcode! {0x04, "INC B", "B", "",   1, incr},
+	make_opcode! {0x03, "INC BC", "BC", "",   2, inc},
+	make_opcode! {0x04, "INC B", "B", "",   1, inc},
 	make_opcode! {0x05, "DEC B", "B", "",   1, decr},
 	make_opcode! {0x06, "LD B,d8", "B", "d",   2, ld},
 	make_opcode! {0x07, "RLCA", "",  "",   1, empty},
@@ -49,15 +49,15 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x09, "ADD HL,BC", "HL", "BC",  2, addr16r16},
 	make_opcode! {0x0A, "LD A,(BC)", "A", "(BC)",  2, ld},
 	make_opcode! {0x0B, "DEC BC", "BC", "",   2, decr16},
-	make_opcode! {0x0C, "INC C", "C", "",   1, incr},
+	make_opcode! {0x0C, "INC C", "C", "",   1, inc},
 	make_opcode! {0x0D, "DEC C", "C", "",   1, decr},
 	make_opcode! {0x0E, "LD C,d8", "C", "d",   2, ld},
 	make_opcode! {0x0F, "RRCA", "",  "",   1, empty},
 	make_opcode! {0x10, "STOP 0", "",  "",   1, stop},
 	make_opcode! {0x11, "LD DE,d16", "DE", "dd",   3, ld},
 	make_opcode! {0x12, "LD (DE),A", "(DE)", "A",  2, ld},
-	make_opcode! {0x13, "INC DE", "DE", "",   2, incr16},
-	make_opcode! {0x14, "INC D", "D", "",   1, incr},
+	make_opcode! {0x13, "INC DE", "DE", "",   2, inc},
+	make_opcode! {0x14, "INC D", "D", "",   1, inc},
 	make_opcode! {0x15, "DEC D", "D", "",   1, decr},
 	make_opcode! {0x16, "LD D,d8", "D", "d",   2, ld},
 	make_opcode! {0x17, "RLA", "",  "",   1, empty},
@@ -65,15 +65,15 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x19, "ADD HL,DE", "HL", "DE",  2, addr16r16},
 	make_opcode! {0x1A, "LD A,(DE)", "A", "(DE)",  2, ld},
 	make_opcode! {0x1B, "DEC DE", "DE", "",   2, decr16},
-	make_opcode! {0x1C, "INC E", "E", "",   1, incr},
+	make_opcode! {0x1C, "INC E", "E", "",   1, inc},
 	make_opcode! {0x1D, "DEC E", "E", "",   1, decr},
 	make_opcode! {0x1E, "LD E,d8", "E", "d",   2, ld},
 	make_opcode! {0x1F, "RRA", "",  "",   1, empty},
 	make_opcode! {0x20, "JR NZ,r8", "Z", "",   2, jrnfr8},
 	make_opcode! {0x21, "LD HL,d16", "HL", "dd",   3, ld},
 	make_opcode! {0x22, "LD (HL+),A", "(HLI)", "A",  2, ld},
-	make_opcode! {0x23, "INC HL", "HL", "",   2, incr16},
-	make_opcode! {0x24, "INC H", "H", "",   1, incr},
+	make_opcode! {0x23, "INC HL", "HL", "",   2, inc},
+	make_opcode! {0x24, "INC H", "H", "",   1, inc},
 	make_opcode! {0x25, "DEC H", "H", "",   1, decr},
 	make_opcode! {0x26, "LD H,d8", "H", "d",   2, ld},
 	make_opcode! {0x27, "DAA", "",  "",   1, empty},
@@ -81,15 +81,15 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x29, "ADD HL,HL", "HL", "HL",  2, addr16r16},
 	make_opcode! {0x2A, "LD A,(HL+)", "A", "(HLI)",  2, ld},
 	make_opcode! {0x2B, "DEC HL", "HL", "",   2, decr16},
-	make_opcode! {0x2C, "INC L", "L", "",   1, incr},
+	make_opcode! {0x2C, "INC L", "L", "",   1, inc},
 	make_opcode! {0x2D, "DEC L", "L", "",   1, decr},
 	make_opcode! {0x2E, "LD L,d8", "L", "d",   2, ld},
 	make_opcode! {0x2F, "CPL", "",  "",   1, cpl},
 	make_opcode! {0x30, "JR NC,r8", "C", "",   2, jrnfr8},
 	make_opcode! {0x31, "LD SP,d16", "SP", "dd",   3, ld},
 	make_opcode! {0x32, "LD (HL-),A", "(HLD)", "A",  2, ld},
-	make_opcode! {0x33, "INC SP", "SP", "",   2, incr16},
-	make_opcode! {0x34, "INC (HL)", "HL", "",   3, incm16},
+	make_opcode! {0x33, "INC SP", "SP", "",   2, inc},
+	make_opcode! {0x34, "INC (HL)", "HL", "",   3, inc},
 	make_opcode! {0x35, "DEC (HL)", "HL", "",   3, decm16},
 	make_opcode! {0x36, "LD (HL),d8", "(HL)", "d",   3, ld},
 	make_opcode! {0x37, "SCF", "",  "",   1, scf},
@@ -97,7 +97,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x39, "ADD HL,SP", "HL", "SP",  2, addr16r16},
 	make_opcode! {0x3A, "LD A,(HL-)", "A", "(HLD)",  2, ld},
 	make_opcode! {0x3B, "DEC SP", "SP", "",   2, decr16},
-	make_opcode! {0x3C, "INC A", "A", "",   1, incr},
+	make_opcode! {0x3C, "INC A", "A", "",   1, inc},
 	make_opcode! {0x3D, "DEC A", "A", "",   1, decr},
 	make_opcode! {0x3E, "LD A,d8", "A", "d",   2, ld},
 	make_opcode! {0x3F, "CCF", "",  "",   1, ccf},
@@ -312,7 +312,6 @@ fn ld(c: &mut Cpu, r1: String, r2: String) {
 	c.store(&r1, value);
 }
 
-
 // LD r1, r2+d
 fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
 	// d = c.fetch();
@@ -325,35 +324,22 @@ fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
 	// c.reg.setZNHC(false, false, carry&0x10 == 0x10, carry&0x100 == 0x100)
 }
 
-
 // arithmetic
-fn incr(c: &mut Cpu, r8: String, _: String) {
-	let r = c.reg.r(&&r8);
+fn inc(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&r1);
+	let value = r.wrapping_add(0x01);
 
-	let v = r.wrapping_add(0x01);
-
-	c.reg.F.z = v == 0;
-	c.reg.F.n = false;
-	c.reg.F.h = (r ^ v) & 0x10 != 0;
-
-	c.reg.r_mut(&&r8, v);
-}
-
-fn incr16(c: &mut Cpu, r16: String, _: String) {
-	let r = c.reg.r16(&r16);
-	let v = r.wrapping_add(1);
-	c.reg.r16_mut(&r16, v);
-}
-
-fn incm16(c: &mut Cpu, r16: String, _: String) {
-	let r = c.bus.read(c.reg.r16(&r16));
-	let v = r.wrapping_add(1);
-
-	c.reg.F.z = v == 0;
-	c.reg.F.n = false;
-	c.reg.F.h = (r ^ v) & 0x10 != 0;
-
-	c.bus.write(c.reg.r16(&r16), v);
+	if R_ARR.contains(&r1.as_str()) {
+		c.reg.F.z = value == 0;
+		c.reg.F.n = false;
+		c.reg.F.h = (r ^ value) & 0x10 != 0;
+	} else if MM_ARR.contains(&r1.as_str()) {
+		c.reg.F.z = value == 0;
+		c.reg.F.n = false;
+		c.reg.F.h = (r ^ value) & 0x10 != 0;
+	}
+	
+	c.store(&r1, value);
 }
 
 fn decr(c: &mut Cpu, r8: String, _: String) {
@@ -1067,7 +1053,6 @@ pub static CB_OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFF, "SET 7,A", "7", "A", 2, set},
 ]);
 
-
 fn rlc(c: &mut Cpu, r1: String, _: String) {
 	let r = c.load(&r1);
 	let value = r.rotate_left(1);
@@ -1140,7 +1125,6 @@ fn sla(c: &mut Cpu, r1: String, _: String) {
 
 fn sra(c: &mut Cpu, r1: String, _: String) {
 	let r = c.load(&r1);
-	
 	let bit7 = crate::util::bit(&(r as Byte), &7);
 	let mut value = r >> 1;
 
@@ -1171,7 +1155,6 @@ fn swap(c: &mut Cpu, r1: String, _: String) {
 
 	c.store(&r1, value as Word);
 }
-
 
 fn srl(c: &mut Cpu, r1: String, _: String) {
 	let r = c.load(&r1);
