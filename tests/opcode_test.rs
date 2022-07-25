@@ -244,6 +244,42 @@ speculate! {
                 cpu = cb_helper(cpu, opcode, 0b00100000, 0b01000000, 0x00);
             }
         }
+
+        describe "rr" {
+            struct Args {
+                opcode: Byte,
+                r1: String,
+            }
+            #[rstest(arg,
+                case(Args{opcode: 0x18, r1: "B".to_string()}),
+                case(Args{opcode: 0x19, r1: "C".to_string()}),
+                case(Args{opcode: 0x1A, r1: "D".to_string()}),
+                case(Args{opcode: 0x1B, r1: "E".to_string()}),
+                case(Args{opcode: 0x1C, r1: "H".to_string()}),
+                case(Args{opcode: 0x1D, r1: "L".to_string()}),
+                case(Args{opcode: 0x1E, r1: "(HL)".to_string()}),
+                case(Args{opcode: 0x1F, r1: "A".to_string()}),
+            )]
+            fn test(arg: Args) {
+                let mut cpu = common::fixture::setup_cpu();
+
+                let opcode = &CB_OPCODES[arg.opcode as usize];
+                assert_eq!(opcode.r1, arg.r1);
+
+                cpu.reg.F.c = true;
+                cpu = cb_helper(cpu, opcode, 0b10010001, 0b11001000, 0x10);
+                cpu.reg.F.c = false;
+                cpu = cb_helper(cpu, opcode, 0b10010001, 0b01001000, 0x10);
+                cpu.reg.F.c = true;
+                cpu = cb_helper(cpu, opcode, 0b00000000, 0b10000000, 0x00);
+                cpu.reg.F.c = false;
+                cpu = cb_helper(cpu, opcode, 0b00000000, 0b00000000, 0x80);
+                cpu.reg.F.c = true;
+                cpu = cb_helper(cpu, opcode, 0b00100000, 0b10010000, 0x00);
+                cpu.reg.F.c = false;
+                cpu = cb_helper(cpu, opcode, 0b00100000, 0b00010000, 0x00);
+            }
+        }
     }
 }
 
