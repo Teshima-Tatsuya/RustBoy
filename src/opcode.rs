@@ -983,19 +983,19 @@ pub static CB_OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 ]);
 
 fn rlc(c: &mut Cpu, r1: String, _: String) {
-	let r = c.load(&r1);
+	let r = c.load(&r1) as Byte;
 	let value = r.rotate_left(1);
 
 	c.reg.F.z = value == 0;
 	c.reg.F.n = false;
 	c.reg.F.h = false;
-	c.reg.F.c = r & 0x80 == 0x80;
+	c.reg.F.c = (r & 0x80) == 0x80;
 
-	c.store(&r1, value);
+	c.store(&r1, value as Word);
 }
 
 fn rrc(c: &mut Cpu, r1: String, _: String) {
-	let r = c.load(&r1);
+	let r = c.load(&r1) as Byte;
 	let value = r.rotate_right(1);
 
 	c.reg.F.z = value == 0;
@@ -1003,7 +1003,7 @@ fn rrc(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.h = false;
 	c.reg.F.c = r & 0x01 == 0x01;
 
-	c.store(&r1, value);
+	c.store(&r1, value as Word);
 }
 
 fn rl(c: &mut Cpu, r1: String, _: String) {
