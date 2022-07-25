@@ -280,6 +280,60 @@ speculate! {
                 cpu = cb_helper(cpu, opcode, 0b00100000, 0b00010000, 0x00);
             }
         }
+
+        describe "sla" {
+            struct Args {
+                opcode: Byte,
+                r1: String,
+            }
+            #[rstest(arg,
+                case(Args{opcode: 0x20, r1: "B".to_string()}),
+                case(Args{opcode: 0x21, r1: "C".to_string()}),
+                case(Args{opcode: 0x22, r1: "D".to_string()}),
+                case(Args{opcode: 0x23, r1: "E".to_string()}),
+                case(Args{opcode: 0x24, r1: "H".to_string()}),
+                case(Args{opcode: 0x25, r1: "L".to_string()}),
+                case(Args{opcode: 0x26, r1: "(HL)".to_string()}),
+                case(Args{opcode: 0x27, r1: "A".to_string()}),
+            )]
+            fn test(arg: Args) {
+                let mut cpu = common::fixture::setup_cpu();
+
+                let opcode = &CB_OPCODES[arg.opcode as usize];
+                assert_eq!(opcode.r1, arg.r1);
+
+                cpu = cb_helper(cpu, opcode, 0b10010000, 0b00100000, 0x10);
+                cpu = cb_helper(cpu, opcode, 0b00000000, 0b00000000, 0x80);
+                cpu = cb_helper(cpu, opcode, 0b00100000, 0b01000000, 0x00);
+            }
+        }
+
+        describe "sra" {
+            struct Args {
+                opcode: Byte,
+                r1: String,
+            }
+            #[rstest(arg,
+                case(Args{opcode: 0x28, r1: "B".to_string()}),
+                case(Args{opcode: 0x29, r1: "C".to_string()}),
+                case(Args{opcode: 0x2A, r1: "D".to_string()}),
+                case(Args{opcode: 0x2B, r1: "E".to_string()}),
+                case(Args{opcode: 0x2C, r1: "H".to_string()}),
+                case(Args{opcode: 0x2D, r1: "L".to_string()}),
+                case(Args{opcode: 0x2E, r1: "(HL)".to_string()}),
+                case(Args{opcode: 0x2F, r1: "A".to_string()}),
+            )]
+            fn test(arg: Args) {
+                let mut cpu = common::fixture::setup_cpu();
+
+                let opcode = &CB_OPCODES[arg.opcode as usize];
+                assert_eq!(opcode.r1, arg.r1);
+
+                cpu = cb_helper(cpu, opcode, 0b10010001, 0b11001000, 0x10);
+                cpu = cb_helper(cpu, opcode, 0b00000000, 0b00000000, 0x80);
+                cpu = cb_helper(cpu, opcode, 0b00100000, 0b00010000, 0x00);
+            }
+        }
     }
 }
 
