@@ -579,6 +579,102 @@ speculate! {
                 assert_eq!(cpu.load(&opcode.r2), 0b00000000);
             }
         }
+        
+        describe "set" {
+            struct Args {
+                opcode: Byte,
+                i: String,
+                r1: String,
+            }
+            #[rstest(arg,
+                case(Args{opcode: 0xC0, i: "0".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xC1, i: "0".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xC2, i: "0".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xC3, i: "0".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xC4, i: "0".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xC5, i: "0".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xC6, i: "0".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xC7, i: "0".to_string(), r1: "A".to_string()}),
+                case(Args{opcode: 0xC8, i: "1".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xC9, i: "1".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xCA, i: "1".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xCB, i: "1".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xCC, i: "1".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xCD, i: "1".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xCE, i: "1".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xCF, i: "1".to_string(), r1: "A".to_string()}),
+                case(Args{opcode: 0xD0, i: "2".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xD1, i: "2".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xD2, i: "2".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xD3, i: "2".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xD4, i: "2".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xD5, i: "2".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xD6, i: "2".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xD7, i: "2".to_string(), r1: "A".to_string()}),
+                case(Args{opcode: 0xD8, i: "3".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xD9, i: "3".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xDA, i: "3".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xDB, i: "3".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xDC, i: "3".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xDD, i: "3".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xDE, i: "3".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xDF, i: "3".to_string(), r1: "A".to_string()}),
+                case(Args{opcode: 0xE0, i: "4".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xE1, i: "4".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xE2, i: "4".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xE3, i: "4".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xE4, i: "4".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xE5, i: "4".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xE6, i: "4".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xE7, i: "4".to_string(), r1: "A".to_string()}),
+                case(Args{opcode: 0xE8, i: "5".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xE9, i: "5".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xEA, i: "5".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xEB, i: "5".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xEC, i: "5".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xED, i: "5".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xEE, i: "5".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xEF, i: "5".to_string(), r1: "A".to_string()}),
+                case(Args{opcode: 0xF0, i: "6".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xF1, i: "6".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xF2, i: "6".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xF3, i: "6".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xF4, i: "6".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xF5, i: "6".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xF6, i: "6".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xF7, i: "6".to_string(), r1: "A".to_string()}),
+                case(Args{opcode: 0xF8, i: "7".to_string(), r1: "B".to_string()}),
+                case(Args{opcode: 0xF9, i: "7".to_string(), r1: "C".to_string()}),
+                case(Args{opcode: 0xFA, i: "7".to_string(), r1: "D".to_string()}),
+                case(Args{opcode: 0xFB, i: "7".to_string(), r1: "E".to_string()}),
+                case(Args{opcode: 0xFC, i: "7".to_string(), r1: "H".to_string()}),
+                case(Args{opcode: 0xFD, i: "7".to_string(), r1: "L".to_string()}),
+                case(Args{opcode: 0xFE, i: "7".to_string(), r1: "(HL)".to_string()}),
+                case(Args{opcode: 0xFF, i: "7".to_string(), r1: "A".to_string()}),
+            )]
+            fn test(arg: Args) {
+                let mut cpu = common::fixture::setup_cpu();
+
+                let opcode = &CB_OPCODES[arg.opcode as usize];
+                assert_eq!(opcode.r1, arg.i);
+                assert_eq!(opcode.r2, arg.r1);
+
+                let mut before: Byte;
+                let i: Byte = arg.i.parse().unwrap();
+
+                before = 0b00000000u8 | 1 << i;
+                cpu.store(&opcode.r2, before as Word);
+                let handler = &opcode.handler;
+                handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                assert_eq!(rust_boy::util::bit(&(cpu.load(&opcode.r2) as Byte), &i), 1);
+
+                before = 0b00000000u8;
+                cpu.store(&opcode.r2, before as Word);
+                let handler = &opcode.handler;
+                handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                assert_eq!(rust_boy::util::bit(&(cpu.load(&opcode.r2) as Byte), &i), 1);
+            }
+        }
     }
 }
 
