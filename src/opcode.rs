@@ -1110,9 +1110,8 @@ fn bit(c: &mut Cpu, str_i: String, r1: String) {
 fn res(c: &mut Cpu, str_i: String, r1: String) {
 	let r = c.load(&r1);
 	let i: u8 = str_i.parse().unwrap();
-	let bit = crate::util::bit(&(r as Byte), &i);
 
-	let value = r & (!(1 << bit));
+	let value = r & !(1 << i);
 
 	c.store(&r1, value);
 }
