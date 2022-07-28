@@ -233,7 +233,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xC1, "POP BC", "BC", "",   3, pop},
 	make_opcode! {0xC2, "JP NZ,a16", "NZ", "aa",   3, jp},
 	make_opcode! {0xC3, "JP a16", "aa",  "",   4, jp},
-	make_opcode! {0xC4, "CALL NZ,a16", "Z", "",   3, callnf},
+	make_opcode! {0xC4, "CALL NZ,a16", "NZ", "aa",   3, call},
 	make_opcode! {0xC5, "PUSH BC", "BC", "",   4, push},
 	make_opcode! {0xC6, "ADD A,d8", "A", "",   2, addd8},
 	make_opcode! {0xC7, "RST 00H", "0x00", "",   4, rst},
@@ -241,7 +241,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xC9, "RET", "",  "",   4, ret},
 	make_opcode! {0xCA, "JP Z,a16", "Z", "aa",   3, jp},
 	make_opcode! {0xCB, "PREFIX CB", "",  "",   1, empty},
-	make_opcode! {0xCC, "CALL Z,a16", "Z", "aa",   3, callf},
+	make_opcode! {0xCC, "CALL Z,a16", "Z", "aa",   3, call},
 	make_opcode! {0xCD, "CALL a16", "aa",  "",   6, call},
 	make_opcode! {0xCE, "ADC A,d8", "A", "",   2, adcd},
 	make_opcode! {0xCF, "RST 08H", "0x08", "",   4, rst},
@@ -249,7 +249,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xD1, "POP DE", "DE", "",   3, pop},
 	make_opcode! {0xD2, "JP NC,a16", "NC", "aa",   3, jp},
 	make_opcode! {0xD3, "EMPTY", "",  "",   0,  empty},
-	make_opcode! {0xD4, "CALL NC,a16", "C", "",   3, callnf},
+	make_opcode! {0xD4, "CALL NC,a16", "NC", "aa",   3, call},
 	make_opcode! {0xD5, "PUSH DE", "DE", "",   4, push},
 	make_opcode! {0xD6, "SUB d8", "",  "",   2, subd8},
 	make_opcode! {0xD7, "RST 10H", "0x10", "",   4, rst},
@@ -257,7 +257,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xD9, "RETI", "",  "",   4, reti},
 	make_opcode! {0xDA, "JP C,a16", "C", "aa",   3, jp},
 	make_opcode! {0xDB, "EMPTY", "",  "",   0,  empty},
-	make_opcode! {0xDC, "CALL C,a16", "C", "",   3, callf},
+	make_opcode! {0xDC, "CALL C,a16", "C", "aa",   3, call},
 	make_opcode! {0xDD, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xDE, "SBC A,d8", "A", "",   2, sbcd},
 	make_opcode! {0xDF, "RST 18H", "0x18", "",   4, rst},
@@ -558,6 +558,21 @@ fn jr(c: &mut Cpu, r1: String, r2: String) {
 	}
 }
 
+fn call(c: &mut Cpu, r1: String, r2: String) {
+	let addr: Word;
+	if COND_ARR.contains(&r1.as_str()) {
+		addr = c.load(&r2);
+		if c.cond(&r1) {
+			c.push_pc();
+			c.reg.PC = addr;
+		}
+	} else {
+		addr = c.load(&r1);
+		c.push_pc();
+		c.reg.PC = addr;
+	}
+}
+
 // ret
 fn ret(c: &mut Cpu, _: String, _: String) {
 	c.pop_pc()
@@ -609,31 +624,6 @@ fn pop(c: &mut Cpu, r: String, _: String) {
 
 	let value = ((upper as i16) << 8 | (lower as i16)) as Word;
 	c.reg.r16_mut(&r, value);
-}
-
-// -----call-----
-fn _call(c: &mut Cpu, dest: Word) {
-	c.push_pc();
-	c.reg.PC = dest
-}
-
-fn call(c: &mut Cpu, _: String, _: String) {
-	let dest = c.fetch16();
-	_call(c, dest)
-}
-
-fn callf(c: &mut Cpu, flag: String, _: String) {
-	let dest = c.fetch16();
-	if c.reg.F.f(flag) {
-		_call(c, dest)
-	}
-}
-
-fn callnf(c: &mut Cpu, flag: String, _: String) {
-	let dest = c.fetch16();
-	if !c.reg.F.f(flag) {
-		_call(c, dest)
-	}
 }
 
 // -----misc-----

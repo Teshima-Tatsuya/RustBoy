@@ -231,6 +231,7 @@ speculate! {
                 }
             }
         }
+
         describe "JR" {
             describe "jr" {
                 struct Args {
@@ -305,6 +306,95 @@ speculate! {
                         assert_eq!(cpu.load(&"PC".to_string()), 0x00FF);
                     } else {
                         assert_eq!(cpu.load(&"PC".to_string()), 0x0101);
+                    }
+                }
+            }
+        }
+
+        describe "CALL" {
+            describe "call" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xCD, r1: "aa".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    cpu.reg.PC = 0x5678;
+                    cpu.reg.SP = 0xFFFC;
+                    cpu.bus.write(cpu.reg.PC,  0x34);
+                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
+                    assert_eq!(cpu.load(&"SP".to_string()), 0xFFFA);
+                    assert_eq!(cpu.bus.read(0xFFFA), 0x7A);
+                    assert_eq!(cpu.bus.read(0xFFFB), 0x56);
+                }
+            }
+
+            describe "callf" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xC4, r1: "NZ".to_string(), r2: "aa".to_string()}),
+                    case(Args{opcode: 0xCC, r1: "Z".to_string(), r2: "aa".to_string()}),
+                    case(Args{opcode: 0xD4, r1: "NC".to_string(), r2: "aa".to_string()}),
+                    case(Args{opcode: 0xDC, r1: "C".to_string(), r2: "aa".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // all true
+                    cpu.reg.PC = 0x5678;
+                    cpu.reg.SP = 0xFFFC;
+                    cpu.bus.write(cpu.reg.PC,  0x34);
+                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    cpu.reg.F.unpack(0xF0);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x567A);
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFC);
+                    } else {
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFA);
+                        assert_eq!(cpu.bus.read(0xFFFA), 0x7A);
+                        assert_eq!(cpu.bus.read(0xFFFB), 0x56);
+                    }
+
+                    // all false
+                    cpu.reg.PC = 0x5678;
+                    cpu.reg.SP = 0xFFFC;
+                    cpu.bus.write(cpu.reg.PC,  0x34);
+                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    cpu.reg.F.unpack(0x00);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFA);
+                        assert_eq!(cpu.bus.read(0xFFFA), 0x7A);
+                        assert_eq!(cpu.bus.read(0xFFFB), 0x56);
+                    } else {
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x567A);
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFC);
                     }
                 }
             }
