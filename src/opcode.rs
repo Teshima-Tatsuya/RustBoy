@@ -231,23 +231,23 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xBF, "CP A", "A", "",   1, cp},
 	make_opcode! {0xC0, "RET NZ", "Z", "",   2, retnf},
 	make_opcode! {0xC1, "POP BC", "BC", "",   3, pop},
-	make_opcode! {0xC2, "JP NZ,a16", "Z", "",   3, jpnfa16},
-	make_opcode! {0xC3, "JP a16", "",  "",   4, jpa16},
+	make_opcode! {0xC2, "JP NZ,a16", "NZ", "aa",   3, jp},
+	make_opcode! {0xC3, "JP a16", "aa",  "",   4, jp},
 	make_opcode! {0xC4, "CALL NZ,a16", "Z", "",   3, callnf},
 	make_opcode! {0xC5, "PUSH BC", "BC", "",   4, push},
 	make_opcode! {0xC6, "ADD A,d8", "A", "",   2, addd8},
 	make_opcode! {0xC7, "RST 00H", "0x00", "",   4, rst},
 	make_opcode! {0xC8, "RET Z", "Z", "",   2, retf},
 	make_opcode! {0xC9, "RET", "",  "",   4, ret},
-	make_opcode! {0xCA, "JP Z,a16", "Z", "",   3, jpfa16},
+	make_opcode! {0xCA, "JP Z,a16", "Z", "aa",   3, jp},
 	make_opcode! {0xCB, "PREFIX CB", "",  "",   1, empty},
-	make_opcode! {0xCC, "CALL Z,a16", "Z", "",   3, callf},
-	make_opcode! {0xCD, "CALL a16", "",  "",   6, call},
+	make_opcode! {0xCC, "CALL Z,a16", "Z", "aa",   3, callf},
+	make_opcode! {0xCD, "CALL a16", "aa",  "",   6, call},
 	make_opcode! {0xCE, "ADC A,d8", "A", "",   2, adcd},
 	make_opcode! {0xCF, "RST 08H", "0x08", "",   4, rst},
 	make_opcode! {0xD0, "RET NC", "C", "",   2, retnf},
 	make_opcode! {0xD1, "POP DE", "DE", "",   3, pop},
-	make_opcode! {0xD2, "JP NC,a16", "C", "",   3, jpnfa16},
+	make_opcode! {0xD2, "JP NC,a16", "NC", "aa",   3, jp},
 	make_opcode! {0xD3, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xD4, "CALL NC,a16", "C", "",   3, callnf},
 	make_opcode! {0xD5, "PUSH DE", "DE", "",   4, push},
@@ -255,7 +255,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xD7, "RST 10H", "0x10", "",   4, rst},
 	make_opcode! {0xD8, "RET C", "C", "",   2, retf},
 	make_opcode! {0xD9, "RETI", "",  "",   4, reti},
-	make_opcode! {0xDA, "JP C,a16", "C", "",   3, jpfa16},
+	make_opcode! {0xDA, "JP C,a16", "C", "aa",   3, jp},
 	make_opcode! {0xDB, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xDC, "CALL C,a16", "C", "",   3, callf},
 	make_opcode! {0xDD, "EMPTY", "",  "",   0,  empty},
@@ -270,7 +270,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xE6, "AND d8", "",  "",   2, and},
 	make_opcode! {0xE7, "RST 20H", "0x20", "",   4, rst},
 	make_opcode! {0xE8, "ADD SP,r8", "SP", "",   4, addr16d},
-	make_opcode! {0xE9, "JP (HL)", "HL", "",   1, jpm16},
+	make_opcode! {0xE9, "JP (HL)", "HL", "",   1, jp},
 	make_opcode! {0xEA, "LD (a16),A", "(aa)",  "A",  4, ld},
 	make_opcode! {0xEB, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xEC, "EMPTY", "",  "",   0,  empty},
@@ -329,12 +329,11 @@ fn inc(c: &mut Cpu, r1: String, _: String) {
 	let r = c.load(&r1);
 	let value = r.wrapping_add(0x01);
 
-	if R_ARR.contains(&r1.as_str()) ||  MM_ARR.contains(&r1.as_str()) {
+	if R_ARR.contains(&r1.as_str()) || MM_ARR.contains(&r1.as_str()) {
 		c.reg.F.z = value == 0;
 		c.reg.F.n = false;
 		c.reg.F.h = (r ^ value) & 0x10 != 0;
 	}
-	
 	c.store(&r1, value);
 }
 
@@ -342,12 +341,11 @@ fn dec(c: &mut Cpu, r1: String, _: String) {
 	let r = c.load(&r1);
 	let value = r.wrapping_sub(0x01);
 
-	if R_ARR.contains(&r1.as_str()) ||  MM_ARR.contains(&r1.as_str()) {
+	if R_ARR.contains(&r1.as_str()) || MM_ARR.contains(&r1.as_str()) {
 		c.reg.F.z = value == 0;
 		c.reg.F.n = true;
 		c.reg.F.h = (r ^ value) & 0x10 != 0;
 	}
-	
 	c.store(&r1, value);
 }
 
@@ -534,59 +532,17 @@ fn sbcd(c: &mut Cpu, _: String, _: String) {
 }
 
 // jp
-fn _jp(c: &mut Cpu, addr: Word) {
-	c.reg.PC = addr
-}
-
-// JP a16
-fn jpa16(c: &mut Cpu, _: String, _: String) {
-	let addr = c.fetch16();
-	_jp(c, addr)
-}
-
-// JP flag, a16
-// jump when flag = 1
-fn jpfa16(c: &mut Cpu, flag: String, _: String) {
-	let addr = c.fetch16();
-
-	let flag_str: &str = &flag;
-	let flag_b;
-	match flag_str {
-		"Z" => flag_b = c.reg.F.z,
-		"N" => flag_b = c.reg.F.n,
-		"H" => flag_b = c.reg.F.h,
-		"C" => flag_b = c.reg.F.c,
-		_ => unreachable!(),
+fn jp(c: &mut Cpu, r1: String, r2: String) {
+	let addr: Word;
+	if COND_ARR.contains(&r1.as_str()) {
+		addr = c.load(&r2);
+		if c.cond(&r1) {
+			c.reg.PC = addr
+		}
+	} else {
+		addr = c.load(&r1);
+		c.reg.PC = addr
 	}
-
-	if flag_b {
-		_jp(c, addr)
-	}
-}
-
-// JP Nflag, a16
-// jump when flag = 0
-fn jpnfa16(c: &mut Cpu, flag: String, _: String) {
-	let addr = c.fetch16();
-
-	let flag_str: &str = &flag;
-	let flag_b;
-	match flag_str {
-		"Z" => flag_b = c.reg.F.z,
-		"N" => flag_b = c.reg.F.n,
-		"H" => flag_b = c.reg.F.h,
-		"C" => flag_b = c.reg.F.c,
-		_ => unreachable!(),
-	}
-	if !flag_b {
-		_jp(c, addr)
-	}
-}
-
-// JP (r16)
-fn jpm16(c: &mut Cpu, r1: String, _: String) {
-	let addr = c.reg.r16(&r1);
-	_jp(c, addr);
 }
 
 // ret

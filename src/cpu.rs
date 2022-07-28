@@ -294,6 +294,9 @@ impl Cpu {
                 let addr = self.fetch();
                 self.bus.read(bytes_2_word(0xFF as Byte, addr)) as Word
             },
+            "aa" => {
+                self.fetch16()
+            },
             "(aa)" => {
                 let addr = self.fetch16();
                 self.bus.read(addr) as Word
@@ -340,6 +343,16 @@ impl Cpu {
                 self.bus.write(addr, value as Byte);
             }, 
             &_ => unreachable!()
+        }
+    }
+
+    pub fn cond(&mut self, cond: &String) -> bool {
+        match cond.as_str() {
+            "Z" => self.reg.F.z,
+            "NZ" => !self.reg.F.z,
+            "C" => self.reg.F.c,
+            "NC" => !self.reg.F.c,
+            &_ => unreachable!(),
         }
     }
 }

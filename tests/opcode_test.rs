@@ -8,6 +8,7 @@ use rust_boy::cpu::*;
 use rust_boy::opcode::*;
 use rust_boy::types::*;
 use rust_boy::util::*;
+use rust_boy::constant::*;
 use speculate::speculate;
 
 speculate! {
@@ -149,8 +150,84 @@ speculate! {
             }
         }
         describe "JP" {
-            describe "jpa16" {
+            describe "jp" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xC3, r1: "aa".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xE9, r1: "HL".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
 
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let want: Word = 0x1234;
+                    
+                    if arg.r1.as_str() == "HL" {
+                        cpu.store(&"HL".to_string(), want);
+                    } else {
+                        cpu.bus.write(cpu.reg.PC,  0x34);
+                        cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    }
+
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+
+                    assert_eq!(cpu.load(&"PC".to_string()), want);
+                }
+            }
+
+            describe "jpf" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xC2, r1: "NZ".to_string(), r2: "aa".to_string()}),
+                    // case(Args{opcode: 0xCA, r1: "Z".to_string(), r2: "aa".to_string()}),
+                    // case(Args{opcode: 0xD2, r1: "NC".to_string(), r2: "aa".to_string()}),
+                    // case(Args{opcode: 0xDA, r1: "C".to_string(), r2: "aa".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let want: Word = 0x1234;
+                    
+                    cpu.bus.write(cpu.reg.PC,  0x34);
+                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+
+                    let handler = &opcode.handler;
+
+                    // all true
+                    cpu.reg.F.unpack(0xF0);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
+                        assert_eq!(cpu.load(&"PC".to_string()), cpu.load(&"PC".to_string()));
+                    } else {
+                        assert_eq!(cpu.load(&"PC".to_string()), want);
+                    }
+
+                    // all false
+                    cpu.reg.F.unpack(0x00);
+                    cpu.reg.PC = cpu.reg.PC - 2;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
+                        assert_eq!(cpu.load(&"PC".to_string()), want);
+                    } else {
+                        assert_eq!(cpu.load(&"PC".to_string()), cpu.load(&"PC".to_string()));
+                    }
+                }
             }
         }
     }
