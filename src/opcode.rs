@@ -61,7 +61,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x15, "DEC D", "D", "",   1, dec},
 	make_opcode! {0x16, "LD D,d8", "D", "d",   2, ld},
 	make_opcode! {0x17, "RLA", "",  "",   1, empty},
-	make_opcode! {0x18, "JR r8", "",  "",   3, jrr8},
+	make_opcode! {0x18, "JR r8", "d",  "",   3, jr},
 	make_opcode! {0x19, "ADD HL,DE", "HL", "DE",  2, addr16r16},
 	make_opcode! {0x1A, "LD A,(DE)", "A", "(DE)",  2, ld},
 	make_opcode! {0x1B, "DEC DE", "DE", "",   2, dec},
@@ -69,7 +69,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x1D, "DEC E", "E", "",   1, dec},
 	make_opcode! {0x1E, "LD E,d8", "E", "d",   2, ld},
 	make_opcode! {0x1F, "RRA", "",  "",   1, empty},
-	make_opcode! {0x20, "JR NZ,r8", "Z", "",   2, jrnfr8},
+	make_opcode! {0x20, "JR NZ,r8", "NZ", "d",   2, jr},
 	make_opcode! {0x21, "LD HL,d16", "HL", "dd",   3, ld},
 	make_opcode! {0x22, "LD (HL+),A", "(HLI)", "A",  2, ld},
 	make_opcode! {0x23, "INC HL", "HL", "",   2, inc},
@@ -77,7 +77,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x25, "DEC H", "H", "",   1, dec},
 	make_opcode! {0x26, "LD H,d8", "H", "d",   2, ld},
 	make_opcode! {0x27, "DAA", "",  "",   1, empty},
-	make_opcode! {0x28, "JR Z,r8", "Z", "",   2, jrfr8},
+	make_opcode! {0x28, "JR Z,r8", "Z", "d",   2, jr},
 	make_opcode! {0x29, "ADD HL,HL", "HL", "HL",  2, addr16r16},
 	make_opcode! {0x2A, "LD A,(HL+)", "A", "(HLI)",  2, ld},
 	make_opcode! {0x2B, "DEC HL", "HL", "",   2, dec},
@@ -85,7 +85,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x2D, "DEC L", "L", "",   1, dec},
 	make_opcode! {0x2E, "LD L,d8", "L", "d",   2, ld},
 	make_opcode! {0x2F, "CPL", "",  "",   1, cpl},
-	make_opcode! {0x30, "JR NC,r8", "C", "",   2, jrnfr8},
+	make_opcode! {0x30, "JR NC,r8", "NC", "d",   2, jr},
 	make_opcode! {0x31, "LD SP,d16", "SP", "dd",   3, ld},
 	make_opcode! {0x32, "LD (HL-),A", "(HLD)", "A",  2, ld},
 	make_opcode! {0x33, "INC SP", "SP", "",   2, inc},
@@ -93,7 +93,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x35, "DEC (HL)", "HL", "",   3, dec},
 	make_opcode! {0x36, "LD (HL),d8", "(HL)", "d",   3, ld},
 	make_opcode! {0x37, "SCF", "",  "",   1, scf},
-	make_opcode! {0x38, "JR C,r8", "C", "",   2, jrfr8},
+	make_opcode! {0x38, "JR C,r8", "C", "d",   2, jr},
 	make_opcode! {0x39, "ADD HL,SP", "HL", "SP",  2, addr16r16},
 	make_opcode! {0x3A, "LD A,(HL-)", "A", "(HLD)",  2, ld},
 	make_opcode! {0x3B, "DEC SP", "SP", "",   2, dec},
@@ -545,6 +545,19 @@ fn jp(c: &mut Cpu, r1: String, r2: String) {
 	}
 }
 
+fn jr(c: &mut Cpu, r1: String, r2: String) {
+	let addr: Word;
+	if COND_ARR.contains(&r1.as_str()) {
+		addr = c.load(&r2);
+		if c.cond(&r1) {
+			c.reg.PC = ((c.reg.PC as i32) + (addr as i8) as i32) as Word;
+		}
+	} else {
+		addr = c.load(&r1);
+		c.reg.PC = ((c.reg.PC as i32) + (addr as i8) as i32) as Word;
+	}
+}
+
 // ret
 fn ret(c: &mut Cpu, _: String, _: String) {
 	c.pop_pc()
@@ -565,35 +578,6 @@ fn retnf(c: &mut Cpu, r: String, _: String) {
 fn reti(c: &mut Cpu, _: String, _: String) {
 	c.pop_pc();
 	// c.IRQ.Enable();
-}
-
-// -----jr-----
-fn _jr(c: &mut Cpu, addr: i8) {
-	c.reg.PC = ((c.reg.PC as i32) + (addr as i32)) as Word;
-}
-
-// r8 is a signed data, which are added to PC
-fn jrr8(c: &mut Cpu, _: String, _: String) {
-	let n = c.fetch();
-	_jr(c, n as i8)
-}
-
-// r8 is a signed data, which are added to PC
-fn jrfr8(c: &mut Cpu, flag: String, _: String) {
-	let n = c.fetch();
-	// flag is set
-	if c.reg.F.f(flag) {
-		_jr(c, n as i8)
-	}
-}
-
-// r8 is a signed data, which are added to PC
-fn jrnfr8(c: &mut Cpu, flag: String, _: String) {
-	let n = c.fetch();
-	// flag is not set
-	if !c.reg.F.f(flag) {
-		_jr(c, n as i8)
-	}
 }
 
 // -----rst------
