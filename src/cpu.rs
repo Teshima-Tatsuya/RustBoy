@@ -246,7 +246,7 @@ impl Cpu {
     pub fn fetch16(&mut self) -> Word {
         let lower = self.fetch();
         let upper = self.fetch();
-        return bytes_2_word(lower, upper);
+        return bytes_2_word(upper, lower);
     }
 
     pub fn push(&mut self, buf: Byte) {

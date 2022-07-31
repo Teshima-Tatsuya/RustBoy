@@ -142,7 +142,7 @@ speculate! {
                     assert_eq!(opcode.r2, arg.r2);
                     let rr_array = ["BC", "DE", "HL", "AF", "HL", "SP"];
                     if rr_array.contains(&opcode.r1.as_str()) && &opcode.r2.as_str() != &"HL" {
-                        assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want, want + 1));
+                        assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want + 1, want));
                     } else {
                         assert_eq!(cpu.load(&opcode.r1), want as Word);
                     }
@@ -396,6 +396,41 @@ speculate! {
                         assert_eq!(cpu.load(&"PC".to_string()), 0x567A);
                         assert_eq!(cpu.load(&"SP".to_string()), 0xFFFC);
                     }
+                }
+            }
+        }
+
+        describe "RET" {
+            describe "ret" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xC0, r1: "NZ".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xC8, r1: "Z".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xC9, r1: "".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xD0, r1: "NC".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xD8, r1: "C".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    cpu.reg.SP = 0xFFFC;
+                    cpu.bus.write(cpu.reg.SP, 0x34);
+                    cpu.bus.write(cpu.reg.SP + 1, 0x12);
+
+                    let handler = &opcode.handler;
+
+
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"SP".to_string()), 0xFFFE);
+                    assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
                 }
             }
         }
@@ -932,7 +967,7 @@ fn cb_helper(mut cpu: Cpu, opcode: &OpCode, before: Byte, want: Byte, flag: Byte
     assert_eq!(cpu.reg.F.pack(),flag);
     let rr_array = ["BC", "DE", "HL", "AF", "HL", "SP"];
     if rr_array.contains(&opcode.r1.as_str()) {
-        assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want, want + 1));
+        assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want + 1, want));
     } else {
         assert_eq!(cpu.load(&opcode.r1), want as Word);
     }

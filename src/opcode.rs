@@ -229,7 +229,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xBD, "CP L", "L", "",   1, cp},
 	make_opcode! {0xBE, "CP (HL)", "HL", "",   2, cp},
 	make_opcode! {0xBF, "CP A", "A", "",   1, cp},
-	make_opcode! {0xC0, "RET NZ", "Z", "",   2, retnf},
+	make_opcode! {0xC0, "RET NZ", "NZ", "",   2, ret},
 	make_opcode! {0xC1, "POP BC", "BC", "",   3, pop},
 	make_opcode! {0xC2, "JP NZ,a16", "NZ", "aa",   3, jp},
 	make_opcode! {0xC3, "JP a16", "aa",  "",   4, jp},
@@ -237,7 +237,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xC5, "PUSH BC", "BC", "",   4, push},
 	make_opcode! {0xC6, "ADD A,d8", "A", "",   2, addd8},
 	make_opcode! {0xC7, "RST 00H", "0x00", "",   4, rst},
-	make_opcode! {0xC8, "RET Z", "Z", "",   2, retf},
+	make_opcode! {0xC8, "RET Z", "Z", "",   2, ret},
 	make_opcode! {0xC9, "RET", "",  "",   4, ret},
 	make_opcode! {0xCA, "JP Z,a16", "Z", "aa",   3, jp},
 	make_opcode! {0xCB, "PREFIX CB", "",  "",   1, empty},
@@ -245,7 +245,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xCD, "CALL a16", "aa",  "",   6, call},
 	make_opcode! {0xCE, "ADC A,d8", "A", "",   2, adcd},
 	make_opcode! {0xCF, "RST 08H", "0x08", "",   4, rst},
-	make_opcode! {0xD0, "RET NC", "C", "",   2, retnf},
+	make_opcode! {0xD0, "RET NC", "NC", "",   2, ret},
 	make_opcode! {0xD1, "POP DE", "DE", "",   3, pop},
 	make_opcode! {0xD2, "JP NC,a16", "NC", "aa",   3, jp},
 	make_opcode! {0xD3, "EMPTY", "",  "",   0,  empty},
@@ -253,7 +253,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xD5, "PUSH DE", "DE", "",   4, push},
 	make_opcode! {0xD6, "SUB d8", "",  "",   2, subd8},
 	make_opcode! {0xD7, "RST 10H", "0x10", "",   4, rst},
-	make_opcode! {0xD8, "RET C", "C", "",   2, retf},
+	make_opcode! {0xD8, "RET C", "C", "",   2, ret},
 	make_opcode! {0xD9, "RETI", "",  "",   4, reti},
 	make_opcode! {0xDA, "JP C,a16", "C", "aa",   3, jp},
 	make_opcode! {0xDB, "EMPTY", "",  "",   0,  empty},
@@ -574,18 +574,12 @@ fn call(c: &mut Cpu, r1: String, r2: String) {
 }
 
 // ret
-fn ret(c: &mut Cpu, _: String, _: String) {
-	c.pop_pc()
-}
-
-fn retf(c: &mut Cpu, r: String, _: String) {
-	if c.reg.F.f(r) {
-		c.pop_pc()
-	}
-}
-
-fn retnf(c: &mut Cpu, r: String, _: String) {
-	if !c.reg.F.f(r) {
+fn ret(c: &mut Cpu, r1: String, _: String) {
+	if COND_ARR.contains(&r1.as_str()) {
+		if c.cond(&r1) {
+			c.pop_pc()
+		}
+	} else {
 		c.pop_pc()
 	}
 }

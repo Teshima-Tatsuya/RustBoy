@@ -1,6 +1,6 @@
 use crate::types::*;
 
-pub fn bytes_2_word(lower: Byte, upper: Byte) -> Word {
+pub fn bytes_2_word(upper: Byte, lower: Byte) -> Word {
     return (upper as Word) << 8 | (lower as Word);
 }
 
