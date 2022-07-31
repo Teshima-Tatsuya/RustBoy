@@ -4,11 +4,11 @@ extern crate speculate;
 
 mod common;
 use rstest::*;
+use rust_boy::constant::*;
 use rust_boy::cpu::*;
 use rust_boy::opcode::*;
 use rust_boy::types::*;
 use rust_boy::util::*;
-use rust_boy::constant::*;
 use speculate::speculate;
 
 speculate! {
@@ -169,7 +169,6 @@ speculate! {
                     assert_eq!(opcode.r2, arg.r2);
 
                     let want: Word = 0x1234;
-                    
                     if arg.r1.as_str() == "HL" {
                         cpu.store(&"HL".to_string(), want);
                     } else {
@@ -204,7 +203,6 @@ speculate! {
                     assert_eq!(opcode.r2, arg.r2);
 
                     let want: Word = 0x1234;
-                    
                     cpu.bus.write(cpu.reg.PC,  0x34);
                     cpu.bus.write(cpu.reg.PC + 1,  0x12);
 
@@ -422,15 +420,35 @@ speculate! {
                     assert_eq!(opcode.r2, arg.r2);
 
                     cpu.reg.SP = 0xFFFC;
+                    cpu.reg.PC = 0x5678;
                     cpu.bus.write(cpu.reg.SP, 0x34);
                     cpu.bus.write(cpu.reg.SP + 1, 0x12);
 
                     let handler = &opcode.handler;
 
-
+                    // all positive
+                    cpu.reg.F.unpack(0xF0);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
-                    assert_eq!(cpu.load(&"SP".to_string()), 0xFFFE);
-                    assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
+                    if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFC);
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x5678);
+                    } else {
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFE);
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
+                    }
+
+                    // all negative
+                    cpu.reg.SP = 0xFFFC;
+                    cpu.reg.PC = 0x5678;
+                    cpu.reg.F.unpack(0x00);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" || opcode.r1.as_str() == "" {
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFE);
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
+                    } else {
+                        assert_eq!(cpu.load(&"SP".to_string()), 0xFFFC);
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x5678);
+                    }
                 }
             }
         }
@@ -764,7 +782,6 @@ speculate! {
                 assert_eq!(cpu.reg.F.pack(), 0b10100000);
             }
         }
-        
         describe "res" {
             struct Args {
                 opcode: Byte,
@@ -860,7 +877,6 @@ speculate! {
                 assert_eq!(cpu.load(&opcode.r2), 0b00000000);
             }
         }
-        
         describe "set" {
             struct Args {
                 opcode: Byte,
@@ -964,7 +980,7 @@ fn cb_helper(mut cpu: Cpu, opcode: &OpCode, before: Byte, want: Byte, flag: Byte
     let handler = &opcode.handler;
     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
 
-    assert_eq!(cpu.reg.F.pack(),flag);
+    assert_eq!(cpu.reg.F.pack(), flag);
     let rr_array = ["BC", "DE", "HL", "AF", "HL", "SP"];
     if rr_array.contains(&opcode.r1.as_str()) {
         assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want + 1, want));
