@@ -10,3 +10,7 @@ pub const COND_ARR: [&str; 4] = ["Z", "NZ", "C", "NC"];
 pub const ADDR_JOYPAD: Word = 0xFF00;
 pub const ADDR_SERIAL_SB: Word = 0xFF01;
 pub const ADDR_SERIAL_SC: Word = 0xFFF2;
+pub const ADDR_TIMER_DIV: Word = 0xFFF4;
+pub const ADDR_TIMER_TIMA: Word = 0xFFF5;
+pub const ADDR_TIMER_TMA: Word = 0xFFF6;
+pub const ADDR_TIMER_TAC: Word = 0xFFF7;
