@@ -1,14 +1,26 @@
-use crate::traits::*;
-use crate::types::*;
-use crate::{mbc::Mbc, mbc::MbcTrait};
+use crate::{
+    traits::*,
+    types::*,
+    {mbc::Mbc, mbc::MbcTrait},
+    memory::*,
+
+};
 
 pub struct Bus {
     mbc: Mbc,
+    wram: RAM,
+    wram2: RAM,
+    hram: RAM,
 }
 
 impl Bus {
     pub fn new(mbc: Mbc) -> Self {
-        Bus { mbc }
+        Bus {
+            mbc,
+            wram: RAM::new(0x4000),
+            wram2: RAM::new(0x4000),
+            hram: RAM::new(0x0080),
+        }
     }
 }
 
@@ -16,7 +28,10 @@ impl Reader for Bus {
     fn read(&self, addr: Word) -> Byte {
         match addr {
             0x0000..=0x7FFF => self.mbc.read(addr),
-            _ => 0x00,
+            0xC000..=0xDFFF => self.wram.read(addr - 0xC000),
+            0xE000..=0xFDFF => self.wram2.read(addr - 0xE000),
+            0xFF80..=0xFFFE => self.hram.read(addr - 0xFF80),
+            v => todo!("addr {:04X} is not readable", v),
         }
     }
 }
@@ -25,7 +40,10 @@ impl Writer for Bus {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
             0x0000..=0x7FFF => self.mbc.write(addr, value),
-            v => todo!("addr {} is not writable", v),
+            0xC000..=0xDFFF => self.wram.write(addr - 0xC000, value),
+            0xE000..=0xFDFF => self.wram2.write(addr - 0xE000, value),
+            0xFF80..=0xFFFE => self.hram.write(addr - 0xFF80, value),
+            v => todo!("addr {:04X} is not writable", v),
         }
     }
 }
