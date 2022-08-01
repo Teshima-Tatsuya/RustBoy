@@ -23,8 +23,8 @@ impl Serial {
 impl Reader for Serial {
     fn read(&self, addr: Word) -> Byte {
         match addr {
-           ADDR_SB => self.sb,
-           ADDR_SC => self.sc | 0x7E,
+           ADDR_SERIAL_SB => self.sb,
+           ADDR_SERIAL_SC => self.sc | 0x7E,
            v => unreachable!("Invalid Addr {:04X} for Serial", v),
         }
     }
@@ -33,8 +33,8 @@ impl Reader for Serial {
 impl Writer for Serial {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
-           ADDR_SB => self.sb = value,
-           ADDR_SC => self.sc = value & 0x83,
+           ADDR_SERIAL_SB => self.sb = value,
+           ADDR_SERIAL_SC => self.sc = value & 0x83,
            v => unreachable!("Invalid Addr {:04X} for Serial", v),
         }
     }

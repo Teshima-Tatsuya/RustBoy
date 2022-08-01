@@ -8,5 +8,5 @@ pub const COND_ARR: [&str; 4] = ["Z", "NZ", "C", "NC"];
 
 // ADDR
 pub const ADDR_JOYPAD: Word = 0xFF00;
-pub const ADDR_SB: Word = 0xFF01;
-pub const ADDR_SC: Word = 0xFFF2;
+pub const ADDR_SERIAL_SB: Word = 0xFF01;
+pub const ADDR_SERIAL_SC: Word = 0xFFF2;
