@@ -1,5 +1,6 @@
 mod serial;
 mod timer;
+mod interrupt;
 
 use crate::{
     constant::*,
@@ -11,6 +12,7 @@ use crate::{
 pub struct Io {
     serial: serial::Serial,
     timer: timer::Timer,
+    interrupt: interrupt::Interrupt,
     tmp_buf: RAM,
 }
 
@@ -19,6 +21,7 @@ impl Io {
         Io {
             serial: serial::Serial::new(),
             timer: timer::Timer::new(),
+            interrupt: interrupt::Interrupt::new(),
             tmp_buf: RAM::new(0x10000),
         }
     }

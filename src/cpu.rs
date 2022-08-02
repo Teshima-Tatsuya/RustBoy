@@ -11,6 +11,7 @@ trait_alias!(pub trait BusTrait = Reader + Writer);
 pub struct Cpu {
     pub reg: Register,
     pub bus: Box<dyn BusTrait>,
+    pub halted: bool,
 }
 
 #[allow(non_snake_case)]
@@ -213,6 +214,7 @@ impl Cpu {
         Self {
             bus: bus,
             reg: Register::default(),
+            halted: false,
         }
     }
 

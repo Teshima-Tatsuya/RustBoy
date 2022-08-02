@@ -7,5 +7,6 @@ pub fn setup_cpu() -> Cpu {
     Cpu {
         reg: Register::default(),
         bus: Box::new(bus),
+        halted: false,
     }
 }

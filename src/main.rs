@@ -1,3 +1,4 @@
+use rust_boy::gameboy::GameBoy;
 use rust_boy::bus::Bus;
 use rust_boy::cartridge::*;
 use rust_boy::cpu::*;
@@ -14,15 +15,8 @@ fn main() {
 
     let bytes = std::fs::read(&args[1]).unwrap();
 
-    let wraped_cart = Cartridge::new(&bytes);
-    let cart = wraped_cart.unwrap();
-    println!("{}", cart);
-
-    let bus = Bus::new(new_mbc(cart));
-
-    let mut cpu = Cpu::new(Box::new(bus));
-
+    let mut gb = GameBoy::new(&bytes);
     loop {
-        cpu.step();
+        gb.step();
     }
 }
