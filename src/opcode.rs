@@ -68,7 +68,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x1C, "INC E", "E", "",   1, inc},
 	make_opcode! {0x1D, "DEC E", "E", "",   1, dec},
 	make_opcode! {0x1E, "LD E,d8", "E", "d",   2, ld},
-	make_opcode! {0x1F, "RRA", "",  "",   1, empty},
+	make_opcode! {0x1F, "RRA", "",  "",   1, rra},
 	make_opcode! {0x20, "JR NZ,r8", "NZ", "d",   2, jr},
 	make_opcode! {0x21, "LD HL,d16", "HL", "dd",   3, ld},
 	make_opcode! {0x22, "LD (HL+),A", "(HLI)", "A",  2, ld},
@@ -621,6 +621,22 @@ fn pop(c: &mut Cpu, r: String, _: String) {
 }
 
 // -----misc-----
+fn rra(c: &mut Cpu, _: String, _: String) {
+	let r = c.load(&"A".to_string());
+	let carry = c.reg.F.c;
+	let mut value = r >> 1;
+
+	if carry {
+		value |= 0x80;
+	}
+
+	c.reg.F.z = false;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x01 == 0x01;
+
+	c.store(&"A".to_string(), value);
+}
 
 fn cpl(c: &mut Cpu, _: String, _: String) {
 	let a = c.reg.r(&"A".to_string());
