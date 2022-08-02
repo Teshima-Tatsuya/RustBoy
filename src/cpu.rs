@@ -1,8 +1,11 @@
-use crate::opcode::{OPCODES, CB_OPCODES};
-use crate::traits::*;
-use crate::types::*;
-use crate::util::*;
-use crate::constant::*;
+use crate::{
+    opcode::{OPCODES, CB_OPCODES},
+    traits::*,
+    types::*,
+    util::*,
+    constant::*,
+};
+
 use bitvec::prelude::*;
 use std::fmt;
 

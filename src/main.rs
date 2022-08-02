@@ -1,8 +1,4 @@
 use rust_boy::gameboy::GameBoy;
-use rust_boy::bus::Bus;
-use rust_boy::cartridge::*;
-use rust_boy::cpu::*;
-use rust_boy::mbc::*;
 use std::env;
 
 fn main() {

@@ -1,6 +1,6 @@
 mod serial;
 mod timer;
-mod interrupt;
+pub mod interrupt;
 
 use crate::{
     constant::*,
