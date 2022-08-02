@@ -309,6 +309,241 @@ speculate! {
             }
         }
 
+        describe "AND" {
+            describe "and" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xA0, r1: "B".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA1, r1: "C".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA2, r1: "D".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA3, r1: "E".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA4, r1: "H".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA5, r1: "L".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA6, r1: "(HL)".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA7, r1: "A".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xE6, r1: "d".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // equal
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b11110000);
+                    } else {
+                        cpu.store(&opcode.r1,  0b11110000);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"A".to_string()), 0b11110000);
+                    assert_eq!(cpu.reg.F.pack(), 0b00100000);
+
+                    // oposite
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b00001111);
+                    } else {
+                        cpu.store(&opcode.r1,  0b00001111);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b00000000);
+                        assert_eq!(cpu.reg.F.pack(), 0b10100000);
+                    }
+
+                    // other
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b10100000);
+                    } else {
+                        cpu.store(&opcode.r1,  0b10100000);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b10100000);
+                        assert_eq!(cpu.reg.F.pack(), 0b00100000);
+                    }
+                }
+            }
+        }
+
+        describe "OR" {
+            describe "or" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xB0, r1: "B".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB1, r1: "C".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB2, r1: "D".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB3, r1: "E".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB4, r1: "H".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB5, r1: "L".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB6, r1: "(HL)".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB7, r1: "A".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xF6, r1: "d".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // equal
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b11110000);
+                    } else {
+                        cpu.store(&opcode.r1,  0b11110000);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"A".to_string()), 0b11110000);
+                    assert_eq!(cpu.reg.F.pack(), 0b00000000);
+
+                    // oposite
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b00001111);
+                    } else {
+                        cpu.store(&opcode.r1,  0b00001111);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b11111111);
+                        assert_eq!(cpu.reg.F.pack(), 0b00000000);
+                    }
+
+                    // other
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b00000101);
+                    } else {
+                        cpu.store(&opcode.r1,  0b00000101);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b11110101);
+                        assert_eq!(cpu.reg.F.pack(), 0b00000000);
+                    }
+
+                    // zero
+                    cpu.reg.A = 0b00000000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b00000000);
+                    } else {
+                        cpu.store(&opcode.r1,  0b00000000);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b00000000);
+                        assert_eq!(cpu.reg.F.pack(), 0b10000000);
+                    }
+                }
+            }
+        }
+
+        describe "XOR" {
+            describe "xor" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xA8, r1: "B".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xA9, r1: "C".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xAA, r1: "D".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xAB, r1: "E".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xAC, r1: "H".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xAD, r1: "L".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xAE, r1: "(HL)".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xAF, r1: "A".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xEE, r1: "d".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // equal
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b11110000);
+                    } else {
+                        cpu.store(&opcode.r1,  0b11110000);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00000000);
+                    assert_eq!(cpu.reg.F.pack(), 0b10000000);
+
+                    // oposite
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b00001111);
+                    } else {
+                        cpu.store(&opcode.r1,  0b00001111);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b11111111);
+                        assert_eq!(cpu.reg.F.pack(), 0b00000000);
+                    }
+
+                    // other
+                    cpu.reg.A = 0b11110000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b01010101);
+                    } else {
+                        cpu.store(&opcode.r1,  0b01010101);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b10100101);
+                        assert_eq!(cpu.reg.F.pack(), 0b00000000);
+                    }
+
+                    // zero
+                    cpu.reg.A = 0b00000000;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0b00000000);
+                    } else {
+                        cpu.store(&opcode.r1,  0b00000000);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.load(&"A".to_string()), 0b00000000);
+                        assert_eq!(cpu.reg.F.pack(), 0b10000000);
+                    }
+                }
+            }
+        }
+
         describe "CP" {
             describe "cp" {
                 struct Args {
