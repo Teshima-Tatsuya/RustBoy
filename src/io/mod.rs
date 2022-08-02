@@ -1,6 +1,7 @@
 mod serial;
 mod timer;
-pub mod interrupt;
+mod interrupt;
+mod apu;
 
 use crate::{
     constant::*,
@@ -13,6 +14,7 @@ pub struct Io {
     serial: serial::Serial,
     timer: timer::Timer,
     interrupt: interrupt::Interrupt,
+    apu: apu::Apu,
     tmp_buf: RAM,
 }
 
@@ -22,6 +24,7 @@ impl Io {
             serial: serial::Serial::new(),
             timer: timer::Timer::new(),
             interrupt: interrupt::Interrupt::new(),
+            apu: apu::Apu::new(),
             tmp_buf: RAM::new(0x10000),
         }
     }
@@ -33,6 +36,8 @@ impl Reader for Io {
             ADDR_JOYPAD => self.tmp_buf.read(addr),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.read(addr),
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.read(addr),
+            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.read(addr),
+            ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.read(addr),
             v => unreachable!("Cannot read addr {:04X} for Io",v)
         }
     }
@@ -44,6 +49,8 @@ impl Writer for Io {
             ADDR_JOYPAD => self.tmp_buf.write(addr, value),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.write(addr, value),
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.write(addr, value),
+            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.write(addr, value),
+            ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.write(addr, value),
             v => unreachable!("Cannot write addr {:04X} for Io",v)
         }
 
