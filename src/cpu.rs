@@ -231,13 +231,19 @@ impl Cpu {
         } else {
             op = &OPCODES[opcode as usize];
         }
-        println!(" {}", op);
-        println!(" {}", self.reg);
-        println!(
-            "  data: {:02X}{:02X}",
-            self.bus.read(self.reg.PC),
-            self.bus.read(self.reg.PC + 1)
-        );
+        // println!(" {}", op);
+        // println!(" {}", self.reg);
+        // println!(
+        //     "  data: {:02X}{:02X}",
+        //     self.bus.read(self.reg.PC),
+        //     self.bus.read(self.reg.PC + 1)
+        // );
+
+        // for test 
+        if self.bus.read(0xFF02) == 0xFF {
+            print!("{}", char::from_u32(self.bus.read(0xFF01) as u32).unwrap());
+            self.bus.write(0xFF02, 0x00);
+        }
         let handler = &op.handler;
         handler(self, op.r1.to_string(), op.r2.to_string());
     }

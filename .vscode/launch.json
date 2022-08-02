@@ -4,6 +4,7 @@
     // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    
         {
             "type": "lldb",
             "request": "launch",
@@ -38,7 +39,9 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": [
+                "/Users/teshima/src/github.com/Teshima-Tatsuya/RustBoy/tests/roms/blargg/cpu_instrs/individual/06-ldr,r.gb"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {

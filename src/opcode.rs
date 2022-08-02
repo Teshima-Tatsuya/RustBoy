@@ -300,7 +300,6 @@ fn empty(_: &mut Cpu, _: String, _: String) {
 }
 
 fn nop(_: &mut Cpu, _: String, _: String) {
-	println!("nop");
 }
 
 fn stop(_: &mut Cpu, _: String, _: String) {
@@ -312,16 +311,17 @@ fn ld(c: &mut Cpu, r1: String, r2: String) {
 	c.store(&r1, value);
 }
 
-// LD r1, r2+d
+// LD r1, r2+r
 fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
-	// d = c.fetch();
-	// sp = c.reg.R16(SP);
-	// v = sp + types.Addr((int8(d)));
-	// c.reg.setR16(int(R1), types.Addr(v));
+	let r = c.fetch() as i8 as Word;
+	let sp = c.load(&r2);
+	let v = sp.wrapping_add(r);
+	c.store(&r1, v);
 
-	// carry = sp ^ types.Addr(d) ^ (sp + types.Addr(d))
-
-	// c.reg.setZNHC(false, false, carry&0x10 == 0x10, carry&0x100 == 0x100)
+	c.reg.F.z = false;
+	c.reg.F.n = false;
+	c.reg.F.h = (r ^ sp ^ v) & 0x10 != 0;
+	c.reg.F.c = (r ^ sp ^ v) & 0x100 != 0;
 }
 
 // arithmetic
@@ -477,14 +477,15 @@ fn adcd(c: &mut Cpu, _: String, _: String) {
 }
 
 fn _sub(c: &mut Cpu, b: Byte) {
-	// a = c.reg.R[A]
-	// v = a - b
-	// carryBits = a ^ b ^ v
-	// flag_h = carryBits&(1<<4) != 0
-	// flag_c = a < v
+	let a = c.reg.A;
+	let (v, overflow) = a.overflowing_sub(b);
 
-	// c.reg.R[A] = v
-	// c.reg.setZNHC(byte(v) == 0, true, flag_h, flag_c)
+	c.store(&"A".to_string(), v as Word);
+
+	c.reg.F.z = v == 0;
+	c.reg.F.n = true;
+	c.reg.F.h = (a ^ b ^ v) & 0x10 != 0;
+	c.reg.F.c = overflow;
 }
 
 fn subr(c: &mut Cpu, r: String, _: String) {
