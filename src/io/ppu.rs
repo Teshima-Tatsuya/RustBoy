@@ -6,11 +6,11 @@ use crate::{
 };
 
 #[derive(Default)]
-pub struct Apu {
+pub struct Ppu {
     buf: RAM,
 }
 
-impl Apu {
+impl Ppu {
     pub fn new() -> Self {
         Self {
             buf: RAM::new(0xFFFF)
@@ -18,13 +18,13 @@ impl Apu {
     }
 }
 
-impl Reader for Apu {
+impl Reader for Ppu {
     fn read(&self, addr: Word) -> Byte {
         self.buf.read(addr)
     }
 }
 
-impl Writer for Apu {
+impl Writer for Ppu {
     fn write(&mut self, addr: Word, value: Byte) {
         self.buf.write(addr, value);
     }
