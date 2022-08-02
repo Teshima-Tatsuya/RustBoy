@@ -309,6 +309,85 @@ speculate! {
             }
         }
 
+        describe "CP" {
+            describe "cp" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xB8, r1: "B".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xB9, r1: "C".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xBA, r1: "D".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xBB, r1: "E".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xBC, r1: "H".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xBD, r1: "L".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xBE, r1: "(HL)".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xBF, r1: "A".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xFE, r1: "d".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // equal
+                    cpu.reg.A = 0x12;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0x12);
+                    } else {
+                        cpu.store(&opcode.r1,  0x12);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0b11000000);
+
+                    // greater than A
+                    cpu.reg.A = 0x12;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0x13);
+                    } else {
+                        cpu.store(&opcode.r1,  0x13);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.reg.F.pack(), 0b01110000);
+                    }
+
+                    // less than A with borrow
+                    cpu.reg.A = 0x12;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0x03);
+                    } else {
+                        cpu.store(&opcode.r1,  0x03);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.reg.F.pack(), 0b01100000);
+                    }
+
+                    // less than A with no borrow
+                    cpu.reg.A = 0x12;
+                    if opcode.r1.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC,  0x02);
+                    } else {
+                        cpu.store(&opcode.r1,  0x02);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+
+                    if opcode.r1.as_str() != "A" {
+                        assert_eq!(cpu.reg.F.pack(), 0b01000000);
+                    }
+                }
+            }
+        }
+
         describe "CALL" {
             describe "call" {
                 struct Args {

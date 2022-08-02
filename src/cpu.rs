@@ -339,7 +339,7 @@ impl Cpu {
                 self.bus.write(addr, value as Byte);
             },
             // rr
-            "AF" | "BC" | "DE" | "HL" | "SP" => self.reg.r16_mut(reg, value),
+            "AF" | "BC" | "DE" | "HL" | "SP" | "PC" => self.reg.r16_mut(reg, value),
             // mm
             "(BC)" | "(DE)" | "(HL)" | "(HLI)" | "(HLD)" => {
                 let mut s = reg.replace("(", "");
