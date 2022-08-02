@@ -66,16 +66,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug integration test 'cpu_test'",
+            "name": "Debug integration test 'rom_test'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--test=cpu_test",
+                    "--test=rom_test",
                     "--package=rust_boy"
                 ],
                 "filter": {
-                    "name": "cpu_test",
+                    "name": "rom_test",
                     "kind": "test"
                 }
             },
