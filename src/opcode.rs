@@ -16,8 +16,8 @@ impl fmt::Display for OpCode {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(
 			f,
-			"OpCode: {:02X} {} {} {} {}",
-			self.code, self.mnemonic, self.r1, self.r2, self.cycles
+			"OpCode: 0x{:02X}[{}] cycles:{}",
+			self.code, self.mnemonic, self.cycles
 		)
 	}
 }
@@ -89,8 +89,8 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x31, "LD SP,d16", "SP", "dd",   3, ld},
 	make_opcode! {0x32, "LD (HL-),A", "(HLD)", "A",  2, ld},
 	make_opcode! {0x33, "INC SP", "SP", "",   2, inc},
-	make_opcode! {0x34, "INC (HL)", "HL", "",   3, inc},
-	make_opcode! {0x35, "DEC (HL)", "HL", "",   3, dec},
+	make_opcode! {0x34, "INC (HL)", "(HL)", "",   3, inc},
+	make_opcode! {0x35, "DEC (HL)", "(HL)", "",   3, dec},
 	make_opcode! {0x36, "LD (HL),d8", "(HL)", "d",   3, ld},
 	make_opcode! {0x37, "SCF", "",  "",   1, scf},
 	make_opcode! {0x38, "JR C,r8", "C", "d",   2, jr},
@@ -330,9 +330,9 @@ fn inc(c: &mut Cpu, r1: String, _: String) {
 	let value = r.wrapping_add(0x01);
 
 	if R_ARR.contains(&r1.as_str()) || MM_ARR.contains(&r1.as_str()) {
-		c.reg.F.z = value == 0;
+		c.reg.F.z = value as Byte == 0;
 		c.reg.F.n = false;
-		c.reg.F.h = (r ^ value) & 0x10 != 0;
+		c.reg.F.h = (r as Byte ^ value as Byte) & 0x10 != 0;
 	}
 	c.store(&r1, value);
 }
