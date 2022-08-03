@@ -449,8 +449,8 @@ fn addd8(c: &mut Cpu, _: String, _: String) {
 }
 
 fn adc(c: &mut Cpu, r1: String, r2: String) {
-	let a = c.load(&r1);
-	let r = c.load(&r2);
+	let a = c.load(&r1) as Byte;
+	let r = c.load(&r2) as Byte;
 	let carry = if c.reg.F.c {1} else {0};
 
 	let (v, overflow1) = a.overflowing_add(r);
@@ -461,7 +461,7 @@ fn adc(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.h = (a ^ r ^ v) & 0x10 != 0;
 	c.reg.F.c = overflow1 | overflow2;
 
-	c.store(&r1, v);
+	c.store(&r1, v as Word);
 }
 fn _sub(c: &mut Cpu, b: Byte) {
 	let a = c.reg.A;
@@ -491,8 +491,8 @@ fn subd8(c: &mut Cpu, _: String, _: String) {
 }
 
 fn sbc(c: &mut Cpu, r1: String, r2: String) {
-	let a = c.load(&r1);
-	let r = c.load(&r2);
+	let a = c.load(&r1) as Byte;
+	let r = c.load(&r2) as Byte;
 	let carry = if c.reg.F.c {1} else {0};
 
 	let (v, overflow1) = a.overflowing_sub(r);
@@ -503,7 +503,7 @@ fn sbc(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.h = (a ^ r ^ v) & 0x10 != 0;
 	c.reg.F.c = overflow1 | overflow2;
 
-	c.store(&r1, v);
+	c.store(&r1, v as Word);
 }
 
 // jp

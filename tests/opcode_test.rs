@@ -463,6 +463,146 @@ speculate! {
             }
         }
 
+        describe "ADC" {
+            describe "adc" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x88, r1: "A".to_string(), r2:  "B".to_string()}),
+                    case(Args{opcode: 0x89, r1: "A".to_string(), r2:  "C".to_string()}),
+                    case(Args{opcode: 0x8A, r1: "A".to_string(), r2:  "D".to_string()}),
+                    case(Args{opcode: 0x8B, r1: "A".to_string(), r2:  "E".to_string()}),
+                    case(Args{opcode: 0x8C, r1: "A".to_string(), r2:  "H".to_string()}),
+                    case(Args{opcode: 0x8D, r1: "A".to_string(), r2:  "L".to_string()}),
+                    case(Args{opcode: 0x8E, r1: "A".to_string(), r2: "(HL)".to_string()}),
+                    case(Args{opcode: 0x8F, r1: "A".to_string(), r2:  "A".to_string()}),
+                    case(Args{opcode: 0xCE, r1: "A".to_string(), r2:  "d".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // no carry and carry = 1
+                    cpu.reg.F.unpack(0b11110000);
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x0D);
+                    } else {
+                        cpu.store(&opcode.r2, 0x0D);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r2.as_str() != "A" {
+                        assert_eq!(cpu.load(&opcode.r1), 0xEF);
+                        assert_eq!(cpu.reg.F.pack(), 0b00000000);
+                    }
+
+                    // no carry and carry = 0
+                    cpu.reg.F.unpack(0b11100000);
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x0D);
+                    } else {
+                        cpu.store(&opcode.r2, 0x0D);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r2.as_str() != "A" {
+                        assert_eq!(cpu.load(&opcode.r1), 0xEE);
+                        assert_eq!(cpu.reg.F.pack(), 0b00000000);
+                    }
+
+                    // half carry and carry = 1
+                    cpu.reg.F.unpack(0b11110000);
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                    } else {
+                        cpu.store(&opcode.r2, 0x0F);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r2.as_str() != "A" {
+                        assert_eq!(cpu.load(&opcode.r1), 0xF1);
+                        assert_eq!(cpu.reg.F.pack(), 0b00100000);
+                    }
+
+                    // half carry and carry = 0
+                    cpu.reg.F.unpack(0b11100000);
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                    } else {
+                        cpu.store(&opcode.r2, 0x0F);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r2.as_str() != "A" {
+                        assert_eq!(cpu.load(&opcode.r1), 0xF0);
+                        assert_eq!(cpu.reg.F.pack(), 0b00100000);
+                    }
+
+                    // carry and carry = 1
+                    cpu.reg.F.unpack(0b11110000);
+                    cpu.store(&opcode.r1, 0xF1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x0E);
+                    } else {
+                        cpu.store(&opcode.r2, 0x0E);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r2.as_str() != "A" {
+                        assert_eq!(cpu.load(&opcode.r1), 0x00);
+                        assert_eq!(cpu.reg.F.pack(), 0b10110000);
+                    }
+
+                    // half carry and carry = 0
+                    cpu.reg.F.unpack(0b11100000);
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x1F);
+                    } else {
+                        cpu.store(&opcode.r2, 0x1F);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r2.as_str() != "A" {
+                        assert_eq!(cpu.load(&opcode.r1), 0x00);
+                        assert_eq!(cpu.reg.F.pack(), 0b10110000);
+                    }
+                }
+            }
+
+            describe "decrr" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x0B, r1: "BC".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0x1B, r1: "DE".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0x2B, r1: "HL".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0x3B, r1: "SP".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    cpu.store(&opcode.r1, 0x1234);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x1233);
+                }
+            }
+        }
         describe "AND" {
             describe "and" {
                 struct Args {
