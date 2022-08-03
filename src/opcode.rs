@@ -173,14 +173,14 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x85, "ADD A, L", "A", "L",  1, addr},
 	make_opcode! {0x86, "ADD A, (HL)", "A", "(HL)",  2, add_hl},
 	make_opcode! {0x87, "ADD A, A", "A", "A",  1, addr},
-	make_opcode! {0x88, "ADC A, B", "A", "B",  1, adcr},
-	make_opcode! {0x89, "ADC A, C", "A", "C",  1, adcr},
-	make_opcode! {0x8A, "ADC A, D", "A", "D",  1, adcr},
-	make_opcode! {0x8B, "ADC A, E", "A", "E",  1, adcr},
-	make_opcode! {0x8C, "ADC A, H", "A", "H",  1, adcr},
-	make_opcode! {0x8D, "ADC A, L", "A", "L",  1, adcr},
-	make_opcode! {0x8E, "ADC A, (HL)", "A", "HL",  2, adcm16},
-	make_opcode! {0x8F, "ADC A, A", "A", "A",  1, adcr},
+	make_opcode! {0x88, "ADC A, B", "A", "B",  1, adc},
+	make_opcode! {0x89, "ADC A, C", "A", "C",  1, adc},
+	make_opcode! {0x8A, "ADC A, D", "A", "D",  1, adc},
+	make_opcode! {0x8B, "ADC A, E", "A", "E",  1, adc},
+	make_opcode! {0x8C, "ADC A, H", "A", "H",  1, adc},
+	make_opcode! {0x8D, "ADC A, L", "A", "L",  1, adc},
+	make_opcode! {0x8E, "ADC A, (HL)", "A", "(HL)",  2, adc},
+	make_opcode! {0x8F, "ADC A, A", "A", "A",  1, adc},
 	make_opcode! {0x90, "SUB B", "B", "",   1, subr},
 	make_opcode! {0x91, "SUB C", "C", "",   1, subr},
 	make_opcode! {0x92, "SUB D", "D", "",   1, subr},
@@ -189,14 +189,14 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x95, "SUB L", "L", "",   1, subr},
 	make_opcode! {0x96, "SUB (HL)", "HL", "",   2, sub_hl},
 	make_opcode! {0x97, "SUB A", "A", "",   1, subr},
-	make_opcode! {0x98, "SBC A, B", "A", "B",  1, sbcr},
-	make_opcode! {0x99, "SBC A, C", "A", "C",  1, sbcr},
-	make_opcode! {0x9A, "SBC A, D", "A", "D",  1, sbcr},
-	make_opcode! {0x9B, "SBC A, E", "A", "E",  1, sbcr},
-	make_opcode! {0x9C, "SBC A, H", "A", "H",  1, sbcr},
-	make_opcode! {0x9D, "SBC A, L", "A", "L",  1, sbcr},
-	make_opcode! {0x9E, "SBC A, (HL)", "A", "HL",  2, sbcm16},
-	make_opcode! {0x9F, "SBC A, A", "A", "A",  1, sbcr},
+	make_opcode! {0x98, "SBC A, B", "A", "B",  1, sbc},
+	make_opcode! {0x99, "SBC A, C", "A", "C",  1, sbc},
+	make_opcode! {0x9A, "SBC A, D", "A", "D",  1, sbc},
+	make_opcode! {0x9B, "SBC A, E", "A", "E",  1, sbc},
+	make_opcode! {0x9C, "SBC A, H", "A", "H",  1, sbc},
+	make_opcode! {0x9D, "SBC A, L", "A", "L",  1, sbc},
+	make_opcode! {0x9E, "SBC A, (HL)", "A", "(HL)",  2, sbc},
+	make_opcode! {0x9F, "SBC A, A", "A", "A",  1, sbc},
 	make_opcode! {0xA0, "AND B", "B", "",   1, and},
 	make_opcode! {0xA1, "AND C", "C", "",   1, and},
 	make_opcode! {0xA2, "AND D", "D", "",   1, and},
@@ -243,7 +243,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xCB, "PREFIX CB", "",  "",   1, empty},
 	make_opcode! {0xCC, "CALL Z,a16", "Z", "aa",   3, call},
 	make_opcode! {0xCD, "CALL a16", "aa",  "",   6, call},
-	make_opcode! {0xCE, "ADC A,d8", "A", "",   2, adcd},
+	make_opcode! {0xCE, "ADC A,d8", "A", "d",   2, adc},
 	make_opcode! {0xCF, "RST 08H", "0x08", "",   4, rst},
 	make_opcode! {0xD0, "RET NC", "NC", "",   2, ret},
 	make_opcode! {0xD1, "POP DE", "DE", "",   3, pop},
@@ -259,7 +259,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xDB, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xDC, "CALL C,a16", "C", "aa",   3, call},
 	make_opcode! {0xDD, "EMPTY", "",  "",   0,  empty},
-	make_opcode! {0xDE, "SBC A,d8", "A", "",   2, sbcd},
+	make_opcode! {0xDE, "SBC A,d8", "A", "d",   2, sbc},
 	make_opcode! {0xDF, "RST 18H", "0x18", "",   4, rst},
 	make_opcode! {0xE0, "LDH (a8),A", "(a)",  "A",  3, ld},
 	make_opcode! {0xE1, "POP HL", "HL", "",   3, pop},
@@ -448,34 +448,21 @@ fn addd8(c: &mut Cpu, _: String, _: String) {
 	_add(c, v);
 }
 
-fn _adc(c: &mut Cpu, r: Byte) {
-	// a = c.reg.R[A]
-	// carry = c.reg.isSet(C)
+fn adc(c: &mut Cpu, r1: String, r2: String) {
+	let a = c.load(&r1);
+	let r = c.load(&r2);
+	let carry = if c.reg.F.c {1} else {0};
 
-	// v = a + r + byte(util.Bool2Int8(carry))
+	let (v, overflow1) = a.overflowing_add(r);
+	let (v, overflow2) = v.overflowing_add(carry);
 
-	// c.reg.R[A] = v
-	// flag_h = a&0x0F+r&0x0F+byte(util.Bool2Int8(carry)) > 0x0F
-	// flag_c = uint(a&0xFF)+uint(r&0xFF)+uint(util.Bool2Int8(carry)) > 0xFF
-	// c.reg.setZNHC(v == 0, false, flag_h, flag_c)
+	c.reg.F.z = v == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = (a ^ r ^ v) & 0x10 != 0;
+	c.reg.F.c = overflow1 | overflow2;
+
+	c.store(&r1, v);
 }
-
-// ADC A,R
-fn adcr(c: &mut Cpu, _: String, r2: String) {
-	let r = c.reg.r(&r2);
-	_adc(c, r)
-}
-
-fn adcm16(c: &mut Cpu, _: String, r2: String) {
-	let r = c.bus.read(c.reg.r16(&r2));
-	_adc(c, r)
-}
-
-fn adcd(c: &mut Cpu, _: String, _: String) {
-	let r = c.fetch();
-	_adc(c, r)
-}
-
 fn _sub(c: &mut Cpu, b: Byte) {
 	let a = c.reg.A;
 	let (v, overflow) = a.overflowing_sub(b);
@@ -503,33 +490,20 @@ fn subd8(c: &mut Cpu, _: String, _: String) {
 	_sub(c, r)
 }
 
-fn _sbc(c: &mut Cpu, r: Byte) {
-	// a = c.reg.R[A]
-	// carry = util.Bool2Int8(c.reg.isSet(C))
+fn sbc(c: &mut Cpu, r1: String, r2: String) {
+	let a = c.load(&r1);
+	let r = c.load(&r2);
+	let carry = if c.reg.F.c {1} else {0};
 
-	// v = a - (r + byte(carry))
-	// c.reg.R[A] = byte(v)
+	let (v, overflow1) = a.overflowing_sub(r);
+	let (v, overflow2) = v.overflowing_sub(carry);
 
-	// flag_h = a&0x0F < r&0x0F+byte(carry)
-	// flag_c = uint16(a) < uint16(r)+uint16(carry)
-	// c.reg.setZNHC(byte(v) == 0, true, flag_h, flag_c)
-}
+	c.reg.F.z = v == 0;
+	c.reg.F.n = true;
+	c.reg.F.h = (a ^ r ^ v) & 0x10 != 0;
+	c.reg.F.c = overflow1 | overflow2;
 
-// SBC A,R
-fn sbcr(c: &mut Cpu, _: String, r2: String) {
-	let r = c.reg.r(&r2);
-	_sbc(c, r);
-}
-
-fn sbcm16(c: &mut Cpu, _: String, r2: String) {
-	let r = c.reg.r16(&r2);
-	let v = c.bus.read(r);
-	_sbc(c, v);
-}
-
-fn sbcd(c: &mut Cpu, _: String, _: String) {
-	let r = c.fetch();
-	_sbc(c, r);
+	c.store(&r1, v);
 }
 
 // jp
