@@ -1145,6 +1145,8 @@ speculate! {
                 cpu = cb_helper(cpu, opcode, 0b00000000, 0b00000001, 0x00);
                 cpu.reg.F.c = false;
                 cpu = cb_helper(cpu, opcode, 0b00000000, 0b00000000, 0x80);
+                cpu.reg.F.c = false;
+                cpu = cb_helper(cpu, opcode, 0b10000000, 0b00000000, 0x90);
                 cpu.reg.F.c = true;
                 cpu = cb_helper(cpu, opcode, 0b00100000, 0b01000001, 0x00);
                 cpu.reg.F.c = false;
@@ -1211,6 +1213,7 @@ speculate! {
 
                 cpu = cb_helper(cpu, opcode, 0b10010000, 0b00100000, 0x10);
                 cpu = cb_helper(cpu, opcode, 0b00000000, 0b00000000, 0x80);
+                cpu = cb_helper(cpu, opcode, 0b10000000, 0b00000000, 0x90);
                 cpu = cb_helper(cpu, opcode, 0b00100000, 0b01000000, 0x00);
             }
         }
@@ -1589,8 +1592,7 @@ fn cb_helper(mut cpu: Cpu, opcode: &OpCode, before: Byte, want: Byte, flag: Byte
     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
 
     assert_eq!(cpu.reg.F.pack(), flag);
-    let rr_array = ["BC", "DE", "HL", "AF", "HL", "SP"];
-    if rr_array.contains(&opcode.r1.as_str()) {
+    if RR_ARR.contains(&opcode.r1.as_str()) {
         assert_eq!(cpu.load(&opcode.r1), bytes_2_word(want + 1, want));
     } else {
         assert_eq!(cpu.load(&opcode.r1), want as Word);

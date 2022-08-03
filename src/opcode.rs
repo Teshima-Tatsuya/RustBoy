@@ -165,14 +165,14 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x7D, "LD A, L", "A", "L",  1, ld},
 	make_opcode! {0x7E, "LD A, (HL)", "A", "(HL)",  2, ld},
 	make_opcode! {0x7F, "LD A, A", "A", "A",  1, ld},
-	make_opcode! {0x80, "ADD A, B", "A", "B",  1, addr},
-	make_opcode! {0x81, "ADD A, C", "A", "C",  1, addr},
-	make_opcode! {0x82, "ADD A, D", "A", "D",  1, addr},
-	make_opcode! {0x83, "ADD A, E", "A", "E",  1, addr},
-	make_opcode! {0x84, "ADD A, H", "A", "H",  1, addr},
-	make_opcode! {0x85, "ADD A, L", "A", "L",  1, addr},
-	make_opcode! {0x86, "ADD A, (HL)", "A", "(HL)",  2, add_hl},
-	make_opcode! {0x87, "ADD A, A", "A", "A",  1, addr},
+	make_opcode! {0x80, "ADD A, B", "A", "B",  1, add},
+	make_opcode! {0x81, "ADD A, C", "A", "C",  1, add},
+	make_opcode! {0x82, "ADD A, D", "A", "D",  1, add},
+	make_opcode! {0x83, "ADD A, E", "A", "E",  1, add},
+	make_opcode! {0x84, "ADD A, H", "A", "H",  1, add},
+	make_opcode! {0x85, "ADD A, L", "A", "L",  1, add},
+	make_opcode! {0x86, "ADD A, (HL)", "A", "(HL)",  2, add},
+	make_opcode! {0x87, "ADD A, A", "A", "A",  1, add},
 	make_opcode! {0x88, "ADC A, B", "A", "B",  1, adc},
 	make_opcode! {0x89, "ADC A, C", "A", "C",  1, adc},
 	make_opcode! {0x8A, "ADC A, D", "A", "D",  1, adc},
@@ -235,7 +235,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xC3, "JP a16", "aa",  "",   4, jp},
 	make_opcode! {0xC4, "CALL NZ,a16", "NZ", "aa",   3, call},
 	make_opcode! {0xC5, "PUSH BC", "BC", "",   4, push},
-	make_opcode! {0xC6, "ADD A,d8", "A", "",   2, addd8},
+	make_opcode! {0xC6, "ADD A,d8", "A", "d",   2, add},
 	make_opcode! {0xC7, "RST 00H", "0x00", "",   4, rst},
 	make_opcode! {0xC8, "RET Z", "Z", "",   2, ret},
 	make_opcode! {0xC9, "RET", "",  "",   4, ret},
@@ -397,6 +397,19 @@ fn cp(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = overflow;
 }
 
+fn add(c: &mut Cpu, r1: String, r2: String) {
+	let a = c.load(&r1) as Byte;
+	let r = c.load(&r2) as Byte;
+
+	let (v, overflow) = a.overflowing_add(r);
+
+	c.reg.F.z = v == 0;
+	c.reg.F.n = false;
+	c.reg.F.h = (a ^ r ^ v) & 0x10 != 0;
+	c.reg.F.c = overflow;
+
+	c.store(&r1, v as Word);
+}
 fn _add(c: &mut Cpu, b: Byte) {
 	let (v, overflow) = c.reg.A.overflowing_add(b);
 
@@ -926,7 +939,7 @@ fn rrc(c: &mut Cpu, r1: String, _: String) {
 }
 
 fn rl(c: &mut Cpu, r1: String, _: String) {
-	let r = c.load(&r1);
+	let r = c.load(&r1) as Byte;
 	let carry = c.reg.F.c;
 	let mut value = r << 1;
 
@@ -939,7 +952,7 @@ fn rl(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.h = false;
 	c.reg.F.c = r & 0x80 == 0x80;
 
-	c.store(&r1, value);
+	c.store(&r1, value as Word);
 }
 
 fn rr(c: &mut Cpu, r1: String, _: String) {
@@ -960,7 +973,7 @@ fn rr(c: &mut Cpu, r1: String, _: String) {
 }
 
 fn sla(c: &mut Cpu, r1: String, _: String) {
-	let r = c.load(&r1);
+	let r = c.load(&r1) as Byte;
 	let value = r << 1;
 
 	c.reg.F.z = value == 0;
@@ -968,7 +981,7 @@ fn sla(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.h = false;
 	c.reg.F.c = r & 0x80 == 0x80;
 
-	c.store(&r1, value);
+	c.store(&r1, value as Word);
 }
 
 fn sra(c: &mut Cpu, r1: String, _: String) {
