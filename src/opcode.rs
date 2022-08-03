@@ -288,7 +288,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xF8, "LD HL,SP+r8", "HL", "SP",  3, ldr16r16d},
 	make_opcode! {0xF9, "LD SP,HL", "SP", "HL",  2, ld},
 	make_opcode! {0xFA, "LD A,(a16)", "A", "(aa)",   4, ld},
-	make_opcode! {0xFB, "EI", "",  "",   1, empty},
+	make_opcode! {0xFB, "EI", "",  "",   1, ei},
 	make_opcode! {0xFC, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xFD, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xFE, "CP d8", "d",  "",   2, cp},
@@ -561,7 +561,7 @@ fn ret(c: &mut Cpu, r1: String, _: String) {
 
 fn reti(c: &mut Cpu, _: String, _: String) {
 	c.pop_pc();
-	// c.IRQ.Enable();
+	c.ime = true;
 }
 
 // -----rst------
@@ -633,8 +633,11 @@ fn ccf(cpu: &mut Cpu, _: String, _: String) {
 }
 
 fn di(c: &mut Cpu, _: String, _: String) {
-	warn!("not implemented di")
-	//	c.IRQ.Disable()
+	c.ime = false;
+}
+
+fn ei(c: &mut Cpu, _: String, _: String) {
+	c.ime = true;
 }
 
 #[rustfmt::skip]

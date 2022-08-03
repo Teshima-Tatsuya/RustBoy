@@ -8,5 +8,6 @@ pub fn setup_cpu() -> Cpu {
         reg: Register::default(),
         bus: Box::new(bus),
         halted: false,
+        ime: false,
     }
 }

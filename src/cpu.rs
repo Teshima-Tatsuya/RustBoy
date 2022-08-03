@@ -15,6 +15,7 @@ pub struct Cpu {
     pub reg: Register,
     pub bus: Box<dyn BusTrait>,
     pub halted: bool,
+    pub ime: bool,
 }
 
 #[allow(non_snake_case)]
@@ -218,6 +219,7 @@ impl Cpu {
             bus: bus,
             reg: Register::default(),
             halted: false,
+            ime: false,
         }
     }
 

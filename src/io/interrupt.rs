@@ -7,7 +7,6 @@ use crate::{
 pub struct Interrupt {
     r#if: Byte,
     ie: Byte,
-    ime: bool,
 }
 
 impl Interrupt {
@@ -15,20 +14,11 @@ impl Interrupt {
         Self {
             r#if:0x00,
             ie: 0x00,
-            ime: false,
         }
     }
 
     pub fn has(&self) -> bool {
         (self.r#if & self.ie) != 0x00
-    }
-    
-    pub fn enable(&mut self) {
-        self.ime = true;
-    }
-
-    pub fn disable(&mut self) {
-        self.ime = false;
     }
 }
 
