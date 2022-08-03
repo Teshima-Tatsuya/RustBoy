@@ -617,19 +617,20 @@ fn cpl(c: &mut Cpu, _: String, _: String) {
 	let a = c.reg.r(&"A".to_string());
 	c.reg.r_mut(&"A".to_string(), a ^ a);
 
-	let znhc = c.reg.F.pack() | 0x60;
-	c.reg.F.unpack(znhc);
+	c.reg.F.n = true;
+	c.reg.F.h = true;
 }
 
 fn scf(c: &mut Cpu, _: String, _: String) {
-	let znhc = (c.reg.F.pack() & 0x80) | 0x10;
-	c.reg.F.unpack(znhc);
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = true;
 }
 
-fn ccf(cpu: &mut Cpu, _: String, _: String) {
-	let c = if !cpu.reg.F.f("C".to_string()) { 1 } else { 0 };
-	let znhc = (cpu.reg.F.pack() & 0x80) | (c << 4);
-	cpu.reg.F.unpack(znhc);
+fn ccf(c: &mut Cpu, _: String, _: String) {
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = !c.reg.F.c;
 }
 
 fn di(c: &mut Cpu, _: String, _: String) {
