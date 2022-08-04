@@ -12,11 +12,16 @@ pub const SCREEN_WIDTH: u8 = 160;
 pub const SCREEN_HEIGHT: u8 = 144;
 
 // interrupt
-pub const INT_VBLANK: u8 = 0;
-pub const INT_LCD_STAT: u8 = 1;
-pub const INT_TIMER: u8 = 2;
-pub const INT_SERIAL: u8 = 3;
-pub const INT_JOYPAD: u8 = 4;
+pub const INT_VBLANK_FLG: Byte = 0x01;
+pub const INT_LCD_STAT_FLG: Byte = 0x02;
+pub const INT_TIMER_FLG: Byte = 0x04;
+pub const INT_SERIAL_FLG: Byte = 0x08;
+pub const INT_JOYPAD_FLG: Byte = 0x10;
+pub const INT_VBLANK_ADDR: Word = 0x0040;
+pub const INT_LCD_STAT_ADDR: Word = 0x0048;
+pub const INT_TIMER_ADDR: Word = 0x0050;
+pub const INT_SERIAL_ADDR: Word = 0x0058;
+pub const INT_JOYPAD_ADDR: Word = 0x0060;
 
 // ADDR
 pub const ADDR_JOYPAD: Word = 0xFF00;

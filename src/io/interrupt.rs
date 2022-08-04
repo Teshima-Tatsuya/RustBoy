@@ -20,6 +20,34 @@ impl Interrupt {
     pub fn has(&self) -> bool {
         (self.r#if & self.ie) != 0x00
     }
+
+    pub fn request(&mut self, value: Byte) {
+        self.write(ADDR_INTERRUPT_IF, value);
+    }
+
+    // @see https://gbdev.io/pandocs/interrupts.html#interrupt-priorities
+    pub fn interrupt_addr(&mut self) -> Word{
+        let idx = self.r#if & self.ie;
+
+        if idx & INT_VBLANK_FLG != 0 {
+            self.r#if ^= INT_VBLANK_FLG;
+            return INT_VBLANK_ADDR;
+        } else if idx & INT_LCD_STAT_FLG != 0 {
+            self.r#if ^= INT_LCD_STAT_FLG;
+            return INT_LCD_STAT_ADDR;
+        } else if idx & INT_TIMER_FLG != 0 {
+            self.r#if ^= INT_TIMER_FLG;
+            return INT_TIMER_ADDR;
+        } else if idx & INT_SERIAL_FLG != 0 {
+            self.r#if ^= INT_SERIAL_FLG;
+            return INT_SERIAL_ADDR;
+        } else if idx & INT_JOYPAD_FLG != 0 {
+            self.r#if ^= INT_JOYPAD_FLG;
+            return INT_JOYPAD_ADDR;
+        } else {
+            unreachable!("idx {:02X} is invalid for interrupt!!", idx);
+        }
+    }
 }
 
 impl Reader for Interrupt {

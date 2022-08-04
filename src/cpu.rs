@@ -5,6 +5,7 @@ use crate::{
     util::*,
     bus::Bus,
     constant::*,
+    io::interrupt::Interrupt,
 };
 
 use bitvec::prelude::*;
@@ -225,6 +226,17 @@ impl Cpu {
     }
 
     pub fn step(&mut self) {
+        if self.halted{
+            if self.bus.interrupt().has() {
+                self.halted = false;
+            }
+            return
+        }
+
+        if self.exec_interrupt() {
+            return
+        }
+
         let mut opcode = self.fetch();
 
         let op;
@@ -363,6 +375,23 @@ impl Cpu {
             "NC" => !self.reg.F.c,
             &_ => unreachable!(),
         }
+    }
+
+    fn exec_interrupt(&mut self) -> bool {
+        if !self.ime || !self.interrupt().has() {
+            return false
+        }
+    
+        let addr = self.interrupt().interrupt_addr();
+        self.push_pc();
+        self.store(&"PC".to_string(), addr);
+        self.ime = false;
+    
+        return true
+    }
+
+    fn interrupt(&mut self) -> &mut Interrupt {
+        self.bus.interrupt()
     }
 }
 
