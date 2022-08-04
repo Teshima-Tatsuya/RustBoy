@@ -1,17 +1,23 @@
 use crate::{constant::*, traits::*, types::*};
 
-#[derive(Default)]
 pub struct Timer {
+    counter: Byte,
     div: Byte,
     tima: Byte,
     tma: Byte,
     tac: Byte,
 }
 
-impl Timer {
-    pub fn new() -> Self {
-        Default::default()
+impl Default for Timer {
+    fn default() -> Self {
+        Self {
+            div: 0x19,
+            ..Default::default()
+        }
     }
+}
+
+impl Timer {
 }
 
 impl Reader for Timer {

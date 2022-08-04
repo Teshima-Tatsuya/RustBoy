@@ -24,7 +24,7 @@ impl Io {
     pub fn new() -> Self {
         Io {
             serial: serial::Serial::new(),
-            timer: timer::Timer::new(),
+            timer: timer::Timer::default(),
             interrupt: interrupt::Interrupt::new(),
             apu: apu::Apu::new(),
             ppu: ppu::Ppu::new(),
