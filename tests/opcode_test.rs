@@ -1060,6 +1060,51 @@ speculate! {
                 }
             }
         }
+
+        describe "DAA" {
+            describe "daa" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x27, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // low 4 bit greater than or equal A                    
+                    cpu.store(&"A".to_string(), 0x0A);
+                    cpu.reg.F.unpack(0x00);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"A".to_string()), 0x10);
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    
+                    // low 4 bit less than A and Harf carry = 0
+                    cpu.store(&"A".to_string(), 0x09);
+                    cpu.reg.F.unpack(0x00);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"A".to_string()), 0x09);
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+
+                    // low 4 bit less than A and Harf carry = 1
+                    cpu.store(&"A".to_string(), 0x09);
+                    cpu.reg.F.unpack(0x20);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"A".to_string()), 0x0F);
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+
+                    // and so on...
+                }
+            }
+        }
     }
     describe "CB_OPCODE" {
         describe "rlc" {

@@ -11,7 +11,7 @@ pub struct MockBus {
 
 impl MockBus {
     pub fn new() -> Self {
-        Self { buf: [0; 0xFFFF], interrupt: Interrupt::new(), timer: Default::default() }
+        Self { buf: [0; 0xFFFF], interrupt: Interrupt::new(), timer: Timer::default() }
     }
 }
 impl Reader for MockBus {

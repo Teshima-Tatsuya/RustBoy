@@ -647,7 +647,7 @@ fn rrca(c: &mut Cpu, _: String, _: String) {
 fn daa(c: &mut Cpu, _: String, _: String) {
 	let mut a = c.load(&"A".to_string());
 
-	if c.reg.F.n {
+	if !c.reg.F.n {
 		if a & 0x0F >= 0x0A || c.reg.F.h {
 			a = a.wrapping_add(0x06);
 		}
