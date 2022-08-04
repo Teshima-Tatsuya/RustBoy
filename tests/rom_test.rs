@@ -5,7 +5,7 @@ extern crate speculate;
 
 mod common;
 use rstest::*;
-use rust_boy::gameboy::GameBoy;
+use rust_boy::{traits::*, gameboy::GameBoy};
 use speculate::speculate;
 use std::env;
 

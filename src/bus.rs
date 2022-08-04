@@ -55,3 +55,9 @@ impl Writer for Bus {
         }
     }
 }
+
+impl BusAccessor for Bus {
+    fn interrupt(&mut self) -> &mut interrupt::Interrupt {
+       &mut self.io.interrupt 
+    }
+}

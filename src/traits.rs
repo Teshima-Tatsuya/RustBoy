@@ -1,4 +1,5 @@
 use crate::types::*;
+use crate::io::interrupt::Interrupt;
 
 macro_rules! trait_alias {
     (pub trait $name:ident = $($traits:tt)+) => {
@@ -17,4 +18,8 @@ pub trait Writer {
     fn write(&mut self, addr: Word, value: Byte);
 }
 
-trait_alias!(pub trait BusTrait = Reader + Writer);
+pub trait BusAccessor {
+    fn interrupt(&mut self) -> &mut Interrupt;
+}
+
+trait_alias!(pub trait BusTrait = Reader + Writer + BusAccessor);

@@ -3,13 +3,14 @@ use crate::{
     traits::*,
     types::*,
     util::*,
+    bus::Bus,
     constant::*,
 };
 
 use bitvec::prelude::*;
 use std::fmt;
 
-trait_alias!(pub trait BusTrait = Reader + Writer);
+trait_alias!(pub trait BusTrait = Reader + Writer + BusAccessor);
 
 pub struct Cpu {
     pub reg: Register,

@@ -1,4 +1,4 @@
-use crate::{constant::*, cpu::Cpu, types::*, util::*};
+use crate::{constant::*, cpu::Cpu, types::*, util::*, traits::*};
 use once_cell::sync::Lazy;
 use std::fmt;
 
