@@ -44,7 +44,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x04, "INC B", "B", "",   1, inc},
 	make_opcode! {0x05, "DEC B", "B", "",   1, dec},
 	make_opcode! {0x06, "LD B,d8", "B", "d",   2, ld},
-	make_opcode! {0x07, "RLCA", "",  "",   1, empty},
+	make_opcode! {0x07, "RLCA", "",  "",   1, rlca},
 	make_opcode! {0x08, "LD (a16),SP", "(aa)",  "SP",  5, ld},
 	make_opcode! {0x09, "ADD HL,BC", "HL", "BC",  2, addr16r16},
 	make_opcode! {0x0A, "LD A,(BC)", "A", "(BC)",  2, ld},
@@ -52,7 +52,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x0C, "INC C", "C", "",   1, inc},
 	make_opcode! {0x0D, "DEC C", "C", "",   1, dec},
 	make_opcode! {0x0E, "LD C,d8", "C", "d",   2, ld},
-	make_opcode! {0x0F, "RRCA", "",  "",   1, empty},
+	make_opcode! {0x0F, "RRCA", "",  "",   1, rrca},
 	make_opcode! {0x10, "STOP 0", "",  "",   1, stop},
 	make_opcode! {0x11, "LD DE,d16", "DE", "dd",   3, ld},
 	make_opcode! {0x12, "LD (DE),A", "(DE)", "A",  2, ld},
@@ -60,7 +60,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x14, "INC D", "D", "",   1, inc},
 	make_opcode! {0x15, "DEC D", "D", "",   1, dec},
 	make_opcode! {0x16, "LD D,d8", "D", "d",   2, ld},
-	make_opcode! {0x17, "RLA", "",  "",   1, empty},
+	make_opcode! {0x17, "RLA", "",  "",   1, rla},
 	make_opcode! {0x18, "JR r8", "d",  "",   3, jr},
 	make_opcode! {0x19, "ADD HL,DE", "HL", "DE",  2, addr16r16},
 	make_opcode! {0x1A, "LD A,(DE)", "A", "(DE)",  2, ld},
@@ -76,7 +76,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x24, "INC H", "H", "",   1, inc},
 	make_opcode! {0x25, "DEC H", "H", "",   1, dec},
 	make_opcode! {0x26, "LD H,d8", "H", "d",   2, ld},
-	make_opcode! {0x27, "DAA", "",  "",   1, empty},
+	make_opcode! {0x27, "DAA", "",  "",   1, daa},
 	make_opcode! {0x28, "JR Z,r8", "Z", "d",   2, jr},
 	make_opcode! {0x29, "ADD HL,HL", "HL", "HL",  2, addr16r16},
 	make_opcode! {0x2A, "LD A,(HL+)", "A", "(HLI)",  2, ld},
@@ -155,7 +155,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x73, "LD (HL), E", "(HL)", "E",  2, ld},
 	make_opcode! {0x74, "LD (HL), H", "(HL)", "H",  2, ld},
 	make_opcode! {0x75, "LD (HL), L", "(HL)", "L",  2, ld},
-	make_opcode! {0x76, "HALT", "",  "",   1, empty},
+	make_opcode! {0x76, "HALT", "",  "",   1, halt},
 	make_opcode! {0x77, "LD (HL), A", "(HL)", "A",  2, ld},
 	make_opcode! {0x78, "LD A, B", "A", "B",  1, ld},
 	make_opcode! {0x79, "LD A, C", "A", "C",  1, ld},
@@ -626,9 +626,79 @@ fn rra(c: &mut Cpu, _: String, _: String) {
 	c.store(&"A".to_string(), value);
 }
 
+fn rla(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&"A".to_string()) as Byte;
+	let carry = c.reg.F.c;
+	let mut value = r << 1;
+
+	if carry {
+		value += 1;
+	}
+
+	c.reg.F.z = false;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x80 == 0x80;
+
+	c.store(&"A".to_string(), value as Word);
+}
+
+fn rlca(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&"A".to_string()) as Byte;
+	let value = r.rotate_left(1);
+
+	c.reg.F.z = false;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = (r & 0x80) == 0x80;
+
+	c.store(&"A".to_string(), value as Word);
+}
+
+fn rrca(c: &mut Cpu, r1: String, _: String) {
+	let r = c.load(&"A".to_string()) as Byte;
+	let value = r.rotate_right(1);
+
+	c.reg.F.z = false;
+	c.reg.F.n = false;
+	c.reg.F.h = false;
+	c.reg.F.c = r & 0x01 == 0x01;
+
+	c.store(&"A".to_string(), value as Word);
+}
+
+// @see https://donkeyhacks.zouri.jp/html/En-Us/snes/apu/spc700/daa.html
+fn daa(c: &mut Cpu, _: String, _: String) {
+	let mut a = c.load(&"A".to_string());
+
+	if c.reg.F.n {
+		if a & 0x0F >= 0x0A || c.reg.F.h {
+			a.wrapping_add(0x06);
+		}
+		if a >= 0xA0 || c.reg.F.c {
+			a.wrapping_add(0x60);
+		}
+	} else {
+		if c.reg.F.h {
+			a = a.wrapping_sub(0x06) & 0xFF;
+		}
+		if c.reg.F.c {
+			a.wrapping_sub(0x60);
+		}
+	}
+
+	c.store(&"A".to_string(), a as Byte as Word);
+	c.reg.F.z = a as Byte == 0;
+	c.reg.F.h = false;
+	if a&0x100 == 0x100 {
+		c.reg.F.c = true;
+	}
+}
+
+
 fn cpl(c: &mut Cpu, _: String, _: String) {
-	let a = c.reg.r(&"A".to_string());
-	c.reg.r_mut(&"A".to_string(), a ^ a);
+	let a = c.load(&"A".to_string()) as Byte;
+	c.store(&"A".to_string(), (a ^ 0xFF) as Word);
 
 	c.reg.F.n = true;
 	c.reg.F.h = true;
@@ -652,6 +722,10 @@ fn di(c: &mut Cpu, _: String, _: String) {
 
 fn ei(c: &mut Cpu, _: String, _: String) {
 	c.ime = true;
+}
+
+fn halt(c: &mut Cpu, _: String, _: String) {
+	c.halted = true;
 }
 
 #[rustfmt::skip]
