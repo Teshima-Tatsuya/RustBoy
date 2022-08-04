@@ -1,5 +1,4 @@
-use crate::{constant::*, cpu::Cpu, traits::*, types::*, util::*};
-use log::warn;
+use crate::{constant::*, cpu::Cpu, types::*, util::*};
 use once_cell::sync::Lazy;
 use std::fmt;
 
@@ -603,7 +602,7 @@ fn rra(c: &mut Cpu, _: String, _: String) {
 	c.store(&"A".to_string(), value);
 }
 
-fn rla(c: &mut Cpu, r1: String, _: String) {
+fn rla(c: &mut Cpu, _: String, _: String) {
 	let r = c.load(&"A".to_string()) as Byte;
 	let carry = c.reg.F.c;
 	let mut value = r << 1;
@@ -620,7 +619,7 @@ fn rla(c: &mut Cpu, r1: String, _: String) {
 	c.store(&"A".to_string(), value as Word);
 }
 
-fn rlca(c: &mut Cpu, r1: String, _: String) {
+fn rlca(c: &mut Cpu, _: String, _: String) {
 	let r = c.load(&"A".to_string()) as Byte;
 	let value = r.rotate_left(1);
 
@@ -632,7 +631,7 @@ fn rlca(c: &mut Cpu, r1: String, _: String) {
 	c.store(&"A".to_string(), value as Word);
 }
 
-fn rrca(c: &mut Cpu, r1: String, _: String) {
+fn rrca(c: &mut Cpu, _: String, _: String) {
 	let r = c.load(&"A".to_string()) as Byte;
 	let value = r.rotate_right(1);
 
