@@ -1,5 +1,5 @@
 mod serial;
-mod timer;
+pub mod timer;
 pub mod interrupt;
 mod apu;
 mod ppu;
@@ -13,7 +13,7 @@ use crate::{
 
 pub struct Io {
     serial: serial::Serial,
-    timer: timer::Timer,
+    pub timer: timer::Timer,
     pub interrupt: interrupt::Interrupt,
     apu: apu::Apu,
     ppu: ppu::Ppu,

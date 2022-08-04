@@ -649,17 +649,17 @@ fn daa(c: &mut Cpu, _: String, _: String) {
 
 	if c.reg.F.n {
 		if a & 0x0F >= 0x0A || c.reg.F.h {
-			a.wrapping_add(0x06);
+			a = a.wrapping_add(0x06);
 		}
 		if a >= 0xA0 || c.reg.F.c {
-			a.wrapping_add(0x60);
+			a = a.wrapping_add(0x60);
 		}
 	} else {
 		if c.reg.F.h {
 			a = a.wrapping_sub(0x06) & 0xFF;
 		}
 		if c.reg.F.c {
-			a.wrapping_sub(0x60);
+			a = a.wrapping_sub(0x60);
 		}
 	}
 

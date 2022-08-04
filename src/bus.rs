@@ -60,4 +60,8 @@ impl BusAccessor for Bus {
     fn interrupt(&mut self) -> &mut interrupt::Interrupt {
        &mut self.io.interrupt 
     }
+
+    fn timer(&mut self) -> &mut timer::Timer {
+       &mut self.io.timer
+    }
 }

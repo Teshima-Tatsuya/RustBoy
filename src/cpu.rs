@@ -6,6 +6,7 @@ use crate::{
     bus::Bus,
     constant::*,
     io::interrupt::Interrupt,
+    io::timer::Timer,
 };
 
 use bitvec::prelude::*;
@@ -225,16 +226,16 @@ impl Cpu {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self) -> u16 {
         if self.halted{
             if self.bus.interrupt().has() {
                 self.halted = false;
             }
-            return
+            return 1;
         }
 
         if self.exec_interrupt() {
-            return
+            return 1;
         }
 
         let mut opcode = self.fetch();
@@ -256,6 +257,8 @@ impl Cpu {
 
         let handler = &op.handler;
         handler(self, op.r1.to_string(), op.r2.to_string());
+
+        return op.cycles as u16;
     }
 
     pub fn fetch(&mut self) -> Byte {
@@ -383,6 +386,12 @@ impl Cpu {
         }
     
         let addr = self.interrupt().interrupt_addr();
+
+        match addr {
+            INT_TIMER_ADDR => self.timer().overflow = false,
+            _ => (),
+        }
+
         self.push_pc();
         self.store(&"PC".to_string(), addr);
         self.ime = false;
@@ -390,8 +399,12 @@ impl Cpu {
         return true
     }
 
-    fn interrupt(&mut self) -> &mut Interrupt {
+    pub fn interrupt(&mut self) -> &mut Interrupt {
         self.bus.interrupt()
+    }
+
+    pub fn timer(&mut self) -> &mut Timer {
+        self.bus.timer()
     }
 }
 

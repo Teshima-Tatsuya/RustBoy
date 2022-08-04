@@ -24,6 +24,7 @@ impl GameBoy {
     }
 
     pub fn step(&mut self) {
-        self.cpu.step();
+        let cycle = self.cpu.step();
+        self.cpu.bus.timer().tick(cycle * 4);
     }
 }

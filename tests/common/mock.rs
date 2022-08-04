@@ -1,15 +1,17 @@
 use rust_boy::traits::*;
 use rust_boy::types::*;
 use rust_boy::io::interrupt::Interrupt;
+use rust_boy::io::timer::Timer;
 
 pub struct MockBus {
     buf: [Byte; 0xFFFF],
     interrupt: Interrupt,
+    timer: Timer,
 }
 
 impl MockBus {
     pub fn new() -> Self {
-        Self { buf: [0; 0xFFFF], interrupt: Interrupt::new() }
+        Self { buf: [0; 0xFFFF], interrupt: Interrupt::new(), timer: Default::default() }
     }
 }
 impl Reader for MockBus {
@@ -27,5 +29,8 @@ impl Writer for MockBus {
 impl BusAccessor for MockBus {
     fn interrupt(&mut self) -> &mut Interrupt {
         &mut self.interrupt
+    }
+    fn timer(&mut self) -> &mut Timer {
+        &mut self.timer
     }
 }
