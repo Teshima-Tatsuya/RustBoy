@@ -3,6 +3,7 @@ use crate::cartridge::Cartridge;
 use crate::cpu::Cpu;
 use crate::mbc::*;
 use crate::types::*;
+use crate::constant::*;
 
 pub struct GameBoy {
     pub cpu: Cpu,
@@ -26,5 +27,9 @@ impl GameBoy {
     pub fn step(&mut self) {
         let cycle = self.cpu.step();
         self.cpu.bus.timer().tick(cycle * 4);
+        if self.cpu.bus.timer().overflow {
+            self.cpu.bus.interrupt().request(INT_TIMER_FLG);
+            self.cpu.bus.timer().overflow = false;
+        }
     }
 }

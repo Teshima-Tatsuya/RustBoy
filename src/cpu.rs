@@ -3,7 +3,6 @@ use crate::{
     traits::*,
     types::*,
     util::*,
-    bus::Bus,
     constant::*,
     io::interrupt::Interrupt,
     io::timer::Timer,
@@ -386,11 +385,6 @@ impl Cpu {
         }
     
         let addr = self.interrupt().interrupt_addr();
-
-        match addr {
-            INT_TIMER_ADDR => self.timer().overflow = false,
-            _ => (),
-        }
 
         self.push_pc();
         self.store(&"PC".to_string(), addr);
