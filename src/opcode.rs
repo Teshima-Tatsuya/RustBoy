@@ -269,7 +269,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xE5, "PUSH HL", "HL", "",   4, push},
 	make_opcode! {0xE6, "AND d8", "d",  "",   2, and},
 	make_opcode! {0xE7, "RST 20H", "0x20", "",   4, rst},
-	make_opcode! {0xE8, "ADD SP,r8", "SP", "",   4, addr16d},
+	make_opcode! {0xE8, "ADD SP,r8", "SP", "d",   4, addr16d},
 	make_opcode! {0xE9, "JP (HL)", "HL", "",   1, jp},
 	make_opcode! {0xEA, "LD (a16),A", "(aa)",  "A",  4, ld},
 	make_opcode! {0xEB, "EMPTY", "",  "",   0,  empty},
@@ -410,25 +410,10 @@ fn add(c: &mut Cpu, r1: String, r2: String) {
 
 	c.store(&r1, v as Word);
 }
-fn _add(c: &mut Cpu, b: Byte) {
-	let (v, overflow) = c.reg.A.overflowing_add(b);
-
-	c.reg.F.z = v == 0;
-	c.reg.F.n = false;
-	c.reg.F.h = (c.reg.A ^ b ^ v) & 0x10 != 0;
-	c.reg.F.c = overflow;
-
-	c.reg.A = v;
-}
-
-fn addr(c: &mut Cpu, _: String, r: String) {
-	let r = c.reg.r(&r);
-	_add(c, r)
-}
 
 fn addr16r16(c: &mut Cpu, r1: String, r2: String) {
-	let a = c.reg.r16(&r1);
-	let b = c.reg.r16(&r2);
+	let a = c.load(&r1);
+	let b = c.load(&r2);
 
 	let (v, overflow) = a.overflowing_add(b);
 
@@ -436,29 +421,21 @@ fn addr16r16(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.h = (a ^ b ^ v) & 0x1000 != 0;
 	c.reg.F.c = overflow;
 
-	c.reg.r16_mut(&r1, v);
+	c.store(&r1, v);
 }
 
-fn addr16d(c: &mut Cpu, r: String, _: String) {
-	// v1 = c.reg.R16(r16)
-	// v2 = int8(c.fetch())
+fn addr16d(c: &mut Cpu, r1: String, r2: String) {
+	let v1 = c.load(&r1);
+	let v2 = c.load(&r2) as i8 as Word;
 
-	// v = uint32(v1) + uint32(v2)
+	let v = v1.wrapping_add(v2);
 
-	// carry = uint32(v1) ^ uint32(v2) ^ v
+	c.reg.F.z = false;
+	c.reg.F.n = false;
+	c.reg.F.h = (v1 ^ v2 ^ v) & 0x10 != 0;
+	c.reg.F.c = (v1 ^ v2 ^ v) & 0x100 != 0;
 
-	// c.reg.setR16(r16, types.Addr(v))
-	// c.reg.setZNHC(false, false, carry&0x10 == 0x10, carry&0x100 == 0x100)
-}
-
-fn add_hl(c: &mut Cpu, _: String, r: String) {
-	let v = c.bus.read(c.reg.r16(&r));
-	_add(c, v);
-}
-
-fn addd8(c: &mut Cpu, _: String, _: String) {
-	let v = c.fetch();
-	_add(c, v);
+	c.store(&r1, v);
 }
 
 fn adc(c: &mut Cpu, r1: String, r2: String) {

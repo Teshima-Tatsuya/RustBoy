@@ -38,9 +38,9 @@ speculate! {
                     frame: u64,
                 }
                 #[rstest(arg,
-                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "01-special".to_string(), frame: 400000}),
-                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "02-interrupts".to_string(), frame: 4000000}),
-                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "03-op sp,hl".to_string(), frame:  8000000}),
+                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "01-special".to_string(), frame: 800000}),
+                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "02-interrupts".to_string(), frame: 8000000}),
+                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "03-op sp,hl".to_string(), frame:  20000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "04-op r,imm".to_string(), frame: 4000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "05-op rp".to_string(), frame: 4000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "06-ldr,r".to_string(), frame: 400000}),
