@@ -32,7 +32,7 @@ impl Timer {
             }
 
             if !self.started() {
-                return;
+                continue;
             }
 
             if self.tima == 0 {
@@ -76,7 +76,13 @@ impl Reader for Timer {
 impl Writer for Timer {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
-            ADDR_TIMER_DIV => self.div = value,
+            ADDR_TIMER_DIV => {
+                self.div = 0;
+                if self.counter >> self.get_freq() & 0x01 == 1 {
+                    self.tima = self.tima.wrapping_add(1);
+                }
+                self.counter = 0;
+            },
             ADDR_TIMER_TIMA => self.tima = value,
             ADDR_TIMER_TMA => self.tma = value,
             ADDR_TIMER_TAC => self.tac = value & 0x07,

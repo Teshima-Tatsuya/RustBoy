@@ -24,6 +24,9 @@ fn rom_test(folder: String, file: String, frame: u64, pass_str: String) {
             result += &char::from_u32(gb.cpu.bus.read(0xFF01) as u32).unwrap().to_string();
             gb.cpu.bus.write(0xFF02, 0x00);
         }
+        if result.contains(&pass_str){
+             break;
+        }
     }
 
     debug_assert!(result.contains(&pass_str), "{}",result);
@@ -40,7 +43,7 @@ speculate! {
                 #[rstest(arg,
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "01-special".to_string(), frame: 2000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "02-interrupts".to_string(), frame: 8000000}),
-                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "03-op sp,hl".to_string(), frame:  20000000}),
+                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "03-op sp,hl".to_string(), frame:  40000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "04-op r,imm".to_string(), frame: 4000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "05-op rp".to_string(), frame: 4000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "06-ldr,r".to_string(), frame: 400000}),

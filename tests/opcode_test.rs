@@ -382,6 +382,10 @@ speculate! {
                     cpu.store(&opcode.r1, 0x1234);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x1235);
+
+                    cpu.store(&opcode.r1, 0xFFFF);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x0000);
                 }
             }
         }
@@ -459,6 +463,10 @@ speculate! {
                     cpu.store(&opcode.r1, 0x1234);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x1233);
+                    
+                    cpu.store(&opcode.r1, 0x0000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0xFFFF);
                 }
             }
         }
