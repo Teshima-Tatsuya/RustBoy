@@ -7,6 +7,7 @@ use crate::constant::*;
 
 pub struct GameBoy {
     pub cpu: Cpu,
+    cycle: u32,
     // gpu: GPU,
     // apu: APU,
     // timer: Timer,
@@ -21,15 +22,23 @@ impl GameBoy {
 
         let cpu = Cpu::new(Box::new(bus));
 
-        Self { cpu }
+        Self { cpu, cycle: 0, }
     }
 
     pub fn step(&mut self) {
-        let cycle = self.cpu.step();
-        self.cpu.bus.timer().tick(cycle * 4);
-        if self.cpu.bus.timer().overflow {
-            self.cpu.bus.interrupt().request(INT_TIMER_FLG);
-            self.cpu.bus.timer().overflow = false;
-        }
+       // loop {
+            let cycle = self.cpu.step();
+            self.cycle += cycle as u32 * 4;
+            self.cpu.bus.timer().tick(cycle);
+            if self.cpu.bus.timer().overflow {
+                self.cpu.bus.interrupt().request(INT_TIMER_FLG);
+                self.cpu.bus.timer().overflow = false;
+            }
+
+//            if self.cycle >= 70224 {
+  //              self.cycle -= 70224;
+    //            return
+      //      }
+       // }
     }
 }

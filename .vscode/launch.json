@@ -4,6 +4,7 @@
     // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
     
         {
             "type": "lldb",
@@ -76,6 +77,25 @@
                 ],
                 "filter": {
                     "name": "rom_test",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'rom_test_single'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=rom_test_single",
+                    "--package=rust_boy"
+                ],
+                "filter": {
+                    "name": "rom_test_single",
                     "kind": "test"
                 }
             },

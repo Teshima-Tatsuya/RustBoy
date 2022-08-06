@@ -302,7 +302,7 @@ fn nop(_: &mut Cpu, _: String, _: String) {
 }
 
 fn stop(_: &mut Cpu, _: String, _: String) {
-	todo!("stop impl");
+	println!("stop impl");
 }
 
 fn ld(c: &mut Cpu, r1: String, r2: String) {
