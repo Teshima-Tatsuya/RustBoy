@@ -1397,6 +1397,44 @@ speculate! {
             }
         }
 
+        describe "RST" {
+            describe "rst" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xC7, r1: "00".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xCF, r1: "08".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xD7, r1: "16".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xDF, r1: "24".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xE7, r1: "32".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xEF, r1: "40".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xF7, r1: "48".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xFF, r1: "56".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    cpu.reg.PC = 0x1234;
+
+                    let handler = &opcode.handler;
+
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.bus.read(cpu.reg.SP), 0x34);
+                    assert_eq!(cpu.bus.read(cpu.reg.SP + 1), 0x12);
+                    let num: u16 = opcode.r1.parse().unwrap();
+                    assert_eq!(cpu.load(&"PC".to_string()), num);
+                }
+            }
+        }
+
+
         describe "DAA" {
             describe "daa" {
                 struct Args {

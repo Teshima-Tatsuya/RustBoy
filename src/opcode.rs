@@ -235,7 +235,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xC4, "CALL NZ,a16", "NZ", "aa",   3, call},
 	make_opcode! {0xC5, "PUSH BC", "BC", "",   4, push},
 	make_opcode! {0xC6, "ADD A,d8", "A", "d",   2, add},
-	make_opcode! {0xC7, "RST 00H", "0x00", "",   4, rst},
+	make_opcode! {0xC7, "RST 00H", "00", "",   4, rst},
 	make_opcode! {0xC8, "RET Z", "Z", "",   2, ret},
 	make_opcode! {0xC9, "RET", "",  "",   4, ret},
 	make_opcode! {0xCA, "JP Z,a16", "Z", "aa",   3, jp},
@@ -243,7 +243,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xCC, "CALL Z,a16", "Z", "aa",   3, call},
 	make_opcode! {0xCD, "CALL a16", "aa",  "",   6, call},
 	make_opcode! {0xCE, "ADC A,d8", "A", "d",   2, adc},
-	make_opcode! {0xCF, "RST 08H", "0x08", "",   4, rst},
+	make_opcode! {0xCF, "RST 08H", "08", "",   4, rst},
 	make_opcode! {0xD0, "RET NC", "NC", "",   2, ret},
 	make_opcode! {0xD1, "POP DE", "DE", "",   3, pop},
 	make_opcode! {0xD2, "JP NC,a16", "NC", "aa",   3, jp},
@@ -251,7 +251,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xD4, "CALL NC,a16", "NC", "aa",   3, call},
 	make_opcode! {0xD5, "PUSH DE", "DE", "",   4, push},
 	make_opcode! {0xD6, "SUB d8", "A",  "d",   2, sub},
-	make_opcode! {0xD7, "RST 10H", "0x10", "",   4, rst},
+	make_opcode! {0xD7, "RST 10H", "16", "",   4, rst},
 	make_opcode! {0xD8, "RET C", "C", "",   2, ret},
 	make_opcode! {0xD9, "RETI", "",  "",   4, reti},
 	make_opcode! {0xDA, "JP C,a16", "C", "aa",   3, jp},
@@ -259,7 +259,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xDC, "CALL C,a16", "C", "aa",   3, call},
 	make_opcode! {0xDD, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xDE, "SBC A,d8", "A", "d",   2, sbc},
-	make_opcode! {0xDF, "RST 18H", "0x18", "",   4, rst},
+	make_opcode! {0xDF, "RST 18H", "24", "",   4, rst},
 	make_opcode! {0xE0, "LDH (a8),A", "(a)",  "A",  3, ld},
 	make_opcode! {0xE1, "POP HL", "HL", "",   3, pop},
 	make_opcode! {0xE2, "LD (C),A", "(C)", "A",  2, ld},
@@ -267,7 +267,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xE4, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xE5, "PUSH HL", "HL", "",   4, push},
 	make_opcode! {0xE6, "AND d8", "d",  "",   2, and},
-	make_opcode! {0xE7, "RST 20H", "0x20", "",   4, rst},
+	make_opcode! {0xE7, "RST 20H", "32", "",   4, rst},
 	make_opcode! {0xE8, "ADD SP,r8", "SP", "d",   4, addr16d},
 	make_opcode! {0xE9, "JP (HL)", "HL", "",   1, jp},
 	make_opcode! {0xEA, "LD (a16),A", "(aa)",  "A",  4, ld},
@@ -275,7 +275,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xEC, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xED, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xEE, "XOR d8", "d",  "",   2, xor},
-	make_opcode! {0xEF, "RST 28H", "0x28", "",   4, rst},
+	make_opcode! {0xEF, "RST 28H", "40", "",   4, rst},
 	make_opcode! {0xF0, "LDH A,(a8)", "A", "(a)",   3, ld},
 	make_opcode! {0xF1, "POP AF", "AF",  "",   3, pop},
 	make_opcode! {0xF2, "LD A,(C)", "A", "(C)",  2, ld},
@@ -283,7 +283,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xF4, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xF5, "PUSH AF", "AF",  "",   4, push},
 	make_opcode! {0xF6, "OR d8", "d",  "",   2, or},
-	make_opcode! {0xF7, "RST 30H", "0x30", "",   4, rst},
+	make_opcode! {0xF7, "RST 30H", "48", "",   4, rst},
 	make_opcode! {0xF8, "LD HL,SP+r8", "HL", "SP",  3, ldr16r16d},
 	make_opcode! {0xF9, "LD SP,HL", "SP", "HL",  2, ld},
 	make_opcode! {0xFA, "LD A,(a16)", "A", "(aa)",   4, ld},
@@ -291,7 +291,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFC, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xFD, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xFE, "CP d8", "d",  "",   2, cp},
-	make_opcode! {0xFF, "RST 38H", "0x38", "",   4, rst},
+	make_opcode! {0xFF, "RST 38H", "56", "",   4, rst},
 ]);
 
 fn empty(_: &mut Cpu, _: String, _: String) {
@@ -547,7 +547,8 @@ fn reti(c: &mut Cpu, _: String, _: String) {
 // push and jump to n
 fn rst(c: &mut Cpu, n: String, _: String) {
 	c.push_pc();
-	c.reg.PC = n.parse::<i32>().unwrap() as Word
+	let num: Word = n.parse().unwrap();
+	c.reg.PC = num;
 }
 
 // -----push-----
