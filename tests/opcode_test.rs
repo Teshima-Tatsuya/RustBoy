@@ -471,6 +471,184 @@ speculate! {
             }
         }
 
+        describe "ADD" {
+            describe "add" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x80, r1: "A".to_string(), r2:  "B".to_string()}),
+                    case(Args{opcode: 0x81, r1: "A".to_string(), r2:  "C".to_string()}),
+                    case(Args{opcode: 0x82, r1: "A".to_string(), r2:  "D".to_string()}),
+                    case(Args{opcode: 0x83, r1: "A".to_string(), r2:  "E".to_string()}),
+                    case(Args{opcode: 0x84, r1: "A".to_string(), r2:  "H".to_string()}),
+                    case(Args{opcode: 0x85, r1: "A".to_string(), r2:  "L".to_string()}),
+                    case(Args{opcode: 0x86, r1: "A".to_string(), r2: "(HL)".to_string()}),
+                    case(Args{opcode: 0x87, r1: "A".to_string(), r2:  "A".to_string()}),
+                    case(Args{opcode: 0xC6, r1: "A".to_string(), r2:  "d".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    if opcode.r2.as_str() == "A" {
+                        return;
+                    }
+
+                    // no carry
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x0E);
+                    } else {
+                        cpu.store(&opcode.r2, 0x0E);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0xEF);
+                    assert_eq!(cpu.reg.F.pack(), 0b00000000);
+
+                    // half carry
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                    } else {
+                        cpu.store(&opcode.r2, 0x0F);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0xF0);
+                    assert_eq!(cpu.reg.F.pack(), 0b00100000);
+
+                    // carry and zero
+                    cpu.store(&opcode.r1, 0xE1);
+                    if opcode.r2.as_str() == "d" {
+                        cpu.bus.write(cpu.reg.PC, 0x1F);
+                    } else {
+                        cpu.store(&opcode.r2, 0x1F);
+                    }
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x00);
+                    assert_eq!(cpu.reg.F.pack(), 0b10110000);
+                }
+            }
+
+            describe "addr16" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x09, r1: "HL".to_string(), r2: "BC".to_string()}),
+                    case(Args{opcode: 0x19, r1: "HL".to_string(), r2: "DE".to_string()}),
+                    case(Args{opcode: 0x29, r1: "HL".to_string(), r2: "HL".to_string()}),
+                    case(Args{opcode: 0x39, r1: "HL".to_string(), r2: "SP".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    if opcode.r2.as_str() == "HL" {
+                        return;
+                    }
+
+                    let handler = &opcode.handler;
+
+                    // no carry
+                    cpu.store(&opcode.r1, 0x00E1);
+                    cpu.store(&opcode.r2, 0x000E);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x00EF);
+                    assert_eq!(cpu.reg.F.pack(), 0b00000000);
+
+                    // half carry
+                    cpu.store(&opcode.r1, 0x0FF1);
+                    cpu.store(&opcode.r2, 0x000F);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x1000);
+                    assert_eq!(cpu.reg.F.pack(), 0b00100000);
+
+                    // carry
+                    cpu.store(&opcode.r1, 0xFFF1);
+                    cpu.store(&opcode.r2, 0x000F);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x0000);
+                    assert_eq!(cpu.reg.F.pack(), 0b00110000);
+                }
+            }
+
+            describe "addr16d" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xE8, r1: "SP".to_string(), r2: "d".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    // no carry
+                    cpu.store(&opcode.r1, 0x01E1);
+                    cpu.bus.write(cpu.reg.PC, 0x0D);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x01EE);
+                    assert_eq!(cpu.reg.F.pack(), 0b00000000);
+
+                    // half carry
+                    cpu.store(&opcode.r1, 0x0FD1);
+                    cpu.bus.write(cpu.reg.PC, 0x0F);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x0FE0);
+                    assert_eq!(cpu.reg.F.pack(), 0b00100000);
+
+                    // carry
+                    cpu.store(&opcode.r1, 0x0DF1);
+                    cpu.bus.write(cpu.reg.PC, 0x0F);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x0E00);
+                    assert_eq!(cpu.reg.F.pack(), 0b00110000);
+
+                    // negative half carry
+                    cpu.store(&opcode.r1, 0x0FD1);
+                    cpu.bus.write(cpu.reg.PC, 0x8F);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x0F60);
+                    assert_eq!(cpu.reg.F.pack(), 0b00110000);
+                    
+                    // negative carry
+                    cpu.store(&opcode.r1, 0x0F81);
+                    cpu.bus.write(cpu.reg.PC, 0x80);
+                    cpu.reg.F.unpack(0b00000000);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x0F01);
+                    assert_eq!(cpu.reg.F.pack(), 0b00010000);
+                }
+            }
+        }
+
         describe "ADC" {
             describe "adc" {
                 struct Args {
@@ -581,33 +759,6 @@ speculate! {
                         assert_eq!(cpu.load(&opcode.r1), 0x00);
                         assert_eq!(cpu.reg.F.pack(), 0b10110000);
                     }
-                }
-            }
-
-            describe "decrr" {
-                struct Args {
-                    opcode: Byte,
-                    r1: String,
-                    r2: String,
-                }
-                #[rstest(arg,
-                    case(Args{opcode: 0x0B, r1: "BC".to_string(), r2: "".to_string()}),
-                    case(Args{opcode: 0x1B, r1: "DE".to_string(), r2: "".to_string()}),
-                    case(Args{opcode: 0x2B, r1: "HL".to_string(), r2: "".to_string()}),
-                    case(Args{opcode: 0x3B, r1: "SP".to_string(), r2: "".to_string()}),
-                )]
-                fn test(arg: Args) {
-                    let mut cpu = common::fixture::setup_cpu();
-
-                    let opcode = &OPCODES[arg.opcode as usize];
-                    assert_eq!(opcode.r1, arg.r1);
-                    assert_eq!(opcode.r2, arg.r2);
-
-                    let handler = &opcode.handler;
-
-                    cpu.store(&opcode.r1, 0x1234);
-                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
-                    assert_eq!(cpu.load(&opcode.r1), 0x1233);
                 }
             }
         }
