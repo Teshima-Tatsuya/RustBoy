@@ -180,14 +180,14 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x8D, "ADC A, L", "A", "L",  1, adc},
 	make_opcode! {0x8E, "ADC A, (HL)", "A", "(HL)",  2, adc},
 	make_opcode! {0x8F, "ADC A, A", "A", "A",  1, adc},
-	make_opcode! {0x90, "SUB B", "B", "",   1, subr},
-	make_opcode! {0x91, "SUB C", "C", "",   1, subr},
-	make_opcode! {0x92, "SUB D", "D", "",   1, subr},
-	make_opcode! {0x93, "SUB E", "E", "",   1, subr},
-	make_opcode! {0x94, "SUB H", "H", "",   1, subr},
-	make_opcode! {0x95, "SUB L", "L", "",   1, subr},
-	make_opcode! {0x96, "SUB (HL)", "HL", "",   2, sub_hl},
-	make_opcode! {0x97, "SUB A", "A", "",   1, subr},
+	make_opcode! {0x90, "SUB B", "A", "B", 1, sub},
+	make_opcode! {0x91, "SUB C", "A", "C", 1, sub},
+	make_opcode! {0x92, "SUB D", "A", "D", 1, sub},
+	make_opcode! {0x93, "SUB E", "A", "E", 1, sub},
+	make_opcode! {0x94, "SUB H", "A", "H", 1, sub},
+	make_opcode! {0x95, "SUB L", "A", "L", 1, sub},
+	make_opcode! {0x96, "SUB (HL)", "A", "(HL)", 2, sub},
+	make_opcode! {0x97, "SUB A", "A", "A",   1, sub},
 	make_opcode! {0x98, "SBC A, B", "A", "B",  1, sbc},
 	make_opcode! {0x99, "SBC A, C", "A", "C",  1, sbc},
 	make_opcode! {0x9A, "SBC A, D", "A", "D",  1, sbc},
@@ -250,7 +250,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xD3, "EMPTY", "",  "",   0,  empty},
 	make_opcode! {0xD4, "CALL NC,a16", "NC", "aa",   3, call},
 	make_opcode! {0xD5, "PUSH DE", "DE", "",   4, push},
-	make_opcode! {0xD6, "SUB d8", "",  "",   2, subd8},
+	make_opcode! {0xD6, "SUB d8", "A",  "d",   2, sub},
 	make_opcode! {0xD7, "RST 10H", "0x10", "",   4, rst},
 	make_opcode! {0xD8, "RET C", "C", "",   2, ret},
 	make_opcode! {0xD9, "RETI", "",  "",   4, reti},
@@ -452,31 +452,19 @@ fn adc(c: &mut Cpu, r1: String, r2: String) {
 
 	c.store(&r1, v as Word);
 }
-fn _sub(c: &mut Cpu, b: Byte) {
-	let a = c.reg.A;
-	let (v, overflow) = a.overflowing_sub(b);
 
-	c.store(&"A".to_string(), v as Word);
+fn sub(c: &mut Cpu, r1: String, r2: String) {
+	let a = c.load(&r1) as Byte;
+	let r = c.load(&r2) as Byte;
+
+	let (v, overflow) = a.overflowing_sub(r);
 
 	c.reg.F.z = v == 0;
 	c.reg.F.n = true;
-	c.reg.F.h = (a ^ b ^ v) & 0x10 != 0;
+	c.reg.F.h = (a ^ r ^ v) & 0x10 != 0;
 	c.reg.F.c = overflow;
-}
 
-fn subr(c: &mut Cpu, r: String, _: String) {
-	let v = c.reg.r(&r);
-	_sub(c, v);
-}
-
-fn sub_hl(c: &mut Cpu, r: String, _: String) {
-	let v = c.bus.read(c.reg.r16(&r));
-	_sub(c, v);
-}
-
-fn subd8(c: &mut Cpu, _: String, _: String) {
-	let r = c.fetch();
-	_sub(c, r)
+	c.store(&r1, v as Word);
 }
 
 fn sbc(c: &mut Cpu, r1: String, r2: String) {
