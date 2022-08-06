@@ -1395,9 +1395,41 @@ speculate! {
                     }
                 }
             }
+
+            describe "reti" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xD9, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    cpu.reg.SP = 0xFFFC;
+                    cpu.reg.PC = 0x5678;
+                    cpu.bus.write(cpu.reg.SP, 0x34);
+                    cpu.bus.write(cpu.reg.SP + 1, 0x12);
+
+                    let handler = &opcode.handler;
+
+                    cpu.reg.F.unpack(0xF0);
+                    cpu.ime = false;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&"SP".to_string()), 0xFFFE);
+                    assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
+                    assert_eq!(cpu.ime, true);
+                }
+            }
         }
 
-        describe "RST" {
+        describe "RT" {
             describe "rst" {
                 struct Args {
                     opcode: Byte,
