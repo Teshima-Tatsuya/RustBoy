@@ -39,8 +39,8 @@ speculate! {
                     case(Args{opcode: 0x2E, r1: "L".to_string(), r2: "d".to_string()}),
                     case(Args{opcode: 0x31, r1: "SP".to_string(), r2: "dd".to_string()}),
                     case(Args{opcode: 0x32, r1: "(HLD)".to_string(), r2: "A".to_string()}),
-                    case(Args{opcode: 0x3A, r1: "A".to_string(), r2: "(HLD)".to_string()}),
                     case(Args{opcode: 0x36, r1: "(HL)".to_string(), r2: "d".to_string()}),
+                    case(Args{opcode: 0x3A, r1: "A".to_string(), r2: "(HLD)".to_string()}),
                     case(Args{opcode: 0x3E, r1: "A".to_string(), r2: "d".to_string()}),
                     case(Args{opcode: 0x40, r1: "B".to_string(), r2: "B".to_string()}),
                     case(Args{opcode: 0x41, r1: "B".to_string(), r2: "C".to_string()}),
@@ -97,6 +97,14 @@ speculate! {
                     case(Args{opcode: 0x74, r1: "(HL)".to_string(), r2: "H".to_string()}),
                     case(Args{opcode: 0x75, r1: "(HL)".to_string(), r2: "L".to_string()}),
                     case(Args{opcode: 0x77, r1: "(HL)".to_string(), r2: "A".to_string()}),
+                    case(Args{opcode: 0x78, r1: "A".to_string(), r2: "B".to_string()}),
+                    case(Args{opcode: 0x79, r1: "A".to_string(), r2: "C".to_string()}),
+                    case(Args{opcode: 0x7A, r1: "A".to_string(), r2: "D".to_string()}),
+                    case(Args{opcode: 0x7B, r1: "A".to_string(), r2: "E".to_string()}),
+                    case(Args{opcode: 0x7C, r1: "A".to_string(), r2: "H".to_string()}),
+                    case(Args{opcode: 0x7D, r1: "A".to_string(), r2: "L".to_string()}),
+                    case(Args{opcode: 0x7E, r1: "A".to_string(), r2: "(HL)".to_string()}),
+                    case(Args{opcode: 0x7F, r1: "A".to_string(), r2: "A".to_string()}),
                     case(Args{opcode: 0xE0, r1: "(a)".to_string(), r2: "A".to_string()}),
                     case(Args{opcode: 0xE2, r1: "(C)".to_string(), r2: "A".to_string()}),
                     case(Args{opcode: 0xEA, r1: "(aa)".to_string(), r2: "A".to_string()}),
@@ -146,6 +154,48 @@ speculate! {
                     } else {
                         assert_eq!(cpu.load(&opcode.r1), want as Word);
                     }
+                }
+            }
+
+            describe "ld,hl,sp+8" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xF8, r1: "HL".to_string(), r2: "SP".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    // no carry
+                    cpu.store(&"SP".to_string(), 0x1E00);
+                    cpu.bus.write(cpu.reg.PC, 0xE1);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x1DE1);
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+
+                    // half carry
+                    cpu.store(&"SP".to_string(), 0x1F21);
+                    cpu.bus.write(cpu.reg.PC, 0x0F);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0x1F30);
+                    assert_eq!(cpu.reg.F.pack(), 0x20);
+
+                    // carry
+                    cpu.store(&"SP".to_string(), 0xFF20);
+                    cpu.bus.write(cpu.reg.PC, 0xE1);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.load(&opcode.r1), 0xFF01);
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
                 }
             }
         }
