@@ -246,13 +246,13 @@ impl Cpu {
         } else {
             op = &OPCODES[opcode as usize];
         }
-        println!(" {}", op);
-        println!(" {}", self.reg);
-        println!(
-            "  data: {:02X}{:02X}",
-            self.bus.read(self.reg.PC),
-            self.bus.read(self.reg.PC + 1)
-        );
+        // println!(" {}", op);
+        // println!(" {}", self.reg);
+        // println!(
+        //     "  data: {:02X}{:02X}",
+        //     self.bus.read(self.reg.PC),
+        //     self.bus.read(self.reg.PC + 1)
+        // );
 
         let handler = &op.handler;
         handler(self, op.r1.to_string(), op.r2.to_string());

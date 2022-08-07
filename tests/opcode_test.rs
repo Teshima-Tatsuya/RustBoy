@@ -253,28 +253,31 @@ speculate! {
                     assert_eq!(opcode.r2, arg.r2);
 
                     let want: Word = 0x1234;
-                    cpu.bus.write(cpu.reg.PC,  0x34);
-                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
 
                     let handler = &opcode.handler;
 
                     // all true
+                    cpu.reg.PC = 0x0100;
+                    cpu.bus.write(cpu.reg.PC,  0x34);
+                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
                     cpu.reg.F.unpack(0xF0);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
-                        assert_eq!(cpu.load(&"PC".to_string()), cpu.load(&"PC".to_string()));
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x0102);
                     } else {
                         assert_eq!(cpu.load(&"PC".to_string()), want);
                     }
 
                     // all false
+                    cpu.reg.PC = 0x0100;
+                    cpu.bus.write(cpu.reg.PC,  0x34);
+                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
                     cpu.reg.F.unpack(0x00);
-                    cpu.reg.PC = cpu.reg.PC - 2;
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
                         assert_eq!(cpu.load(&"PC".to_string()), want);
                     } else {
-                        assert_eq!(cpu.load(&"PC".to_string()), cpu.load(&"PC".to_string()));
+                        assert_eq!(cpu.load(&"PC".to_string()), 0x0102);
                     }
                 }
             }
@@ -1549,7 +1552,7 @@ speculate! {
             }
         }
 
-        describe "RT" {
+        describe "RST" {
             describe "rst" {
                 struct Args {
                     opcode: Byte,
