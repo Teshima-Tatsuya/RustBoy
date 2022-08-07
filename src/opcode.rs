@@ -1,4 +1,9 @@
-use crate::{constant::*, cpu::Cpu, types::*, util::*, traits::*};
+use crate::{
+	constant::{COND_ARR, MM_ARR, R_ARR},
+	 cpu::Cpu,
+	  types::{Byte, Word},
+	   util::{bytes_2_word, extract_lower, extract_upper}
+	};
 use once_cell::sync::Lazy;
 use std::fmt;
 
@@ -341,9 +346,9 @@ fn dec(c: &mut Cpu, r1: String, _: String) {
 	let value = r.wrapping_sub(0x01);
 
 	if R_ARR.contains(&r1.as_str()) || MM_ARR.contains(&r1.as_str()) {
-		c.reg.F.z = value == 0;
+		c.reg.F.z = value as Byte == 0;
 		c.reg.F.n = true;
-		c.reg.F.h = (r ^ value) & 0x10 != 0;
+		c.reg.F.h = (r as Byte ^ value as Byte) & 0x10 != 0;
 	}
 	c.store(&r1, value);
 }
@@ -502,11 +507,11 @@ fn jr(c: &mut Cpu, r1: String, r2: String) {
 	if COND_ARR.contains(&r1.as_str()) {
 		addr = c.load(&r2);
 		if c.cond(&r1) {
-			c.reg.PC = ((c.reg.PC as i32) + (addr as i8) as i32) as Word;
+			c.reg.PC = c.reg.PC.wrapping_add(addr as i8 as Word);
 		}
 	} else {
 		addr = c.load(&r1);
-		c.reg.PC = ((c.reg.PC as i32) + (addr as i8) as i32) as Word;
+		c.reg.PC = c.reg.PC.wrapping_add(addr as i8 as Word);
 	}
 }
 
