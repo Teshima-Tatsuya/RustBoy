@@ -1392,6 +1392,76 @@ speculate! {
             }
         }
 
+        describe "PUSH" {
+            describe "push" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xC5, r1: "BC".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xD5, r1: "DE".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xE5, r1: "HL".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xF5, r1: "AF".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    cpu.store(&opcode.r1, 0x1234);
+                    let before_sp = cpu.reg.SP;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.SP, before_sp - 2);
+                    if opcode.r1.as_str() == "AF" {
+                        assert_eq!(cpu.bus.read(cpu.reg.SP), 0x30);
+                    } else {
+                        assert_eq!(cpu.bus.read(cpu.reg.SP), 0x34);
+                    }
+                    assert_eq!(cpu.bus.read(cpu.reg.SP + 1), 0x12);
+                }
+            }
+        }
+
+        describe "POP" {
+            describe "pop" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0xC1, r1: "BC".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xD1, r1: "DE".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xE1, r1: "HL".to_string(), r2: "".to_string()}),
+                    case(Args{opcode: 0xF1, r1: "AF".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    let handler = &opcode.handler;
+
+                    cpu.push(0x12);
+                    cpu.push(0x34);
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    if opcode.r1.as_str() == "AF" {
+                        assert_eq!(cpu.load(&opcode.r1), 0x1230);
+                    } else {
+                        assert_eq!(cpu.load(&opcode.r1), 0x1234);
+                    }
+                }
+            }
+        }
+
         describe "RET" {
             describe "ret" {
                 struct Args {

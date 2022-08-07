@@ -553,9 +553,9 @@ fn rst(c: &mut Cpu, n: String, _: String) {
 
 // -----push-----
 fn push(c: &mut Cpu, r: String, _: String) {
-	let buf = c.reg.r16(&r);
-	let upper = extract_upper(buf as Word);
-	let lower = extract_lower(buf as Word);
+	let buf = c.load(&r);
+	let upper = extract_upper(buf);
+	let lower = extract_lower(buf);
 	c.push(upper);
 	c.push(lower);
 }
@@ -566,11 +566,11 @@ fn pop(c: &mut Cpu, r: String, _: String) {
 	let upper = c.pop();
 
 	if r == "AF" {
-		lower &= 0xF0
+		lower &= 0xF0;
 	}
 
-	let value = ((upper as i16) << 8 | (lower as i16)) as Word;
-	c.reg.r16_mut(&r, value);
+	let value = bytes_2_word(upper, lower);
+	c.store(&r, value);
 }
 
 // -----misc-----

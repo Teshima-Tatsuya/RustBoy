@@ -40,7 +40,7 @@ speculate! {
                     frame: u64,
                 }
                 #[rstest(arg,
-                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "03-op sp,hl".to_string(), frame: 200}),
+                    case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "03-op sp,hl".to_string(), frame: 8000000}),
                 )]
                 fn test(arg: Args) {
                     rom_test(arg.folder, arg.file, arg.frame, "Passed".to_string());

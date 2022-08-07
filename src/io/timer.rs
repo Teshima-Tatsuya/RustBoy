@@ -90,13 +90,3 @@ impl Writer for Timer {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_freq() {
-        assert_eq!(0x00, 0x1350);
-    }
-}
