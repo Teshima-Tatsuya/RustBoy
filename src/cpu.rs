@@ -3,7 +3,6 @@ use crate::{
     traits::*,
     types::*,
     util::*,
-    constant::*,
     io::interrupt::Interrupt,
     io::timer::Timer,
 };
