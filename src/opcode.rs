@@ -1,9 +1,9 @@
 use crate::{
 	constant::{COND_ARR, MM_ARR, R_ARR},
-	 cpu::Cpu,
-	  types::{Byte, Word},
-	   util::{bytes_2_word, extract_lower, extract_upper}
-	};
+	cpu::Cpu,
+	types::{Byte, Word},
+	util::{bytes_2_word, extract_lower, extract_upper},
+};
 use once_cell::sync::Lazy;
 use std::fmt;
 
@@ -303,8 +303,7 @@ fn empty(_: &mut Cpu, _: String, _: String) {
 	unreachable!("this is empty!");
 }
 
-fn nop(_: &mut Cpu, _: String, _: String) {
-}
+fn nop(_: &mut Cpu, _: String, _: String) {}
 
 fn stop(_: &mut Cpu, _: String, _: String) {
 	println!("stop impl");
@@ -445,7 +444,7 @@ fn addr16d(c: &mut Cpu, r1: String, r2: String) {
 fn adc(c: &mut Cpu, r1: String, r2: String) {
 	let a = c.load(&r1) as Byte;
 	let r = c.load(&r2) as Byte;
-	let carry = if c.reg.F.c {1} else {0};
+	let carry = if c.reg.F.c { 1 } else { 0 };
 
 	let (v, overflow1) = a.overflowing_add(r);
 	let (v, overflow2) = v.overflowing_add(carry);
@@ -475,7 +474,7 @@ fn sub(c: &mut Cpu, r1: String, r2: String) {
 fn sbc(c: &mut Cpu, r1: String, r2: String) {
 	let a = c.load(&r1) as Byte;
 	let r = c.load(&r2) as Byte;
-	let carry = if c.reg.F.c {1} else {0};
+	let carry = if c.reg.F.c { 1 } else { 0 };
 
 	let (v, overflow1) = a.overflowing_sub(r);
 	let (v, overflow2) = v.overflowing_sub(carry);
@@ -660,11 +659,10 @@ fn daa(c: &mut Cpu, _: String, _: String) {
 	c.store(&"A".to_string(), a as Byte as Word);
 	c.reg.F.z = a as Byte == 0;
 	c.reg.F.h = false;
-	if a&0x100 == 0x100 {
+	if a & 0x100 == 0x100 {
 		c.reg.F.c = true;
 	}
 }
-
 
 fn cpl(c: &mut Cpu, _: String, _: String) {
 	let a = c.load(&"A".to_string()) as Byte;
