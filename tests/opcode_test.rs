@@ -1590,7 +1590,7 @@ speculate! {
         }
 
 
-        describe "DAA" {
+        describe "MISC" {
             describe "daa" {
                 struct Args {
                     opcode: Byte,
@@ -1631,6 +1631,293 @@ speculate! {
                     assert_eq!(cpu.reg.F.pack(), 0x00);
 
                     // and so on...
+                }
+            }
+
+            describe "rlca" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x07, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+    
+                    // bit7 = 1
+                    cpu.store(&"A".to_string(), 0b10010001);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00100011);
+    
+                    // bit7 = 0
+                    cpu.store(&"A".to_string(), 0b00010000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00100000);
+    
+                    // bit7 = 0 and zero
+                    cpu.store(&"A".to_string(), 0b00000000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00000000);
+                }
+            }
+
+            describe "rrca" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x0F, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+    
+                    // bit0 = 1
+                    cpu.store(&"A".to_string(), 0b10010001);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b11001000);
+    
+                    // bit0 = 0
+                    cpu.store(&"A".to_string(), 0b10010000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b01001000);
+    
+                    // bit0 = 0 and zero
+                    cpu.store(&"A".to_string(), 0b00000000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00000000);
+                }
+            }
+             
+            describe "rla" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x17, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+    
+                    // bit7 = 1 and carry = 1
+                    cpu.store(&"A".to_string(), 0b10010001);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00100011);
+    
+                    // bit7 = 1 and carry = 0
+                    cpu.store(&"A".to_string(), 0b10010001);
+                    cpu.reg.F.unpack(0xE0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00100010);
+    
+                    // bit7 = 0 and carry = 1
+                    cpu.store(&"A".to_string(), 0b00010000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00100001);
+    
+                    // bit7 = 0 and carry = 0
+                    cpu.store(&"A".to_string(), 0b00010000);
+                    cpu.reg.F.unpack(0xE0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00100000);
+    
+                    // bit7 = 0 and zero and carry = 1
+                    cpu.store(&"A".to_string(), 0b00000000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00000001);
+    
+                    // bit7 = 0 and zero and carry = 0
+                    cpu.store(&"A".to_string(), 0b00000000);
+                    cpu.reg.F.unpack(0xE0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b00000000);
+                }
+            }
+
+            describe "rra" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x1F, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+    
+                    // bit0 = 1 and carry = 1
+                    cpu.store(&"A".to_string(), 0b10010001);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b11001000);
+    
+                    // bit0 = 1 and carry = 0
+                    cpu.store(&"A".to_string(), 0b10010001);
+                    cpu.reg.F.unpack(0xE0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b01001000);
+    
+                    // bit0 = 0 and carry = 1
+                    cpu.store(&"A".to_string(), 0b10010000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b11001000);
+    
+                    // bit0 = 0 and carry = 0
+                    cpu.store(&"A".to_string(), 0b10010000);
+                    cpu.reg.F.unpack(0xE0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b01001000);
+    
+                    // bit0 = 0 and zero and carry = 1
+                    cpu.store(&"A".to_string(), 0b00000000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b10000000);
+    
+                    // bit0 = 0 and zero and carry = 0
+                    cpu.store(&"A".to_string(), 0b00000000);
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x00);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b10000000);
+                }
+            }
+
+            describe "cpl" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x2F, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+    
+                    cpu.store(&"A".to_string(), 0b10010001);
+                    cpu.reg.F.unpack(0x00);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x60);
+                    assert_eq!(cpu.load(&"A".to_string()), 0b01101110);
+                }
+            }
+
+            describe "scf" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x37, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+    
+                    // carry = 0
+                    cpu.reg.F.unpack(0x00);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+    
+                    // carry = 1
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x90);
+                }
+            }
+
+            describe "ccf" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x3F, r1: "".to_string(), r2: "".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+    
+                    // carry = 0
+                    cpu.reg.F.unpack(0x00);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x10);
+    
+                    // carry = 1
+                    cpu.reg.F.unpack(0xF0);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.reg.F.pack(), 0x80);
                 }
             }
         }
