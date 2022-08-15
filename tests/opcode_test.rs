@@ -24,7 +24,6 @@ speculate! {
                     case(Args{opcode: 0x01, r1: "BC".to_string(), r2: "dd".to_string()}),
                     case(Args{opcode: 0x02, r1: "(BC)".to_string(), r2: "A".to_string()}),
                     case(Args{opcode: 0x06, r1: "B".to_string(), r2: "d".to_string()}),
-                    case(Args{opcode: 0x08, r1: "(aa)".to_string(), r2: "SP".to_string()}),
                     case(Args{opcode: 0x0A, r1: "A".to_string(), r2: "(BC)".to_string()}),
                     case(Args{opcode: 0x0E, r1: "C".to_string(), r2: "d".to_string()}),
                     case(Args{opcode: 0x11, r1: "DE".to_string(), r2: "dd".to_string()}),
@@ -154,6 +153,32 @@ speculate! {
                     } else {
                         assert_eq!(cpu.load(&opcode.r1), want as Word);
                     }
+                }
+            }
+
+            describe "ld,(aa),sp" {
+                struct Args {
+                    opcode: Byte,
+                    r1: String,
+                    r2: String,
+                }
+                #[rstest(arg,
+                    case(Args{opcode: 0x08, r1: "(aa)".to_string(), r2: "SP".to_string()}),
+                )]
+                fn test(arg: Args) {
+                    let mut cpu = common::fixture::setup_cpu();
+
+                    let opcode = &OPCODES[arg.opcode as usize];
+                    assert_eq!(opcode.r1, arg.r1);
+                    assert_eq!(opcode.r2, arg.r2);
+
+                    cpu.store(&"SP".to_string(), 0x4567);
+                    cpu.bus.write(cpu.reg.PC, 0x34);
+                    cpu.bus.write(cpu.reg.PC + 1, 0x12);
+                    let handler = &opcode.handler;
+                    handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
+                    assert_eq!(cpu.bus.read(0x1234), 0x67);
+                    assert_eq!(cpu.bus.read(0x1235), 0x45);
                 }
             }
 

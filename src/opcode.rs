@@ -49,7 +49,7 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0x05, "DEC B", "B", "",   1, dec},
 	make_opcode! {0x06, "LD B,d8", "B", "d",   2, ld},
 	make_opcode! {0x07, "RLCA", "",  "",   1, rlca},
-	make_opcode! {0x08, "LD (a16),SP", "(aa)",  "SP",  5, ld},
+	make_opcode! {0x08, "LD (a16),SP", "(aa)",  "SP",  5, ldnnsp},
 	make_opcode! {0x09, "ADD HL,BC", "HL", "BC",  2, addr16r16},
 	make_opcode! {0x0A, "LD A,(BC)", "A", "(BC)",  2, ld},
 	make_opcode! {0x0B, "DEC BC", "BC", "",   2, dec},
@@ -303,7 +303,8 @@ fn empty(_: &mut Cpu, _: String, _: String) {
 	unreachable!("this is empty!");
 }
 
-fn nop(_: &mut Cpu, _: String, _: String) {}
+fn nop(_: &mut Cpu, _: String, _: String) {
+}
 
 fn stop(_: &mut Cpu, _: String, _: String) {
 	println!("stop impl");
@@ -312,6 +313,13 @@ fn stop(_: &mut Cpu, _: String, _: String) {
 fn ld(c: &mut Cpu, r1: String, r2: String) {
 	let value = c.load(&r2);
 	c.store(&r1, value);
+}
+
+fn ldnnsp(c: &mut Cpu, _: String, r2: String) {
+	let value = c.load(&r2);
+	let addr = c.fetch16();
+	c.bus.write(addr, extract_lower(value));
+	c.bus.write(addr + 1, extract_upper(value));
 }
 
 // LD r1, r2+r

@@ -38,8 +38,8 @@ impl fmt::Display for Register {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Register: SP:{:04X} PC:{:04X} A:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X}",
-            self.SP, self.PC, self.A, self.B, self.C, self.D, self.E, self.H, self.L
+            "Register: SP:{:04X} PC:{:04X} A:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} Flags:{}",
+            self.SP, self.PC, self.A, self.B, self.C, self.D, self.E, self.H, self.L, self.F
         )
     }
 }
@@ -215,6 +215,16 @@ impl Flags {
     }
 }
 
+impl fmt::Display for Flags {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "z:{} n:{} h:{} c:{}",
+            self.z, self.n, self.h, self.c,
+        )
+    }
+}
+
 impl Cpu {
     pub fn new(bus: Box<dyn BusTrait>) -> Self {
         Self {
@@ -246,16 +256,11 @@ impl Cpu {
         } else {
             op = &OPCODES[opcode as usize];
         }
-        trace!(" {}", op);
-        trace!(" {}", self.reg);
-        trace!(
-            "  data: {:02X}{:02X}",
-            self.bus.read(self.reg.PC),
-            self.bus.read(self.reg.PC + 1)
-        );
+        // self.trace(op);
 
         let handler = &op.handler;
         handler(self, op.r1.to_string(), op.r2.to_string());
+        // self.trace2(op);
 
         return op.cycles as u16;
     }
@@ -399,6 +404,52 @@ impl Cpu {
 
     pub fn timer(&mut self) -> &mut Timer {
         self.bus.timer()
+    }
+
+    fn trace(&mut self, op: &crate::opcode::OpCode) {
+        println!(" {}", *op);
+        println!("{}", self.reg);
+        println!("Cpu: halted:{} ime:{}",self.halted, self.ime);
+        println!(
+            "  data: {:02X}{:02X}",
+            self.bus.read(self.reg.PC),
+            self.bus.read(self.reg.PC + 1),
+        );
+        
+        if op.r2 == "(a)" {
+            println!("(a:FF{:02X}) = {:02X}", self.bus.read(self.reg.PC), self.load(&"(a)".to_string()));
+            self.reg.PC -= 1;
+        }
+        if op.r2 == "(HLD)" || op.r2 == "(HLI)" {
+            println!("(HL) = {:02X}", self.load(&"(HL)".to_string()))
+        }
+
+        if crate::constant::MM_ARR.contains(&op.r2.as_str()) {
+            println!("{} = {:02X}", op.r2, self.load(&op.r2))
+        }
+        println!("");
+    }
+
+    fn trace2(&mut self, op: &crate::opcode::OpCode) {
+        if op.r1 == "(HLD)" {
+            self.reg.L = self.reg.L.wrapping_add(1);
+            println!("(HL) = {:02X}", self.load(&"(HL)".to_string()));
+            self.reg.L = self.reg.L.wrapping_sub(1);
+        }
+        if op.r1 == "(HLI)" {
+            self.reg.L = self.reg.L.wrapping_sub(1);
+            println!("(HL) = {:02X}", self.load(&"(HL)".to_string()));
+            self.reg.L = self.reg.L.wrapping_add(1);
+        }
+
+        if crate::constant::MM_ARR.contains(&op.r1.as_str()) {
+            println!("{} = {:02X}", op.r1, self.load(&op.r1));
+        }
+        if op.r1 == "(aa)" {
+            self.reg.PC -= 2;
+            println!("(a16) = {:02X}", self.load(&"(aa)".to_string()));
+        }
+        println!("");
     }
 }
 

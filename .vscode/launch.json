@@ -5,6 +5,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
     
         {
             "type": "lldb",
@@ -92,7 +93,9 @@
                     "test",
                     "--no-run",
                     "--test=rom_test_single",
-                    "--package=rust_boy"
+                    "--package=rust_boy",
+                    "--",
+                    "--nocapture"
                 ],
                 "filter": {
                     "name": "rom_test_single",
