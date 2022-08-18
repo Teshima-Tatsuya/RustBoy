@@ -28,9 +28,18 @@ impl Ppu {
         }
 
         if self.clock >= CYCLE_PER_LINE {
+            if self.scroll.isVBlankStart() {
+
+            } else if self.scroll.isVBlankPeriod() {
+
+            } else if self.scroll.isHBlankPeriod() {
+
+            } else {
+                self.scroll.ly = 0;
+            }
+
             self.scroll.ly += 1;
             self.clock -= CYCLE_PER_LINE;
-
         }
     }
 }
@@ -40,6 +49,7 @@ impl Reader for Ppu {
         match addr {
             ADDR_PPU_LCDC => self.lcdc.buf,
             ADDR_PPU_LCDS => self.lcds,
+            ADDR_PPU_SCY..=ADDR_PPU_WX => self.scroll.read(addr),
             v => self.buf.read(addr),
         }
     }
@@ -47,7 +57,10 @@ impl Reader for Ppu {
 
 impl Writer for Ppu {
     fn write(&mut self, addr: Word, value: Byte) {
-        self.buf.write(addr, value);
+        match addr {
+            ADDR_PPU_SCY..=ADDR_PPU_WX => self.scroll.write(addr, value),
+            v => self.buf.write(addr, value),
+        }
     }
 }
 
@@ -59,6 +72,56 @@ struct Scroll {
     lyc: Byte,
     wx: Byte,
     wy: Byte,
+}
+
+impl Scroll {
+    fn isVBlankPeriod(&self) -> bool {
+        if SCREEN_HEIGHT <= self.ly && self.ly <= 153 {
+            return true
+        }
+    
+        return false
+    }
+    
+    fn isHBlankPeriod(&self) -> bool {
+        if self.ly < SCREEN_HEIGHT {
+            return true
+        }
+    
+        return false
+    }
+    
+    fn isVBlankStart(&self) -> bool {
+        return self.ly == SCREEN_HEIGHT
+    }
+}
+    
+impl Reader for Scroll {
+    fn read(&self, addr: Word) -> Byte {
+        match addr {
+            ADDR_PPU_SCY => self.scy,
+            ADDR_PPU_SCX => self.scx,
+            ADDR_PPU_LY => self.ly,
+            ADDR_PPU_LYC => self.lyc,
+            ADDR_PPU_WX => self.wx,
+            ADDR_PPU_WY => self.wy,
+            v => unreachable!("cannot read {:04X} for PPU Scroll", v),
+        }
+    }
+}
+
+impl Writer for Scroll {
+    fn write(&mut self, addr: Word, value: Byte) {
+        match addr {
+            ADDR_PPU_SCY => self.scy = value,
+            ADDR_PPU_SCX => self.scx = value,
+            ADDR_PPU_LY => self.ly = value,
+            ADDR_PPU_LYC => self.lyc = value,
+            ADDR_PPU_WX => self.wx = value,
+            ADDR_PPU_WY => self.wy = value,
+            v => unreachable!("cannot write {:04X} for PPU Scroll", v),
+        }
+    }
 }
 
 struct Lcdc {
