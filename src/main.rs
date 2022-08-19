@@ -1,4 +1,5 @@
 use rust_boy::gameboy::GameBoy;
+use rust_boy::emulator::Emulator;
 use std::env;
 
 fn main() {
@@ -10,9 +11,10 @@ fn main() {
     }
 
     let bytes = std::fs::read(&args[1]).unwrap();
-
-    let mut gb = GameBoy::new(&bytes);
+    
+    let gb = GameBoy::new(&bytes);
+    let mut emu = Emulator::new(gb);
     loop {
-        gb.step();
+        emu.gb.step();
     }
 }

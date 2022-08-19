@@ -5,7 +5,7 @@ pub struct Ppu {
     clock: u16,
     buf: RAM,
     lcdc: Lcdc,
-    lcds: Byte,
+    lcds: Lcds,
     scroll: Scroll,
 }
 
@@ -15,7 +15,7 @@ impl Ppu {
             clock: 0,
             buf: RAM::new(0xFFFF),
             lcdc: Default::default(),
-            lcds: 0x00,
+            lcds: Default::default(),
             scroll: Default::default(),
         }
     }
@@ -48,7 +48,7 @@ impl Reader for Ppu {
     fn read(&self, addr: Word) -> Byte {
         match addr {
             ADDR_PPU_LCDC => self.lcdc.buf,
-            ADDR_PPU_LCDS => self.lcds,
+            ADDR_PPU_LCDS => self.lcds.buf,
             ADDR_PPU_SCY..=ADDR_PPU_WX => self.scroll.read(addr),
             v => self.buf.read(addr),
         }
@@ -58,6 +58,8 @@ impl Reader for Ppu {
 impl Writer for Ppu {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
+            ADDR_PPU_LCDC => self.lcdc.buf = value,
+            ADDR_PPU_LCDS => self.lcds.buf = value,
             ADDR_PPU_SCY..=ADDR_PPU_WX => self.scroll.write(addr, value),
             v => self.buf.write(addr, value),
         }
@@ -201,4 +203,9 @@ impl Default for Lcdc {
     fn default() -> Self {
         Self { buf: 0x91 }
     }
+}
+
+#[derive(Default)]
+struct Lcds {
+    pub buf: Byte,
 }
