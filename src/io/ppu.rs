@@ -316,3 +316,35 @@ impl Writer for Palette {
         }
     }
 }
+
+struct Tile {
+    buf: Vec<Vec<Byte>>,
+}
+
+impl Tile {
+    fn new(bytes16: &[Byte]) -> Self {
+        let mut buf: Vec<Vec<Byte>>;
+        buf = Vec::new();
+
+        for y in 0..8 {
+            let lower = bytes16[y * 2];
+            let upper = bytes16[y * 2 + 1];
+
+            let mut xs = Vec::new();
+
+            for x in 7..0 {
+                let lb = bit(&lower, &x);
+                let ub = bit(&upper, &x);
+
+                let color = (ub << 1) + lb;
+                xs.push(color);
+            };
+            buf.push(xs);
+        };
+
+        Self {
+            buf
+        }
+
+    }
+}
