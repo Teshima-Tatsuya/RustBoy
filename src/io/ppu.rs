@@ -317,8 +317,9 @@ impl Writer for Palette {
     }
 }
 
+#[derive(Debug)]
 struct Tile {
-    buf: Vec<Vec<Byte>>,
+    pub buf: Vec<Vec<Byte>>,
 }
 
 impl Tile {
@@ -332,7 +333,7 @@ impl Tile {
 
             let mut xs = Vec::new();
 
-            for x in 7..0 {
+            for x in (0..8).rev() {
                 let lb = bit(&lower, &x);
                 let ub = bit(&upper, &x);
 
@@ -346,5 +347,29 @@ impl Tile {
             buf
         }
 
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tile_new() {
+        let bytes = [0xFF, 0x00, 0x7E, 0xFF, 0x85, 0x81, 0x89, 0x83, 0x93, 0x85, 0xA5, 0x8B, 0xC9, 0x97, 0x7E, 0xFF];
+        let tile = Tile::new(&bytes);
+
+		let colors: Vec<Vec<Byte>> = vec![
+			vec![1, 1, 1, 1, 1, 1, 1, 1],
+			vec![2, 3, 3, 3, 3, 3, 3, 2],
+			vec![3, 0, 0, 0, 0, 1, 0, 3],
+			vec![3, 0, 0, 0, 1, 0, 2, 3],
+			vec![3, 0, 0, 1, 0, 2, 1, 3],
+			vec![3, 0, 1, 0, 2, 1, 2, 3],
+			vec![3, 1, 0, 2, 1, 2, 2, 3],
+			vec![2, 3, 3, 3, 3, 3, 3, 2],
+        ];
+
+        assert_eq!(colors, tile.buf);
     }
 }
