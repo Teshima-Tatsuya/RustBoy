@@ -8,7 +8,8 @@ edition = "2021"
 [dependencies]
 ambassador = "0.3.1"
 anyhow = "1.0.57"
-bevy = "0.7.0"
+bevy = { version = "0.7.0", default_features = false}
+bevy_pixels = "0.5.0"
 bitvec = "1.0.0"
 log = "0.4.17"
 mockall = "0.11.1"

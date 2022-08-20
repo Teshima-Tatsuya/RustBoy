@@ -1,5 +1,4 @@
 use crate::{constant::*, memory::*, traits::*, types::*, util::*};
-use bevy::prelude::Color;
 
 #[derive(Default)]
 pub struct Ppu {
@@ -227,14 +226,14 @@ enum PaletteEnum {
 }
 
 impl PaletteEnum {
-    pub fn get_color(palette: PaletteEnum) -> Color {
-        match palette {
-            PaletteEnum::White => Color::rgb(175f32, 197f32, 160f32),
-            PaletteEnum::LightGray => Color::rgb(93f32, 147f32, 66f32),
-            PaletteEnum::DarkGray => Color::rgb(22f32, 63f32, 48f32),
-            PaletteEnum::Black => Color::rgb(0f32, 40f32, 0f32),
-        }
-    }
+    // pub fn get_color(palette: PaletteEnum) -> Color {
+    //     match palette {
+    //         PaletteEnum::White => Color::rgb(175f32, 197f32, 160f32),
+    //         PaletteEnum::LightGray => Color::rgb(93f32, 147f32, 66f32),
+    //         PaletteEnum::DarkGray => Color::rgb(22f32, 63f32, 48f32),
+    //         PaletteEnum::Black => Color::rgb(0f32, 40f32, 0f32),
+    //     }
+    // }
 
     pub fn from_u8(value: u8) -> Self {
         match value {
@@ -268,21 +267,21 @@ struct Palette {
 }
 
 impl Palette {
-    fn get_palette(&self, idx: u8) -> Color {
-        let color: Byte = (self.bgp >> (idx * 2)) & 0x03;
-        PaletteEnum::get_color(PaletteEnum::from_u8(color))
-    }
+    // fn get_palette(&self, idx: u8) -> Color {
+    //     let color: Byte = (self.bgp >> (idx * 2)) & 0x03;
+    //     PaletteEnum::get_color(PaletteEnum::from_u8(color))
+    // }
 
-    fn get_obj_palette(&self, idx: u8, obp: u8) -> Color {
-        let color: Byte;
-        if obp == 1 {
-          color = (self.obp1 >> (idx * 2)) & 0x03;
-        } else {
-          color = (self.obp0 >> (idx * 2)) & 0x03;
-        }
+    // fn get_obj_palette(&self, idx: u8, obp: u8) -> Color {
+    //     let color: Byte;
+    //     if obp == 1 {
+    //       color = (self.obp1 >> (idx * 2)) & 0x03;
+    //     } else {
+    //       color = (self.obp0 >> (idx * 2)) & 0x03;
+    //     }
 
-        PaletteEnum::get_color(PaletteEnum::from_u8(color))
-    }
+    //     PaletteEnum::get_color(PaletteEnum::from_u8(color))
+    // }
 }
 
 impl Reader for Palette {
