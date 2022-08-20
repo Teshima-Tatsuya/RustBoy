@@ -1,4 +1,5 @@
 use crate::{constant::*, memory::*, traits::*, types::*, util::*};
+use bevy::prelude::Color;
 
 #[derive(Default)]
 pub struct Ppu {
@@ -7,6 +8,9 @@ pub struct Ppu {
     lcdc: Lcdc,
     lcds: Lcds,
     scroll: Scroll,
+    palette: Palette,
+    dma: Byte,
+    dma_started: bool,
 }
 
 impl Ppu {
@@ -17,6 +21,9 @@ impl Ppu {
             lcdc: Default::default(),
             lcds: Default::default(),
             scroll: Default::default(),
+            palette: Default::default(),
+            dma: 0x00,
+            dma_started: false,
         }
     }
 
@@ -49,7 +56,8 @@ impl Reader for Ppu {
         match addr {
             ADDR_PPU_LCDC => self.lcdc.buf,
             ADDR_PPU_LCDS => self.lcds.buf,
-            ADDR_PPU_SCY..=ADDR_PPU_WX => self.scroll.read(addr),
+            ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.read(addr),
+            ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.read(addr),
             v => self.buf.read(addr),
         }
     }
@@ -60,7 +68,8 @@ impl Writer for Ppu {
         match addr {
             ADDR_PPU_LCDC => self.lcdc.buf = value,
             ADDR_PPU_LCDS => self.lcds.buf = value,
-            ADDR_PPU_SCY..=ADDR_PPU_WX => self.scroll.write(addr, value),
+            ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.write(addr, value),
+            ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.write(addr, value),
             v => self.buf.write(addr, value),
         }
     }
@@ -208,4 +217,100 @@ impl Default for Lcdc {
 #[derive(Default)]
 struct Lcds {
     pub buf: Byte,
+}
+
+enum PaletteEnum {
+    White,
+    LightGray,
+    DarkGray,
+    Black,
+}
+
+impl PaletteEnum {
+    pub fn get_color(palette: PaletteEnum) -> Color {
+        match palette {
+            PaletteEnum::White => Color::rgb(175f32, 197f32, 160f32),
+            PaletteEnum::LightGray => Color::rgb(93f32, 147f32, 66f32),
+            PaletteEnum::DarkGray => Color::rgb(22f32, 63f32, 48f32),
+            PaletteEnum::Black => Color::rgb(0f32, 40f32, 0f32),
+        }
+    }
+
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            0 => PaletteEnum::White,
+            1 => PaletteEnum::LightGray,
+            2 => PaletteEnum::DarkGray,
+            3 => PaletteEnum::Black,
+            v => unreachable!("Cannot convert from {} to PaletteEnum", v),
+        }
+    }
+}
+
+#[derive(Default)]
+struct Palette {
+	// FF47
+	bgp: Byte,
+	// FF48
+	obp0: Byte,
+	// FF49
+	obp1: Byte,
+
+	// CGB Only
+	// FF68
+	bcps: Byte,
+	// FF69
+	bcpd: Byte,
+	// FF6A
+	ocps: Byte,
+	// FF6B
+	ocpd: Byte,
+}
+
+impl Palette {
+    fn get_palette(&self, idx: u8) -> Color {
+        let color: Byte = (self.bgp >> (idx * 2)) & 0x03;
+        PaletteEnum::get_color(PaletteEnum::from_u8(color))
+    }
+
+    fn get_obj_palette(&self, idx: u8, obp: u8) -> Color {
+        let color: Byte;
+        if obp == 1 {
+          color = (self.obp1 >> (idx * 2)) & 0x03;
+        } else {
+          color = (self.obp0 >> (idx * 2)) & 0x03;
+        }
+
+        PaletteEnum::get_color(PaletteEnum::from_u8(color))
+    }
+}
+
+impl Reader for Palette {
+    fn read(&self, addr: Word) -> Byte {
+        match addr {
+            ADDR_PPU_BGP => self.bgp,
+            ADDR_PPU_OBP0 => self.obp0,
+            ADDR_PPU_OBP1 => self.obp1,
+            ADDR_PPU_BCPS => self.bcps,
+            ADDR_PPU_BCPD => self.bcpd,
+            ADDR_PPU_OCPS => self.ocps,
+            ADDR_PPU_OCPD => self.ocpd,
+            v => unreachable!("cannot read {:04X} for PPU Palette", v),
+        }
+    }
+}
+
+impl Writer for Palette {
+    fn write(&mut self, addr: Word, value: Byte) {
+        match addr {
+            ADDR_PPU_BGP => self.bgp = value,
+            ADDR_PPU_OBP0 => self.obp0 = value,
+            ADDR_PPU_OBP1 => self.obp1 = value,
+            ADDR_PPU_BCPS => self.bcps = value,
+            ADDR_PPU_BCPD => self.bcpd = value,
+            ADDR_PPU_OCPS => self.ocps = value,
+            ADDR_PPU_OCPD => self.ocpd = value,
+            v => unreachable!("cannot write {:04X} for PPU Palette", v),
+        }
+    }
 }

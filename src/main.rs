@@ -14,6 +14,7 @@ fn main() {
     
     let gb = GameBoy::new(&bytes);
     let mut emu = Emulator::new(gb);
+    emu.init();
     loop {
         emu.gb.step();
     }
