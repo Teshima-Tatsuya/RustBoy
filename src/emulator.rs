@@ -38,4 +38,8 @@ impl Emulator {
 
 fn main_system(mut pixels_resource: ResMut<PixelsResource>) {
     let frame: &mut [u8] = pixels_resource.pixels.get_frame();
+
+    for i in 0..(160*72*3) {
+        frame[i] = 255 - (i % 4) as u8;
+    }
 }
