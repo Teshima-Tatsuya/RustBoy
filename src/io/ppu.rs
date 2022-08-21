@@ -1,4 +1,8 @@
-use crate::{constant::*, memory::*, traits::*, types::*, util::*};
+use std::{
+    cell::Cell,
+    rc::Rc
+};
+use crate::{constant::*, memory::*, traits::*, types::*, util::*, bus::Bus};
 
 #[derive(Debug, Default)]
 struct Color(u8, u8, u8, u8); // rgba
@@ -11,6 +15,8 @@ pub struct Ppu {
     lcds: Lcds,
     scroll: Scroll,
     palette: Palette,
+    tiles: Vec<Vec<Tile>>,
+    image_data: Vec<Vec<Color>>,
     dma: Byte,
     dma_started: bool,
 }
@@ -20,12 +26,9 @@ impl Ppu {
         Self {
             clock: 0,
             buf: RAM::new(0xFFFF),
-            lcdc: Default::default(),
-            lcds: Default::default(),
-            scroll: Default::default(),
-            palette: Default::default(),
             dma: 0x00,
             dma_started: false,
+            ..Default::default()
         }
     }
 
@@ -51,6 +54,29 @@ impl Ppu {
             self.clock -= CYCLE_PER_LINE;
         }
     }
+
+    fn load_tile(&mut self) {
+        let addr = 0x8000;
+        let tile_num = 128;
+        let bytes16: [Byte; 16];
+
+        for block in 0..3 {
+            for i in 0..tile_num {
+                for b in 0..16 {
+                }
+            }
+        }
+    }
+
+    pub fn transfer_oam(&mut self, mut bus: Bus) {
+        for i in 0..0xA0 {
+            let addr = self.dma as Word * 0x100;
+            let b = bus.read(addr + i as Word);
+            bus.write(ADDR_OAM_START + i as Word, b);
+        }
+
+        self.dma_started = false;
+    }
 }
 
 impl Reader for Ppu {
@@ -60,6 +86,7 @@ impl Reader for Ppu {
             ADDR_PPU_LCDS => self.lcds.buf,
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.read(addr),
             ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.read(addr),
+            ADDR_PPU_DMA => self.dma,
             v => self.buf.read(addr),
         }
     }
@@ -72,6 +99,10 @@ impl Writer for Ppu {
             ADDR_PPU_LCDS => self.lcds.buf = value,
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.write(addr, value),
             ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.write(addr, value),
+            ADDR_PPU_DMA => {
+                self.dma_started = true;
+                self.dma = value;
+            },
             v => self.buf.write(addr, value),
         }
     }
@@ -317,7 +348,7 @@ impl Writer for Palette {
     }
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 struct Tile {
     pub buf: Vec<Vec<Byte>>,
 }
