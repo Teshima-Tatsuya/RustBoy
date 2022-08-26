@@ -1,3 +1,8 @@
+use std::{
+    cell::RefCell,
+    rc::Rc,
+};
+
 use crate::{
     traits::*,
     types::*,
@@ -18,7 +23,7 @@ pub struct Bus {
 }
 
 impl Bus {
-    pub fn new(mbc: Mbc) -> Self {
+    pub fn new(mbc: Mbc, timer: Rc<RefCell<timer::Timer>>) -> Self {
         Bus {
             mbc,
             vram: RAM::new(0x2000),
@@ -27,7 +32,7 @@ impl Bus {
             hram: RAM::new(0x0080),
             eram: RAM::new(0x2000),
             oam: RAM::new(0x00A0),
-            io: Io::new(),
+            io: Io::new(timer),
         }
     }
 }
@@ -71,9 +76,5 @@ impl Writer for Bus {
 impl BusAccessor for Bus {
     fn interrupt(&mut self) -> &mut interrupt::Interrupt {
        &mut self.io.interrupt 
-    }
-
-    fn timer(&mut self) -> &mut timer::Timer {
-       &mut self.io.timer
     }
 }

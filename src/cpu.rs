@@ -402,10 +402,6 @@ impl Cpu {
         self.bus.interrupt()
     }
 
-    pub fn timer(&mut self) -> &mut Timer {
-        self.bus.timer()
-    }
-
     fn trace(&mut self, op: &crate::opcode::OpCode) {
         println!(" {}", *op);
         println!("{}", self.reg);

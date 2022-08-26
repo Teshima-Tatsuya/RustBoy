@@ -21,7 +21,6 @@ pub trait Writer {
 
 pub trait BusAccessor {
     fn interrupt(&mut self) -> &mut Interrupt;
-    fn timer(&mut self) -> &mut Timer;
 }
 
 trait_alias!(pub trait BusTrait = Reader + Writer + BusAccessor);

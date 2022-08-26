@@ -30,7 +30,4 @@ impl BusAccessor for MockBus {
     fn interrupt(&mut self) -> &mut Interrupt {
         &mut self.interrupt
     }
-    fn timer(&mut self) -> &mut Timer {
-        &mut self.timer
-    }
 }

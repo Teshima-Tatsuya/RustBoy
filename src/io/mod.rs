@@ -4,6 +4,11 @@ pub mod interrupt;
 mod apu;
 mod ppu;
 
+use std::{
+    cell::RefCell,
+    rc::Rc,
+};
+
 use crate::{
     constant::*,
     types::*,
@@ -13,7 +18,7 @@ use crate::{
 
 pub struct Io {
     serial: serial::Serial,
-    pub timer: timer::Timer,
+    pub timer: Rc<RefCell<timer::Timer>>,
     pub interrupt: interrupt::Interrupt,
     apu: apu::Apu,
     ppu: ppu::Ppu,
@@ -21,10 +26,10 @@ pub struct Io {
 }
 
 impl Io {
-    pub fn new() -> Self {
+    pub fn new(timer: Rc<RefCell<timer::Timer>>) -> Self {
         Io {
             serial: serial::Serial::new(),
-            timer: timer::Timer::default(),
+            timer: timer,
             interrupt: interrupt::Interrupt::new(),
             apu: apu::Apu::new(),
             ppu: ppu::Ppu::new(),
@@ -38,7 +43,7 @@ impl Reader for Io {
         match addr {
             ADDR_JOYPAD => self.tmp_buf.read(addr),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.read(addr),
-            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.read(addr),
+            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow().read(addr),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.read(addr),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.read(addr),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.read(addr),
@@ -52,7 +57,7 @@ impl Writer for Io {
         match addr {
             ADDR_JOYPAD => self.tmp_buf.write(addr, value),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.write(addr, value),
-            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.write(addr, value),
+            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow_mut().write(addr, value),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.write(addr, value),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.write(addr, value),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.write(addr, value),

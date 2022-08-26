@@ -1,5 +1,5 @@
 use std::{
-    cell::Cell,
+    cell::RefCell,
     rc::Rc,
 };
 
@@ -18,7 +18,7 @@ pub struct GameBoy {
     cycle: u32,
     // gpu: GPU,
     // apu: APU,
-    timer: Rc<Cell<timer::Timer>>,
+    timer: Rc<RefCell<timer::Timer>>,
 }
 
 impl GameBoy {
@@ -26,15 +26,15 @@ impl GameBoy {
         let wraped_cartridge = Cartridge::new(buf);
         let cartridge = wraped_cartridge.unwrap();
 
-        let timer = Rc::new(Cell::new(timer::Timer::default()));
-        let bus = Bus::new(new_mbc(cartridge));
+        let timer = Rc::new(RefCell::new(timer::Timer::default()));
+        let bus = Bus::new(new_mbc(cartridge), Rc::clone(&timer));
 
         let cpu = Cpu::new(Box::new(bus));
 
         Self { 
             cpu,
             cycle: 0,
-            timer: timer.clone(),
+            timer: Rc::clone(&timer),
         }
     }
 
@@ -42,10 +42,10 @@ impl GameBoy {
        // loop {
             let cycle = self.cpu.step();
             self.cycle += cycle as u32 * 4;
-            self.cpu.bus.timer().tick(cycle);
-            if self.cpu.bus.timer().overflow {
+            self.timer.borrow_mut().tick(cycle);
+            if self.timer.borrow_mut().overflow {
                 self.cpu.bus.interrupt().request(INT_TIMER_FLG);
-                self.cpu.bus.timer().overflow = false;
+                self.timer.borrow_mut().overflow = false;
             }
 
 //            if self.cycle >= 70224 {
