@@ -12,3 +12,5 @@ pub mod constant;
 pub mod io;
 pub mod emulator;
 pub mod ppu;
+pub mod interrupt;
+pub mod timer;

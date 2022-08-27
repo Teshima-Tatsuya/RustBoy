@@ -1,4 +1,14 @@
-use crate::{constant::*, traits::*, types::*};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+};
+
+use crate::{
+    constant::*,
+    traits::*,
+    types::*,
+    interrupt::Interrupt,
+};
 
 pub struct Timer {
     counter: u16,
@@ -6,23 +16,21 @@ pub struct Timer {
     tima: Byte,
     tma: Byte,
     tac: Byte,
-    pub overflow: bool,
-}
-
-impl Default for Timer {
-    fn default() -> Self {
-        Self {
-            counter: 0,
-            div: 0x19,
-            tima: 0,
-            tma: 0,
-            tac: 0,
-            overflow: false,
-        }
-    }
+    interrupt: Rc<RefCell<Interrupt>>,
 }
 
 impl Timer {
+    pub fn new(interrupt: Rc<RefCell<Interrupt>>) -> Self {
+        Self {
+            div: 0x19,
+            interrupt: interrupt,
+            counter: 0,
+            tima: 0x00,
+            tma: 0x00,
+            tac: 0x00,
+        }
+    }
+
     pub fn tick(&mut self, cycle: u16) {
         for _ in 0..cycle {
             self.counter = self.counter.wrapping_add(4);
@@ -37,7 +45,7 @@ impl Timer {
 
             if self.tima == 0 {
                 self.tima = self.tma;
-                self.overflow = true;
+                self.interrupt.borrow_mut().request(INT_TIMER_FLG);
             }
 
             if self.counter % (1 << (self.get_freq() + 1)) == 0 {

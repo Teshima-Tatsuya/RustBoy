@@ -9,6 +9,8 @@ use crate::{
     {mbc::Mbc, mbc::MbcTrait},
     memory::*,
     io::*,
+    interrupt::Interrupt,
+    timer::Timer,
     ppu::Ppu,
     constant::*,
 };
@@ -22,11 +24,13 @@ pub struct Bus {
     eram: RAM,
     oam: RAM,
     ppu: Rc<RefCell<Ppu>>,
+    interrupt: Rc<RefCell<Interrupt>>,
+    timer: Rc<RefCell<Timer>>,
     io: Io,
 }
 
 impl Bus {
-    pub fn new(mbc: Mbc, timer: Rc<RefCell<timer::Timer>>, ppu: Rc<RefCell<Ppu>>) -> Box<dyn BusTrait> {
+    pub fn new(mbc: Mbc, timer: Rc<RefCell<Timer>>, interrupt: Rc<RefCell<Interrupt>>,ppu: Rc<RefCell<Ppu>>) -> Box<dyn BusTrait> {
         Box::new(Bus {
             mbc,
             vram: RAM::new(0x2000),
@@ -36,7 +40,9 @@ impl Bus {
             eram: RAM::new(0x2000),
             oam: RAM::new(0x00A0),
             ppu: ppu,
-            io: Io::new(timer),
+            interrupt: interrupt,
+            timer: timer,
+            io: Io::new(),
         })
     }
 }
@@ -52,7 +58,9 @@ impl Reader for Bus {
             0xE000..=0xFDFF => self.eram.read(addr - 0xE000),
             0xFE00..=0xFE9F => self.oam.read(addr - 0xFE00),
             0xFEA0..=0xFEFF => 0,
+            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow().read(addr),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.borrow().read(addr),
+            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.borrow().read(addr),
             0xFF00..=0xFF70 | 0xFFFF => self.io.read(addr),
             0xFF80..=0xFFFE => self.hram.read(addr - 0xFF80),
             v => todo!("addr {:04X} is not readable", v),
@@ -71,16 +79,12 @@ impl Writer for Bus {
             0xE000..=0xFDFF => self.eram.write(addr - 0xE000, value),
             0xFE00..=0xFE9F => self.oam.write(addr - 0xFE00, value),
             0xFEA0..=0xFEFF => (),
+            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow_mut().write(addr, value),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.borrow_mut().write(addr, value),
+            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.borrow_mut().write(addr, value),
             0xFF00..=0xFF70 | 0xFFFF => self.io.write(addr, value),
             0xFF80..=0xFFFE => self.hram.write(addr - 0xFF80, value),
             v => todo!("addr {:04X} is not writable", v),
         }
-    }
-}
-
-impl BusAccessor for Bus {
-    fn interrupt(&mut self) -> &mut interrupt::Interrupt {
-       &mut self.io.interrupt 
     }
 }

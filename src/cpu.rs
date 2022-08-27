@@ -3,8 +3,8 @@ use crate::{
     traits::*,
     types::*,
     util::*,
-    io::interrupt::Interrupt,
-    io::timer::Timer,
+    interrupt::Interrupt,
+    timer::Timer,
 };
 
 use bitvec::prelude::*;
@@ -18,6 +18,7 @@ use log::{info, warn, trace};
 pub struct Cpu {
     pub reg: Register,
     pub bus: Rc<RefCell<Box<dyn BusTrait>>>,
+    pub interrupt: Rc<RefCell<Interrupt>>,
     pub halted: bool,
     pub ime: bool,
 }
@@ -228,9 +229,10 @@ impl fmt::Display for Flags {
 }
 
 impl Cpu {
-    pub fn new(bus: Rc<RefCell<Box<dyn BusTrait>>>) -> Self {
+    pub fn new(bus: Rc<RefCell<Box<dyn BusTrait>>>, interrupt: Rc<RefCell<Interrupt>>) -> Self {
         Self {
             bus: bus,
+            interrupt: interrupt,
             reg: Register::default(),
             halted: false,
             ime: false,
@@ -239,7 +241,7 @@ impl Cpu {
 
     pub fn step(&mut self) -> u16 {
         if self.halted{
-            if self.bus.borrow_mut().interrupt().has() {
+            if self.interrupt.borrow().has() {
                 self.halted = false;
             }
             return 1;
@@ -387,11 +389,11 @@ impl Cpu {
     }
 
     fn exec_interrupt(&mut self) -> bool {
-        if !self.ime || !self.bus.borrow_mut().interrupt().has() {
+        if !self.ime || !self.interrupt.borrow().has() {
             return false
         }
     
-        let addr = self.bus.borrow_mut().interrupt().interrupt_addr();
+        let addr = self.interrupt.borrow_mut().interrupt_addr();
 
         self.push_pc();
         self.store(&"PC".to_string(), addr);
