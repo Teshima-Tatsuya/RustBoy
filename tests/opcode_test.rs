@@ -119,10 +119,10 @@ speculate! {
                     let want = 0x12;
 
                     if &arg.r2 == "d" {
-                        cpu.bus.write(cpu.reg.PC, want);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, want);
                     } else if &arg.r2 == "dd" {
-                        cpu.bus.write(cpu.reg.PC, want);
-                        cpu.bus.write(cpu.reg.PC + 1, want + 1);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, want);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC + 1, want + 1);
                     } else {
                         cpu.store(&arg.r2, want as Word);
                     }
@@ -173,12 +173,12 @@ speculate! {
                     assert_eq!(opcode.r2, arg.r2);
 
                     cpu.store(&"SP".to_string(), 0x4567);
-                    cpu.bus.write(cpu.reg.PC, 0x34);
-                    cpu.bus.write(cpu.reg.PC + 1, 0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC + 1, 0x12);
                     let handler = &opcode.handler;
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
-                    assert_eq!(cpu.bus.read(0x1234), 0x67);
-                    assert_eq!(cpu.bus.read(0x1235), 0x45);
+                    assert_eq!(cpu.bus.borrow_mut().read(0x1234), 0x67);
+                    assert_eq!(cpu.bus.borrow_mut().read(0x1235), 0x45);
                 }
             }
 
@@ -200,7 +200,7 @@ speculate! {
 
                     // no carry
                     cpu.store(&"SP".to_string(), 0x1E00);
-                    cpu.bus.write(cpu.reg.PC, 0xE1);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0xE1);
                     let handler = &opcode.handler;
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x1DE1);
@@ -208,7 +208,7 @@ speculate! {
 
                     // half carry
                     cpu.store(&"SP".to_string(), 0x1F21);
-                    cpu.bus.write(cpu.reg.PC, 0x0F);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     let handler = &opcode.handler;
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x1F30);
@@ -216,7 +216,7 @@ speculate! {
 
                     // carry
                     cpu.store(&"SP".to_string(), 0xFF20);
-                    cpu.bus.write(cpu.reg.PC, 0xE1);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0xE1);
                     let handler = &opcode.handler;
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0xFF01);
@@ -247,8 +247,8 @@ speculate! {
                     if arg.r1.as_str() == "HL" {
                         cpu.store(&"HL".to_string(), want);
                     } else {
-                        cpu.bus.write(cpu.reg.PC,  0x34);
-                        cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0x34);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC + 1,  0x12);
                     }
 
                     let handler = &opcode.handler;
@@ -283,8 +283,8 @@ speculate! {
 
                     // all true
                     cpu.reg.PC = 0x0100;
-                    cpu.bus.write(cpu.reg.PC,  0x34);
-                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC + 1,  0x12);
                     cpu.reg.F.unpack(0xF0);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
@@ -295,8 +295,8 @@ speculate! {
 
                     // all false
                     cpu.reg.PC = 0x0100;
-                    cpu.bus.write(cpu.reg.PC,  0x34);
-                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC + 1,  0x12);
                     cpu.reg.F.unpack(0x00);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
@@ -329,13 +329,13 @@ speculate! {
 
                     // positive
                     cpu.reg.PC = 0x100;
-                    cpu.bus.write(cpu.reg.PC,  0x10);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0x10);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&"PC".to_string()), 0x0111);
 
                     // nagative
                     cpu.reg.PC = 0x100;
-                    cpu.bus.write(cpu.reg.PC,  0xFE); // -2
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0xFE); // -2
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&"PC".to_string()), 0x00FF);
                 }
@@ -364,7 +364,7 @@ speculate! {
 
                     // positive
                     cpu.reg.PC = 0x100;
-                    cpu.bus.write(cpu.reg.PC,  0x10);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0x10);
                     cpu.reg.F.unpack(0xF0);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
@@ -375,7 +375,7 @@ speculate! {
 
                     // nagative
                     cpu.reg.PC = 0x100;
-                    cpu.bus.write(cpu.reg.PC,  0xFE); // -2
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0xFE); // -2
                     cpu.reg.F.unpack(0x00);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
@@ -583,7 +583,7 @@ speculate! {
                     // no carry
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0E);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0E);
                     } else {
                         cpu.store(&opcode.r2, 0x0E);
                     }
@@ -594,7 +594,7 @@ speculate! {
                     // half carry
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     } else {
                         cpu.store(&opcode.r2, 0x0F);
                     }
@@ -605,7 +605,7 @@ speculate! {
                     // carry and zero
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x1F);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x1F);
                     } else {
                         cpu.store(&opcode.r2, 0x1F);
                     }
@@ -686,7 +686,7 @@ speculate! {
 
                     // no carry
                     cpu.store(&opcode.r1, 0x01E1);
-                    cpu.bus.write(cpu.reg.PC, 0x0D);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0D);
                     cpu.reg.F.unpack(0b00000000);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x01EE);
@@ -694,7 +694,7 @@ speculate! {
 
                     // half carry
                     cpu.store(&opcode.r1, 0x0FD1);
-                    cpu.bus.write(cpu.reg.PC, 0x0F);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     cpu.reg.F.unpack(0b00000000);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x0FE0);
@@ -702,7 +702,7 @@ speculate! {
 
                     // carry
                     cpu.store(&opcode.r1, 0x0DF1);
-                    cpu.bus.write(cpu.reg.PC, 0x0F);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     cpu.reg.F.unpack(0b00000000);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x0E00);
@@ -710,7 +710,7 @@ speculate! {
 
                     // negative half carry
                     cpu.store(&opcode.r1, 0x0FD1);
-                    cpu.bus.write(cpu.reg.PC, 0x8F);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0x8F);
                     cpu.reg.F.unpack(0b00000000);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x0F60);
@@ -718,7 +718,7 @@ speculate! {
                     
                     // negative carry
                     cpu.store(&opcode.r1, 0x0F81);
-                    cpu.bus.write(cpu.reg.PC, 0x80);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC, 0x80);
                     cpu.reg.F.unpack(0b00000000);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&opcode.r1), 0x0F01);
@@ -762,7 +762,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11110000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0D);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0D);
                     } else {
                         cpu.store(&opcode.r2, 0x0D);
                     }
@@ -774,7 +774,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11100000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0D);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0D);
                     } else {
                         cpu.store(&opcode.r2, 0x0D);
                     }
@@ -786,7 +786,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11110000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     } else {
                         cpu.store(&opcode.r2, 0x0F);
                     }
@@ -798,7 +798,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11100000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     } else {
                         cpu.store(&opcode.r2, 0x0F);
                     }
@@ -810,7 +810,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11110000);
                     cpu.store(&opcode.r1, 0xF1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0E);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0E);
                     } else {
                         cpu.store(&opcode.r2, 0x0E);
                     }
@@ -822,7 +822,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11100000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x1F);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x1F);
                     } else {
                         cpu.store(&opcode.r2, 0x1F);
                     }
@@ -867,7 +867,7 @@ speculate! {
                     // no carry
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x01);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x01);
                     } else {
                         cpu.store(&opcode.r2, 0x01);
                     }
@@ -878,7 +878,7 @@ speculate! {
                     // half carry
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x02);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x02);
                     } else {
                         cpu.store(&opcode.r2, 0x02);
                     }
@@ -889,7 +889,7 @@ speculate! {
                     // carry and zero
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0xE1);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0xE1);
                     } else {
                         cpu.store(&opcode.r2, 0xE1);
                     }
@@ -900,7 +900,7 @@ speculate! {
                     // carry
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0xE2);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0xE2);
                     } else {
                         cpu.store(&opcode.r2, 0xE2);
                     }
@@ -946,7 +946,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11110000);
                     cpu.store(&opcode.r1, 0xE2);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x01);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x01);
                     } else {
                         cpu.store(&opcode.r2, 0x01);
                     }
@@ -958,7 +958,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11100000);
                     cpu.store(&opcode.r1, 0xE2);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x01);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x01);
                     } else {
                         cpu.store(&opcode.r2, 0x01);
                     }
@@ -970,7 +970,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11110000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     } else {
                         cpu.store(&opcode.r2, 0x0F);
                     }
@@ -982,7 +982,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11100000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0x0F);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0x0F);
                     } else {
                         cpu.store(&opcode.r2, 0x0F);
                     }
@@ -994,7 +994,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11110000);
                     cpu.store(&opcode.r1, 0xF1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0xF0);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0xF0);
                     } else {
                         cpu.store(&opcode.r2, 0xF0);
                     }
@@ -1006,7 +1006,7 @@ speculate! {
                     cpu.reg.F.unpack(0b11100000);
                     cpu.store(&opcode.r1, 0xE1);
                     if opcode.r2.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC, 0xE2);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC, 0xE2);
                     } else {
                         cpu.store(&opcode.r2, 0xE2);
                     }
@@ -1047,7 +1047,7 @@ speculate! {
                     // equal
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b11110000);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b11110000);
                     } else {
                         cpu.store(&opcode.r1,  0b11110000);
                     }
@@ -1058,7 +1058,7 @@ speculate! {
                     // oposite
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b00001111);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b00001111);
                     } else {
                         cpu.store(&opcode.r1,  0b00001111);
                     }
@@ -1072,7 +1072,7 @@ speculate! {
                     // other
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b10100000);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b10100000);
                     } else {
                         cpu.store(&opcode.r1,  0b10100000);
                     }
@@ -1116,7 +1116,7 @@ speculate! {
                     // equal
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b11110000);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b11110000);
                     } else {
                         cpu.store(&opcode.r1,  0b11110000);
                     }
@@ -1127,7 +1127,7 @@ speculate! {
                     // oposite
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b00001111);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b00001111);
                     } else {
                         cpu.store(&opcode.r1,  0b00001111);
                     }
@@ -1141,7 +1141,7 @@ speculate! {
                     // other
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b00000101);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b00000101);
                     } else {
                         cpu.store(&opcode.r1,  0b00000101);
                     }
@@ -1155,7 +1155,7 @@ speculate! {
                     // zero
                     cpu.reg.A = 0b00000000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b00000000);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b00000000);
                     } else {
                         cpu.store(&opcode.r1,  0b00000000);
                     }
@@ -1199,7 +1199,7 @@ speculate! {
                     // equal
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b11110000);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b11110000);
                     } else {
                         cpu.store(&opcode.r1,  0b11110000);
                     }
@@ -1210,7 +1210,7 @@ speculate! {
                     // oposite
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b00001111);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b00001111);
                     } else {
                         cpu.store(&opcode.r1,  0b00001111);
                     }
@@ -1224,7 +1224,7 @@ speculate! {
                     // other
                     cpu.reg.A = 0b11110000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b01010101);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b01010101);
                     } else {
                         cpu.store(&opcode.r1,  0b01010101);
                     }
@@ -1238,7 +1238,7 @@ speculate! {
                     // zero
                     cpu.reg.A = 0b00000000;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0b00000000);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0b00000000);
                     } else {
                         cpu.store(&opcode.r1,  0b00000000);
                     }
@@ -1282,7 +1282,7 @@ speculate! {
                     // equal
                     cpu.reg.A = 0x12;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0x12);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0x12);
                     } else {
                         cpu.store(&opcode.r1,  0x12);
                     }
@@ -1292,7 +1292,7 @@ speculate! {
                     // greater than A
                     cpu.reg.A = 0x12;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0x13);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0x13);
                     } else {
                         cpu.store(&opcode.r1,  0x13);
                     }
@@ -1305,7 +1305,7 @@ speculate! {
                     // less than A with borrow
                     cpu.reg.A = 0x12;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0x03);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0x03);
                     } else {
                         cpu.store(&opcode.r1,  0x03);
                     }
@@ -1318,7 +1318,7 @@ speculate! {
                     // less than A with no borrow
                     cpu.reg.A = 0x12;
                     if opcode.r1.as_str() == "d" {
-                        cpu.bus.write(cpu.reg.PC,  0x02);
+                        cpu.bus.borrow_mut().write(cpu.reg.PC,  0x02);
                     } else {
                         cpu.store(&opcode.r1,  0x02);
                     }
@@ -1352,13 +1352,13 @@ speculate! {
 
                     cpu.reg.PC = 0x5678;
                     cpu.reg.SP = 0xFFFC;
-                    cpu.bus.write(cpu.reg.PC,  0x34);
-                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC + 1,  0x12);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
                     assert_eq!(cpu.load(&"SP".to_string()), 0xFFFA);
-                    assert_eq!(cpu.bus.read(0xFFFA), 0x7A);
-                    assert_eq!(cpu.bus.read(0xFFFB), 0x56);
+                    assert_eq!(cpu.bus.borrow_mut().read(0xFFFA), 0x7A);
+                    assert_eq!(cpu.bus.borrow_mut().read(0xFFFB), 0x56);
                 }
             }
 
@@ -1386,8 +1386,8 @@ speculate! {
                     // all true
                     cpu.reg.PC = 0x5678;
                     cpu.reg.SP = 0xFFFC;
-                    cpu.bus.write(cpu.reg.PC,  0x34);
-                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC + 1,  0x12);
                     cpu.reg.F.unpack(0xF0);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
@@ -1396,22 +1396,22 @@ speculate! {
                     } else {
                         assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
                         assert_eq!(cpu.load(&"SP".to_string()), 0xFFFA);
-                        assert_eq!(cpu.bus.read(0xFFFA), 0x7A);
-                        assert_eq!(cpu.bus.read(0xFFFB), 0x56);
+                        assert_eq!(cpu.bus.borrow_mut().read(0xFFFA), 0x7A);
+                        assert_eq!(cpu.bus.borrow_mut().read(0xFFFB), 0x56);
                     }
 
                     // all false
                     cpu.reg.PC = 0x5678;
                     cpu.reg.SP = 0xFFFC;
-                    cpu.bus.write(cpu.reg.PC,  0x34);
-                    cpu.bus.write(cpu.reg.PC + 1,  0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC,  0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.PC + 1,  0x12);
                     cpu.reg.F.unpack(0x00);
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     if opcode.r1.as_str() == "NZ" || opcode.r1.as_str() == "NC" {
                         assert_eq!(cpu.load(&"PC".to_string()), 0x1234);
                         assert_eq!(cpu.load(&"SP".to_string()), 0xFFFA);
-                        assert_eq!(cpu.bus.read(0xFFFA), 0x7A);
-                        assert_eq!(cpu.bus.read(0xFFFB), 0x56);
+                        assert_eq!(cpu.bus.borrow_mut().read(0xFFFA), 0x7A);
+                        assert_eq!(cpu.bus.borrow_mut().read(0xFFFB), 0x56);
                     } else {
                         assert_eq!(cpu.load(&"PC".to_string()), 0x567A);
                         assert_eq!(cpu.load(&"SP".to_string()), 0xFFFC);
@@ -1447,11 +1447,11 @@ speculate! {
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
                     assert_eq!(cpu.reg.SP, before_sp - 2);
                     if opcode.r1.as_str() == "AF" {
-                        assert_eq!(cpu.bus.read(cpu.reg.SP), 0x30);
+                        assert_eq!(cpu.bus.borrow_mut().read(cpu.reg.SP), 0x30);
                     } else {
-                        assert_eq!(cpu.bus.read(cpu.reg.SP), 0x34);
+                        assert_eq!(cpu.bus.borrow_mut().read(cpu.reg.SP), 0x34);
                     }
-                    assert_eq!(cpu.bus.read(cpu.reg.SP + 1), 0x12);
+                    assert_eq!(cpu.bus.borrow_mut().read(cpu.reg.SP + 1), 0x12);
                 }
             }
         }
@@ -1513,8 +1513,8 @@ speculate! {
 
                     cpu.reg.SP = 0xFFFC;
                     cpu.reg.PC = 0x5678;
-                    cpu.bus.write(cpu.reg.SP, 0x34);
-                    cpu.bus.write(cpu.reg.SP + 1, 0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.SP, 0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.SP + 1, 0x12);
 
                     let handler = &opcode.handler;
 
@@ -1562,8 +1562,8 @@ speculate! {
 
                     cpu.reg.SP = 0xFFFC;
                     cpu.reg.PC = 0x5678;
-                    cpu.bus.write(cpu.reg.SP, 0x34);
-                    cpu.bus.write(cpu.reg.SP + 1, 0x12);
+                    cpu.bus.borrow_mut().write(cpu.reg.SP, 0x34);
+                    cpu.bus.borrow_mut().write(cpu.reg.SP + 1, 0x12);
 
                     let handler = &opcode.handler;
 
@@ -1606,8 +1606,8 @@ speculate! {
                     let handler = &opcode.handler;
 
                     handler(&mut cpu, opcode.r1.to_string(), opcode.r2.to_string());
-                    assert_eq!(cpu.bus.read(cpu.reg.SP), 0x34);
-                    assert_eq!(cpu.bus.read(cpu.reg.SP + 1), 0x12);
+                    assert_eq!(cpu.bus.borrow_mut().read(cpu.reg.SP), 0x34);
+                    assert_eq!(cpu.bus.borrow_mut().read(cpu.reg.SP + 1), 0x12);
                     let num: u16 = opcode.r1.parse().unwrap();
                     assert_eq!(cpu.load(&"PC".to_string()), num);
                 }

@@ -20,9 +20,9 @@ fn rom_test(folder: String, file: String, frame: u64, pass_str: String) {
     let mut gb = GameBoy::new(&bytes);
     for _ in 1..=frame {
         gb.step();
-        if gb.cpu.bus.read(0xFF02) == 0xFF {
-            result += &char::from_u32(gb.cpu.bus.read(0xFF01) as u32).unwrap().to_string();
-            gb.cpu.bus.write(0xFF02, 0x00);
+        if gb.cpu.bus.borrow_mut().read(0xFF02) == 0xFF {
+            result += &char::from_u32(gb.cpu.bus.borrow_mut().read(0xFF01) as u32).unwrap().to_string();
+            gb.cpu.bus.borrow_mut().write(0xFF02, 0x00);
         }
         if result.contains(&pass_str){
              break;

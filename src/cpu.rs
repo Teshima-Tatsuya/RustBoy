@@ -8,14 +8,16 @@ use crate::{
 };
 
 use bitvec::prelude::*;
-use std::fmt;
+use std::{
+    fmt,
+    rc::Rc,
+    cell::RefCell,
+};
 use log::{info, warn, trace};
-
-trait_alias!(pub trait BusTrait = Reader + Writer + BusAccessor);
 
 pub struct Cpu {
     pub reg: Register,
-    pub bus: Box<dyn BusTrait>,
+    pub bus: Rc<RefCell<Box<dyn BusTrait>>>,
     pub halted: bool,
     pub ime: bool,
 }
@@ -226,7 +228,7 @@ impl fmt::Display for Flags {
 }
 
 impl Cpu {
-    pub fn new(bus: Box<dyn BusTrait>) -> Self {
+    pub fn new(bus: Rc<RefCell<Box<dyn BusTrait>>>) -> Self {
         Self {
             bus: bus,
             reg: Register::default(),
@@ -237,7 +239,7 @@ impl Cpu {
 
     pub fn step(&mut self) -> u16 {
         if self.halted{
-            if self.bus.interrupt().has() {
+            if self.bus.borrow_mut().interrupt().has() {
                 self.halted = false;
             }
             return 1;
@@ -266,7 +268,7 @@ impl Cpu {
     }
 
     pub fn fetch(&mut self) -> Byte {
-        let buf = self.bus.read(self.reg.PC);
+        let buf = self.bus.borrow().read(self.reg.PC);
         self.reg.PC += 1;
         return buf;
     }
@@ -279,7 +281,7 @@ impl Cpu {
 
     pub fn push(&mut self, buf: Byte) {
         self.reg.SP = self.reg.SP.wrapping_sub(1);
-        self.bus.write(self.reg.SP, buf)
+        self.bus.borrow_mut().write(self.reg.SP, buf)
     }
 
     // push PC
@@ -289,7 +291,7 @@ impl Cpu {
     }
 
     pub fn pop(&mut self) -> Byte {
-        let d = self.bus.read(self.reg.SP);
+        let d = self.bus.borrow().read(self.reg.SP);
         self.reg.SP += 1;
         return d;
     }
@@ -308,7 +310,7 @@ impl Cpu {
             // m
             "(C)" => {
                 let r = self.reg.C;
-                self.bus.read(bytes_2_word(0xFF, r)) as Word
+                self.bus.borrow().read(bytes_2_word(0xFF, r)) as Word
             },
             // d
             "d" => {
@@ -320,14 +322,14 @@ impl Cpu {
             // a
             "(a)" => {
                 let addr = self.fetch();
-                self.bus.read(bytes_2_word(0xFF as Byte, addr)) as Word
+                self.bus.borrow().read(bytes_2_word(0xFF as Byte, addr)) as Word
             },
             "aa" => {
                 self.fetch16()
             },
             "(aa)" => {
                 let addr = self.fetch16();
-                self.bus.read(addr) as Word
+                self.bus.borrow().read(addr) as Word
             },
             // rr
             "AF" | "BC" | "DE" | "HL" | "HLD" | "HLI" | "PC" | "SP" => self.reg.r16(reg),
@@ -335,7 +337,7 @@ impl Cpu {
             "(BC)" | "(DE)" | "(HL)" | "(HLI)" | "(HLD)" => {
                 let mut s = reg.replace("(", "");
                 s = s.replace(")", "");
-                self.bus.read(self.reg.r16(&s)) as Word
+                self.bus.borrow().read(self.reg.r16(&s)) as Word
             }, 
             &_ => unreachable!()
         }
@@ -350,16 +352,16 @@ impl Cpu {
                 let mut s = reg.replace("(", "");
                 s = s.replace(")", "");
                 let addr = bytes_2_word(0xFF, self.reg.r(&s));
-                self.bus.write(addr, value as Byte);
+                self.bus.borrow_mut().write(addr, value as Byte);
             },
             // a
             "(a)" => {
                 let addr = self.fetch();
-                self.bus.write(bytes_2_word(0xFF as Byte, addr), value as Byte);
+                self.bus.borrow_mut().write(bytes_2_word(0xFF as Byte, addr), value as Byte);
             },
             "(aa)" => {
                 let addr = self.fetch16();
-                self.bus.write(addr, value as Byte);
+                self.bus.borrow_mut().write(addr, value as Byte);
             },
             // rr
             "AF" | "BC" | "DE" | "HL" | "SP" | "PC" => self.reg.r16_mut(reg, value),
@@ -368,7 +370,7 @@ impl Cpu {
                 let mut s = reg.replace("(", "");
                 s = s.replace(")", "");
                 let addr = self.reg.r16(&s);
-                self.bus.write(addr, value as Byte);
+                self.bus.borrow_mut().write(addr, value as Byte);
             }, 
             &_ => unreachable!()
         }
@@ -385,11 +387,11 @@ impl Cpu {
     }
 
     fn exec_interrupt(&mut self) -> bool {
-        if !self.ime || !self.interrupt().has() {
+        if !self.ime || !self.bus.borrow_mut().interrupt().has() {
             return false
         }
     
-        let addr = self.interrupt().interrupt_addr();
+        let addr = self.bus.borrow_mut().interrupt().interrupt_addr();
 
         self.push_pc();
         self.store(&"PC".to_string(), addr);
@@ -398,22 +400,19 @@ impl Cpu {
         return true
     }
 
-    pub fn interrupt(&mut self) -> &mut Interrupt {
-        self.bus.interrupt()
-    }
-
     fn trace(&mut self, op: &crate::opcode::OpCode) {
         println!(" {}", *op);
         println!("{}", self.reg);
         println!("Cpu: halted:{} ime:{}",self.halted, self.ime);
         println!(
             "  data: {:02X}{:02X}",
-            self.bus.read(self.reg.PC),
-            self.bus.read(self.reg.PC + 1),
+            self.bus.borrow().read(self.reg.PC),
+            self.bus.borrow().read(self.reg.PC + 1),
         );
         
         if op.r2 == "(a)" {
-            println!("(a:FF{:02X}) = {:02X}", self.bus.read(self.reg.PC), self.load(&"(a)".to_string()));
+            let a =self.load(&"(a)".to_string());
+            println!("(a:FF{:02X}) = {:02X}", self.bus.borrow().read(self.reg.PC), a);
             self.reg.PC -= 1;
         }
         if op.r2 == "(HLD)" || op.r2 == "(HLI)" {

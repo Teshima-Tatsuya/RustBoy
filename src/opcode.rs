@@ -318,8 +318,8 @@ fn ld(c: &mut Cpu, r1: String, r2: String) {
 fn ldnnsp(c: &mut Cpu, _: String, r2: String) {
 	let value = c.load(&r2);
 	let addr = c.fetch16();
-	c.bus.write(addr, extract_lower(value));
-	c.bus.write(addr + 1, extract_upper(value));
+	c.bus.borrow_mut().write(addr, extract_lower(value));
+	c.bus.borrow_mut().write(addr + 1, extract_upper(value));
 }
 
 // LD r1, r2+r

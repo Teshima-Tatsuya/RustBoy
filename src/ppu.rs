@@ -1,7 +1,8 @@
 use std::{
-    cell::Cell,
+    cell::RefCell,
     rc::Rc
 };
+
 use crate::{constant::*, memory::*, traits::*, types::*, util::*, bus::Bus};
 
 #[derive(Debug, Default)]
@@ -11,6 +12,7 @@ struct Color(u8, u8, u8, u8); // rgba
 pub struct Ppu {
     clock: u16,
     buf: RAM,
+    bus: Option<Rc<RefCell<Box<dyn BusTrait>>>>,
     lcdc: Lcdc,
     lcds: Lcds,
     scroll: Scroll,
@@ -26,10 +28,15 @@ impl Ppu {
         Self {
             clock: 0,
             buf: RAM::new(0xFFFF),
+            bus: None,
             dma: 0x00,
             dma_started: false,
             ..Default::default()
         }
+    }
+
+    pub fn init(&mut self, bus: Rc<RefCell<Box<dyn BusTrait>>>) {
+        self.bus = Option::Some(bus);
     }
 
     pub fn step(&mut self, cycle: u16) {

@@ -11,12 +11,13 @@ use crate::{
     types::*,
     constant::*,
     io::*,
+    ppu::Ppu,
 };
 
 pub struct GameBoy {
     pub cpu: Cpu,
     cycle: u32,
-    // gpu: GPU,
+    ppu: Rc<RefCell<Ppu>>,
     // apu: APU,
     timer: Rc<RefCell<timer::Timer>>,
 }
@@ -27,13 +28,16 @@ impl GameBoy {
         let cartridge = wraped_cartridge.unwrap();
 
         let timer = Rc::new(RefCell::new(timer::Timer::default()));
-        let bus = Bus::new(new_mbc(cartridge), Rc::clone(&timer));
+        let ppu = Rc::new(RefCell::new(Ppu::new()));
+        let bus = Rc::new(RefCell::new(Bus::new(new_mbc(cartridge), Rc::clone(&timer), Rc::clone(&ppu))));
+        ppu.borrow_mut().init(Rc::clone(&bus));
 
-        let cpu = Cpu::new(Box::new(bus));
+        let cpu = Cpu::new(Rc::clone(&bus));
 
         Self { 
             cpu,
             cycle: 0,
+            ppu: Rc::clone(&ppu),
             timer: Rc::clone(&timer),
         }
     }
@@ -44,7 +48,7 @@ impl GameBoy {
             self.cycle += cycle as u32 * 4;
             self.timer.borrow_mut().tick(cycle);
             if self.timer.borrow_mut().overflow {
-                self.cpu.bus.interrupt().request(INT_TIMER_FLG);
+                self.cpu.bus.borrow_mut().interrupt().request(INT_TIMER_FLG);
                 self.timer.borrow_mut().overflow = false;
             }
 

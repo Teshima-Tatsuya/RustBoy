@@ -9,6 +9,8 @@ use crate::{
     {mbc::Mbc, mbc::MbcTrait},
     memory::*,
     io::*,
+    ppu::Ppu,
+    constant::*,
 };
 
 pub struct Bus {
@@ -19,12 +21,13 @@ pub struct Bus {
     hram: RAM,
     eram: RAM,
     oam: RAM,
+    ppu: Rc<RefCell<Ppu>>,
     io: Io,
 }
 
 impl Bus {
-    pub fn new(mbc: Mbc, timer: Rc<RefCell<timer::Timer>>) -> Self {
-        Bus {
+    pub fn new(mbc: Mbc, timer: Rc<RefCell<timer::Timer>>, ppu: Rc<RefCell<Ppu>>) -> Box<dyn BusTrait> {
+        Box::new(Bus {
             mbc,
             vram: RAM::new(0x2000),
             wram: RAM::new(0x4000),
@@ -32,8 +35,9 @@ impl Bus {
             hram: RAM::new(0x0080),
             eram: RAM::new(0x2000),
             oam: RAM::new(0x00A0),
+            ppu: ppu,
             io: Io::new(timer),
-        }
+        })
     }
 }
 
@@ -48,6 +52,7 @@ impl Reader for Bus {
             0xE000..=0xFDFF => self.eram.read(addr - 0xE000),
             0xFE00..=0xFE9F => self.oam.read(addr - 0xFE00),
             0xFEA0..=0xFEFF => 0,
+            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.borrow().read(addr),
             0xFF00..=0xFF70 | 0xFFFF => self.io.read(addr),
             0xFF80..=0xFFFE => self.hram.read(addr - 0xFF80),
             v => todo!("addr {:04X} is not readable", v),
@@ -66,6 +71,7 @@ impl Writer for Bus {
             0xE000..=0xFDFF => self.eram.write(addr - 0xE000, value),
             0xFE00..=0xFE9F => self.oam.write(addr - 0xFE00, value),
             0xFEA0..=0xFEFF => (),
+            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.borrow_mut().write(addr, value),
             0xFF00..=0xFF70 | 0xFFFF => self.io.write(addr, value),
             0xFF80..=0xFFFE => self.hram.write(addr - 0xFF80, value),
             v => todo!("addr {:04X} is not writable", v),

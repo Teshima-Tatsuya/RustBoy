@@ -11,3 +11,4 @@ pub mod util;
 pub mod constant;
 pub mod io;
 pub mod emulator;
+pub mod ppu;

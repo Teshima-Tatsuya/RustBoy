@@ -2,7 +2,6 @@ mod serial;
 pub mod timer;
 pub mod interrupt;
 mod apu;
-mod ppu;
 
 use std::{
     cell::RefCell,
@@ -21,7 +20,6 @@ pub struct Io {
     pub timer: Rc<RefCell<timer::Timer>>,
     pub interrupt: interrupt::Interrupt,
     apu: apu::Apu,
-    ppu: ppu::Ppu,
     tmp_buf: RAM,
 }
 
@@ -32,7 +30,6 @@ impl Io {
             timer: timer,
             interrupt: interrupt::Interrupt::new(),
             apu: apu::Apu::new(),
-            ppu: ppu::Ppu::new(),
             tmp_buf: RAM::new(0x10000),
         }
     }
@@ -46,7 +43,6 @@ impl Reader for Io {
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow().read(addr),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.read(addr),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.read(addr),
-            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.read(addr),
             v => unreachable!("Cannot read addr {:04X} for Io",v)
         }
     }
@@ -60,7 +56,6 @@ impl Writer for Io {
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow_mut().write(addr, value),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.write(addr, value),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.write(addr, value),
-            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.write(addr, value),
             v => unreachable!("Cannot write addr {:04X} for Io",v)
         }
 
