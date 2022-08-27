@@ -1,6 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{bus::Bus, constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
+use crate::{
+    constant::*,
+    interrupt::Interrupt,
+    memory::*,
+    traits::*,
+    types::*,
+    util::*
+};
 
 #[derive(Debug, Default)]
 struct Color(u8, u8, u8, u8); // rgba
@@ -24,7 +31,7 @@ pub struct Ppu {
     tiles: Vec<Vec<Tile>>,
     image_data: Vec<Vec<Color>>,
     dma: Byte,
-    dma_started: bool,
+    pub dma_started: bool,
     interrupt: Rc<RefCell<Interrupt>>,
 }
 
@@ -81,11 +88,11 @@ impl Ppu {
         }
     }
 
-    pub fn transfer_oam(&mut self, mut bus: Bus) {
+    pub fn transfer_oam(&mut self) {
         for i in 0..0xA0 {
             let addr = self.dma as Word * 0x100;
-            let b = bus.read(addr + i as Word);
-            bus.write(ADDR_OAM_START + i as Word, b);
+            let b = self.bus.as_ref().unwrap().borrow().read(addr + i as Word);
+            self.bus.as_mut().unwrap().borrow_mut().write(ADDR_OAM_START + i as Word, b);
         }
 
         self.dma_started = false;

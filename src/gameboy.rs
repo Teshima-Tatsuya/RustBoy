@@ -47,7 +47,13 @@ impl GameBoy {
 
     pub fn step(&mut self) {
        // loop {
-            let cycle = self.cpu.step();
+        let cycle: u16;
+        if self.ppu.borrow().dma_started {
+            self.ppu.borrow_mut().transfer_oam();
+            cycle = 162;
+        } else {
+            cycle = self.cpu.step();
+        }
             self.cycle += cycle as u32 * 4;
             self.ppu.borrow_mut().step(cycle * 4);
             self.timer.borrow_mut().tick(cycle);
