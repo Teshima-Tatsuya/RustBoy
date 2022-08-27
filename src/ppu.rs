@@ -289,10 +289,10 @@ impl Lcdc {
     fn win_tile_map_area(&self) -> Word {
         let area = bit(&self.buf, &6);
         if area == 0 {
-            return WindowTileMapArea0;
+            return WINDOW_TILE_MAP_AREA_0;
         }
 
-        return WindowTileMapArea1;
+        return WINDOW_TILE_MAP_AREA_1;
     }
 
     // Window enable
@@ -307,10 +307,10 @@ impl Lcdc {
     fn bg_win_tile_data_area(&self) -> Word {
         let area = bit(&self.buf, &4);
         if area == 0 {
-            return BGWindowTileDataArea0;
+            return BG_WINDOW_TILE_DATA_AREA_0;
         }
 
-        return BGWindowTileDataArea1;
+        return BG_WINDOW_TILE_DATA_AREA_1;
     }
 
     /*
@@ -320,10 +320,10 @@ impl Lcdc {
     fn bg_tile_map_area(&self) -> Word {
         let area = bit(&self.buf, &3);
         if area == 0 {
-            return BGTileMapArea0;
+            return BG_TILE_MAP_AREA_0;
         }
 
-        return BGTileMapArea1;
+        return BG_TILE_MAP_AREA_1;
     }
 
     /*

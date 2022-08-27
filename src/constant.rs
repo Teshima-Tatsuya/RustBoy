@@ -12,21 +12,14 @@ pub const SPRITE_NUM: u16 = 40;
 pub const CYCLE_PER_LINE: u16 = 456;
 pub const ADDR_OAM_START: u16 = 0xFE00;
 
-pub enum PpuMode {
-	HBlank,
-	VBlank,
-	SearchingOAM,
-	TransferringData,
-}
+pub const WINDOW_TILE_MAP_AREA_0: Word = 0x9800;
+pub const WINDOW_TILE_MAP_AREA_1: Word = 0x9C00;
 
-pub const WindowTileMapArea0: Word = 0x9800;
-pub const WindowTileMapArea1: Word = 0x9C00;
+pub const BG_WINDOW_TILE_DATA_AREA_0: Word = 0x8800;
+pub const BG_WINDOW_TILE_DATA_AREA_1: Word = 0x8000;
 
-pub const BGWindowTileDataArea0: Word = 0x8800;
-pub const BGWindowTileDataArea1: Word = 0x8000;
-
-pub const BGTileMapArea0: Word = 0x9800;
-pub const BGTileMapArea1: Word = 0x9C00;
+pub const BG_TILE_MAP_AREA_0: Word = 0x9800;
+pub const BG_TILE_MAP_AREA_1: Word = 0x9C00;
 
 // screen
 pub const SCREEN_WIDTH: u8 = 160;
