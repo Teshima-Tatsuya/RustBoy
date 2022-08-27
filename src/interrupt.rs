@@ -4,6 +4,7 @@ use crate::{
     traits::*,
 };
 
+#[derive(Default)]
 pub struct Interrupt {
     r#if: Byte,
     ie: Byte,

@@ -4,7 +4,6 @@ use crate::{
     types::*,
     util::*,
     interrupt::Interrupt,
-    timer::Timer,
 };
 
 use bitvec::prelude::*;
@@ -13,7 +12,6 @@ use std::{
     rc::Rc,
     cell::RefCell,
 };
-use log::{info, warn, trace};
 
 pub struct Cpu {
     pub reg: Register,

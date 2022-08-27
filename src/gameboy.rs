@@ -29,8 +29,8 @@ impl GameBoy {
         let wraped_cartridge = Cartridge::new(buf);
         let cartridge = wraped_cartridge.unwrap();
 
-        let ppu = Rc::new(RefCell::new(Ppu::new()));
         let interrupt = Rc::new(RefCell::new(Interrupt::new()));
+        let ppu = Rc::new(RefCell::new(Ppu::new(Rc::clone(&interrupt))));
         let timer = Rc::new(RefCell::new(Timer::new(Rc::clone(&interrupt))));
         let bus = Rc::new(RefCell::new(Bus::new(new_mbc(cartridge), Rc::clone(&timer),Rc::clone(&interrupt), Rc::clone(&ppu))));
         ppu.borrow_mut().init(Rc::clone(&bus));
@@ -49,6 +49,7 @@ impl GameBoy {
        // loop {
             let cycle = self.cpu.step();
             self.cycle += cycle as u32 * 4;
+            self.ppu.borrow_mut().step(cycle * 4);
             self.timer.borrow_mut().tick(cycle);
 //            if self.cycle >= 70224 {
   //              self.cycle -= 70224;

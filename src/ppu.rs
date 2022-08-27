@@ -1,12 +1,16 @@
-use std::{
-    cell::RefCell,
-    rc::Rc
-};
+use std::{cell::RefCell, rc::Rc};
 
-use crate::{constant::*, memory::*, traits::*, types::*, util::*, bus::Bus};
+use crate::{bus::Bus, constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
 #[derive(Debug, Default)]
 struct Color(u8, u8, u8, u8); // rgba
+
+enum Mode {
+    HBlank,
+    VBlank,
+    SearchingOAM,
+    TransferringData,
+}
 
 #[derive(Default)]
 pub struct Ppu {
@@ -21,16 +25,18 @@ pub struct Ppu {
     image_data: Vec<Vec<Color>>,
     dma: Byte,
     dma_started: bool,
+    interrupt: Rc<RefCell<Interrupt>>,
 }
 
 impl Ppu {
-    pub fn new() -> Self {
+    pub fn new(interrupt: Rc<RefCell<Interrupt>>) -> Self {
         Self {
             clock: 0,
             buf: RAM::new(0xFFFF),
             bus: None,
             dma: 0x00,
             dma_started: false,
+            interrupt: interrupt,
             ..Default::default()
         }
     }
@@ -40,19 +46,20 @@ impl Ppu {
     }
 
     pub fn step(&mut self, cycle: u16) {
-        self.clock += cycle;
+        self.clock = self.clock.wrapping_add(cycle);
 
         if !self.lcdc.LcdPpuEnable() {
-            return
+            return;
         }
 
         if self.clock >= CYCLE_PER_LINE {
             if self.scroll.isVBlankStart() {
-
+                self.interrupt.borrow_mut().request(INT_VBLANK_FLG);
+                if self.lcds.mode1() {
+                    self.interrupt.borrow_mut().request(INT_LCD_STAT_FLG);
+                }
             } else if self.scroll.isVBlankPeriod() {
-
             } else if self.scroll.isHBlankPeriod() {
-
             } else {
                 self.scroll.ly = 0;
             }
@@ -69,8 +76,7 @@ impl Ppu {
 
         for block in 0..3 {
             for i in 0..tile_num {
-                for b in 0..16 {
-                }
+                for b in 0..16 {}
             }
         }
     }
@@ -104,12 +110,16 @@ impl Writer for Ppu {
         match addr {
             ADDR_PPU_LCDC => self.lcdc.buf = value,
             ADDR_PPU_LCDS => self.lcds.buf = value,
-            ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.write(addr, value),
-            ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.write(addr, value),
+            ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => {
+                self.scroll.write(addr, value)
+            }
+            ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => {
+                self.palette.write(addr, value)
+            }
             ADDR_PPU_DMA => {
                 self.dma_started = true;
                 self.dma = value;
-            },
+            }
             v => self.buf.write(addr, value),
         }
     }
@@ -128,25 +138,22 @@ struct Scroll {
 impl Scroll {
     fn isVBlankPeriod(&self) -> bool {
         if SCREEN_HEIGHT <= self.ly && self.ly <= 153 {
-            return true
+            return true;
         }
-    
-        return false
+
+        return false;
     }
-    
     fn isHBlankPeriod(&self) -> bool {
         if self.ly < SCREEN_HEIGHT {
-            return true
+            return true;
         }
-    
-        return false
+
+        return false;
     }
-    
     fn isVBlankStart(&self) -> bool {
-        return self.ly == SCREEN_HEIGHT
+        return self.ly == SCREEN_HEIGHT;
     }
 }
-    
 impl Reader for Scroll {
     fn read(&self, addr: Word) -> Byte {
         match addr {
@@ -259,6 +266,38 @@ struct Lcds {
     pub buf: Byte,
 }
 
+impl Lcds {
+    // Bit 6
+    // LY STAT Interrupt source
+    pub fn LYC(&self) -> bool {
+        return bit(&self.buf, &6) == 1;
+    }
+
+    // Bit 5
+    // OAM STAT Interrupt source
+    pub fn mode2(&self) -> bool {
+        return bit(&self.buf, &5) == 1;
+    }
+
+    // Bit 4
+    // VBlank STAT Interrupt source
+    pub fn mode1(&self) -> bool {
+        return bit(&self.buf, &4) == 1;
+    }
+
+    // Bit 3
+    // HBlank STAT Interrupt source
+    pub fn mode0(&self) -> bool {
+        return bit(&self.buf, &3) == 1;
+    }
+
+    // Bit 2
+    // OAM STAT Interrupt source
+    pub fn ly_lcy(&self) -> bool {
+        return bit(&self.buf, &2) == 1;
+    }
+}
+
 enum PaletteEnum {
     White,
     LightGray,
@@ -289,22 +328,22 @@ impl PaletteEnum {
 
 #[derive(Default)]
 struct Palette {
-	// FF47
-	bgp: Byte,
-	// FF48
-	obp0: Byte,
-	// FF49
-	obp1: Byte,
+    // FF47
+    bgp: Byte,
+    // FF48
+    obp0: Byte,
+    // FF49
+    obp1: Byte,
 
-	// CGB Only
-	// FF68
-	bcps: Byte,
-	// FF69
-	bcpd: Byte,
-	// FF6A
-	ocps: Byte,
-	// FF6B
-	ocpd: Byte,
+    // CGB Only
+    // FF68
+    bcps: Byte,
+    // FF69
+    bcpd: Byte,
+    // FF6A
+    ocps: Byte,
+    // FF6B
+    ocpd: Byte,
 }
 
 impl Palette {
@@ -316,9 +355,9 @@ impl Palette {
     fn get_obj_palette(&self, idx: u8, obp: u8) -> Color {
         let color: Byte;
         if obp == 1 {
-          color = (self.obp1 >> (idx * 2)) & 0x03;
+            color = (self.obp1 >> (idx * 2)) & 0x03;
         } else {
-          color = (self.obp0 >> (idx * 2)) & 0x03;
+            color = (self.obp0 >> (idx * 2)) & 0x03;
         }
 
         PaletteEnum::get_color(PaletteEnum::from_u8(color))
@@ -377,14 +416,11 @@ impl Tile {
 
                 let color = (ub << 1) + lb;
                 xs.push(color);
-            };
+            }
             buf.push(xs);
-        };
-
-        Self {
-            buf
         }
 
+        Self { buf }
     }
 }
 
@@ -394,18 +430,21 @@ mod tests {
 
     #[test]
     fn test_tile_new() {
-        let bytes = [0xFF, 0x00, 0x7E, 0xFF, 0x85, 0x81, 0x89, 0x83, 0x93, 0x85, 0xA5, 0x8B, 0xC9, 0x97, 0x7E, 0xFF];
+        let bytes = [
+            0xFF, 0x00, 0x7E, 0xFF, 0x85, 0x81, 0x89, 0x83, 0x93, 0x85, 0xA5, 0x8B, 0xC9, 0x97,
+            0x7E, 0xFF,
+        ];
         let tile = Tile::new(&bytes);
 
-		let colors: Vec<Vec<Byte>> = vec![
-			vec![1, 1, 1, 1, 1, 1, 1, 1],
-			vec![2, 3, 3, 3, 3, 3, 3, 2],
-			vec![3, 0, 0, 0, 0, 1, 0, 3],
-			vec![3, 0, 0, 0, 1, 0, 2, 3],
-			vec![3, 0, 0, 1, 0, 2, 1, 3],
-			vec![3, 0, 1, 0, 2, 1, 2, 3],
-			vec![3, 1, 0, 2, 1, 2, 2, 3],
-			vec![2, 3, 3, 3, 3, 3, 3, 2],
+        let colors: Vec<Vec<Byte>> = vec![
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+            vec![2, 3, 3, 3, 3, 3, 3, 2],
+            vec![3, 0, 0, 0, 0, 1, 0, 3],
+            vec![3, 0, 0, 0, 1, 0, 2, 3],
+            vec![3, 0, 0, 1, 0, 2, 1, 3],
+            vec![3, 0, 1, 0, 2, 1, 2, 3],
+            vec![3, 1, 0, 2, 1, 2, 2, 3],
+            vec![2, 3, 3, 3, 3, 3, 3, 2],
         ];
 
         assert_eq!(colors, tile.buf);
