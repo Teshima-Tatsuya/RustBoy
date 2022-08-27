@@ -1,13 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{
-    constant::*,
-    interrupt::Interrupt,
-    memory::*,
-    traits::*,
-    types::*,
-    util::*
-};
+use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
 #[derive(Debug, Default)]
 struct Color(u8, u8, u8, u8); // rgba
@@ -37,13 +30,34 @@ pub struct Ppu {
 
 impl Ppu {
     pub fn new(interrupt: Rc<RefCell<Interrupt>>) -> Self {
+        let mut tiles = Vec::new();
+        for block in 0..3 {
+            tiles.push(Vec::new());
+            for _ in 0..128 {
+                let tile = Tile::default();
+                tiles[block].push(tile);
+            }
+        }
+
+        let mut image_data = Vec::new();
+        for width in 0..SCREEN_WIDTH {
+            image_data.push(Vec::new());
+            for _ in 0..SCREEN_HEIGHT {
+                let color = Color(0,0,0,0);
+                image_data[width as usize].push(color);
+            }
+        }
+
+
         Self {
             clock: 0,
             buf: RAM::new(0xFFFF),
             bus: None,
             dma: 0x00,
             dma_started: false,
-            interrupt: interrupt,
+            interrupt,
+            tiles,
+            image_data,
             ..Default::default()
         }
     }
@@ -55,11 +69,12 @@ impl Ppu {
     pub fn step(&mut self, cycle: u16) {
         self.clock = self.clock.wrapping_add(cycle);
 
-        if !self.lcdc.LcdPpuEnable() {
+        if !self.lcdc.lcd_ppu_enable() {
             return;
         }
 
         if self.clock >= CYCLE_PER_LINE {
+            self.load_tile();
             if self.scroll.isVBlankStart() {
                 self.interrupt.borrow_mut().request(INT_VBLANK_FLG);
                 if self.lcds.mode1() {
@@ -67,10 +82,20 @@ impl Ppu {
                 }
             } else if self.scroll.isVBlankPeriod() {
             } else if self.scroll.isHBlankPeriod() {
+                self.draw_bg_line();
             } else {
                 self.scroll.ly = 0;
+                self.draw_bg_line();
             }
 
+            if self.scroll.ly == self.scroll.scy {
+                self.lcds.buf |= 0x04;
+                if self.lcds.lyc() {
+                    self.interrupt.borrow_mut().request(INT_LCD_STAT_FLG);
+                }
+            } else {
+                self.lcds.buf &= 0xFB;
+            }
             self.scroll.ly += 1;
             self.clock -= CYCLE_PER_LINE;
         }
@@ -79,20 +104,78 @@ impl Ppu {
     fn load_tile(&mut self) {
         let addr = 0x8000;
         let tile_num = 128;
-        let bytes16: [Byte; 16];
+        let mut bytes16: [Byte; 16] = Default::default();
 
         for block in 0..3 {
             for i in 0..tile_num {
-                for b in 0..16 {}
+                for b in 0..16 {
+                    bytes16[b] = self
+                        .bus
+                        .as_ref()
+                        .unwrap()
+                        .borrow()
+                        .read(addr + (block * 128 * 16 + i * 16 + b) as Word);
+                }
+                self.tiles[block][i] = Tile::new(&bytes16);
             }
         }
+    }
+    fn draw_bg_line(&mut self) {
+        for x in 0..SCREEN_WIDTH {
+            self.image_data[x as usize][self.scroll.ly as usize] = self.get_bg_tile_color(x);
+        }
+    }
+    fn get_bg_tile_color(&self, lx: u8) -> Color {
+        // yPos is current pixel from top(0-255)
+        let y_pos = (self.scroll.ly.wrapping_add(self.scroll.scy)) & 255;
+        let x_pos = (lx.wrapping_add(self.scroll.scx)) & 255;
+        let base_addr = self.lcdc.bg_tile_map_area();
+
+        self.get_tile_color(x_pos, y_pos, base_addr)
+    }
+
+    fn get_tile_color(&self, x_pos: u8, y_pos: u8, base_addr: Word) -> Color {
+        // https://gbdev.io/pandocs/pixel_fifo.html#get-tile
+
+        // yTile is Tile corresponding at yPos
+        let y_tile: Word = y_pos as Word / 8;
+        // xPos is current pixel from left(0-31)
+        let x_tile: Word = x_pos as Word / 8;
+
+        let addr = base_addr + y_tile * 32 + x_tile;
+        let mut tile_idx = self.bus.as_ref().unwrap().borrow().read(addr) as i8 as i32;
+
+        let mut block: usize = 0;
+        if self.lcdc.bg_win_tile_data_area() == 0x8800 {
+            if tile_idx < 0 {
+                block = 1;
+                tile_idx += 128;
+            } else {
+                block = 2;
+            }
+        } else {
+            if tile_idx < 128 {
+                block = 0;
+            } else {
+                block = 1;
+                tile_idx -= 128;
+            }
+        }
+
+        self.palette.get_palette(
+            self.tiles[block][tile_idx as usize].buf[(y_pos % 8) as usize][(x_pos % 8) as usize],
+        )
     }
 
     pub fn transfer_oam(&mut self) {
         for i in 0..0xA0 {
             let addr = self.dma as Word * 0x100;
             let b = self.bus.as_ref().unwrap().borrow().read(addr + i as Word);
-            self.bus.as_mut().unwrap().borrow_mut().write(ADDR_OAM_START + i as Word, b);
+            self.bus
+                .as_mut()
+                .unwrap()
+                .borrow_mut()
+                .write(ADDR_OAM_START + i as Word, b);
         }
 
         self.dma_started = false;
@@ -195,7 +278,7 @@ struct Lcdc {
 
 impl Lcdc {
     // LCD and PPU enable
-    fn LcdPpuEnable(&self) -> bool {
+    fn lcd_ppu_enable(&self) -> bool {
         bit(&self.buf, &7) == 1
     }
 
@@ -203,7 +286,7 @@ impl Lcdc {
     Window tile map area
      0=9800-9BFF, 1=9C00-9FFF
     */
-    fn WinTileMapArea(&self) -> Word {
+    fn win_tile_map_area(&self) -> Word {
         let area = bit(&self.buf, &6);
         if area == 0 {
             return WindowTileMapArea0;
@@ -213,7 +296,7 @@ impl Lcdc {
     }
 
     // Window enable
-    fn WindowEnable(&self) -> bool {
+    fn window_enable(&self) -> bool {
         bit(&self.buf, &5) == 1
     }
 
@@ -221,7 +304,7 @@ impl Lcdc {
     BG and Window tile data area
      0=8800-97FF, 1=8000-8FFF
     */
-    fn BgWinTileDataArea(&self) -> Word {
+    fn bg_win_tile_data_area(&self) -> Word {
         let area = bit(&self.buf, &4);
         if area == 0 {
             return BGWindowTileDataArea0;
@@ -234,7 +317,7 @@ impl Lcdc {
     BG tile map area
      0=9800-9BFF, 1=9C00-9FFF
     */
-    fn BgTileMapArea(&self) -> Word {
+    fn bg_tile_map_area(&self) -> Word {
         let area = bit(&self.buf, &3);
         if area == 0 {
             return BGTileMapArea0;
@@ -247,17 +330,17 @@ impl Lcdc {
     OBJ size
      0=8x8, 1=8x16
     */
-    fn ObjSize(&self) -> u8 {
+    fn obj_size(&self) -> u8 {
         bit(&self.buf, &2)
     }
 
     // OBJ enable
-    fn ObjEnable(&self) -> bool {
+    fn obj_enable(&self) -> bool {
         bit(&self.buf, &1) == 1
     }
 
     // BG and Window enable/priority
-    fn BgWinEnable(&self) -> bool {
+    fn bg_win_enable(&self) -> bool {
         bit(&self.buf, &0) == 1
     }
 }
@@ -276,7 +359,7 @@ struct Lcds {
 impl Lcds {
     // Bit 6
     // LY STAT Interrupt source
-    pub fn LYC(&self) -> bool {
+    pub fn lyc(&self) -> bool {
         return bit(&self.buf, &6) == 1;
     }
 
