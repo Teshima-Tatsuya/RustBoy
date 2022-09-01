@@ -75,13 +75,13 @@ impl Ppu {
 
         if self.clock >= CYCLE_PER_LINE {
             self.load_tile();
-            if self.scroll.isVBlankStart() {
+            if self.scroll.is_v_blank_start() {
                 self.interrupt.borrow_mut().request(INT_VBLANK_FLG);
                 if self.lcds.mode1() {
                     self.interrupt.borrow_mut().request(INT_LCD_STAT_FLG);
                 }
-            } else if self.scroll.isVBlankPeriod() {
-            } else if self.scroll.isHBlankPeriod() {
+            } else if self.scroll.is_v_blank_period() {
+            } else if self.scroll.is_h_blank_period() {
                 self.draw_bg_line();
             } else {
                 self.scroll.ly = 0;
@@ -135,14 +135,7 @@ impl Ppu {
     }
 
     fn get_tile_color(&self, x_pos: u8, y_pos: u8, base_addr: Word) -> Color {
-        // https://gbdev.io/pandocs/pixel_fifo.html#get-tile
-
-        // yTile is Tile corresponding at yPos
-        let y_tile: Word = y_pos as Word / 8;
-        // xPos is current pixel from left(0-31)
-        let x_tile: Word = x_pos as Word / 8;
-
-        let addr = base_addr + y_tile * 32 + x_tile;
+        let addr = Tile::get_tile_addr(y_pos, x_pos, base_addr);
         let mut tile_idx = self.bus.as_ref().unwrap().borrow().read(addr) as i8 as i32;
 
         let mut block: usize = 0;
@@ -226,21 +219,21 @@ struct Scroll {
 }
 
 impl Scroll {
-    fn isVBlankPeriod(&self) -> bool {
+    fn is_v_blank_period(&self) -> bool {
         if SCREEN_HEIGHT <= self.ly && self.ly <= 153 {
             return true;
         }
 
         return false;
     }
-    fn isHBlankPeriod(&self) -> bool {
+    fn is_h_blank_period(&self) -> bool {
         if self.ly < SCREEN_HEIGHT {
             return true;
         }
 
         return false;
     }
-    fn isVBlankStart(&self) -> bool {
+    fn is_v_blank_start(&self) -> bool {
         return self.ly == SCREEN_HEIGHT;
     }
 }
@@ -511,6 +504,20 @@ impl Tile {
         }
 
         Self { buf }
+    }
+
+    pub fn get_tile_addr(y_pos: Byte, x_pos: Byte, base_addr: Word) -> Word{
+        // https://gbdev.io/pandocs/pixel_fifo.html#get-tile
+
+        // yTile is Tile corresponding at yPos
+        let y_tile: Word = y_pos as Word / 8;
+        // xPos is current pixel from left(0-31)
+        let x_tile: Word = x_pos as Word / 8;
+
+        base_addr + y_tile * 32 + x_tile
+    }
+
+    pub fn get(y_pos: Byte, x_pos: Byte, base_addr: Word) {
     }
 }
 
