@@ -21,7 +21,6 @@ pub struct Ppu {
     lcds: Lcds,
     scroll: Scroll,
     palette: Palette,
-    tiles: Vec<Vec<Tile>>,
     image_data: Vec<Vec<Color>>,
     dma: Byte,
     pub dma_started: bool,
@@ -30,24 +29,14 @@ pub struct Ppu {
 
 impl Ppu {
     pub fn new(interrupt: Rc<RefCell<Interrupt>>) -> Self {
-        let mut tiles = Vec::new();
-        for block in 0..3 {
-            tiles.push(Vec::new());
-            for _ in 0..128 {
-                let tile = Tile::default();
-                tiles[block].push(tile);
-            }
-        }
-
         let mut image_data = Vec::new();
         for width in 0..SCREEN_WIDTH {
             image_data.push(Vec::new());
             for _ in 0..SCREEN_HEIGHT {
-                let color = Color(0,0,0,0);
+                let color = Color(0, 0, 0, 0);
                 image_data[width as usize].push(color);
             }
         }
-
 
         Self {
             clock: 0,
@@ -56,7 +45,6 @@ impl Ppu {
             dma: 0x00,
             dma_started: false,
             interrupt,
-            tiles,
             image_data,
             ..Default::default()
         }
@@ -74,7 +62,6 @@ impl Ppu {
         }
 
         if self.clock >= CYCLE_PER_LINE {
-            self.load_tile();
             if self.scroll.is_v_blank_start() {
                 self.interrupt.borrow_mut().request(INT_VBLANK_FLG);
                 if self.lcds.mode1() {
@@ -101,25 +88,6 @@ impl Ppu {
         }
     }
 
-    fn load_tile(&mut self) {
-        let addr = 0x8000;
-        let tile_num = 128;
-        let mut bytes16: [Byte; 16] = Default::default();
-
-        for block in 0..3 {
-            for i in 0..tile_num {
-                for b in 0..16 {
-                    bytes16[b] = self
-                        .bus
-                        .as_ref()
-                        .unwrap()
-                        .borrow()
-                        .read(addr + (block * 128 * 16 + i * 16 + b) as Word);
-                }
-                self.tiles[block][i] = Tile::new(&bytes16);
-            }
-        }
-    }
     fn draw_bg_line(&mut self) {
         for x in 0..SCREEN_WIDTH {
             self.image_data[x as usize][self.scroll.ly as usize] = self.get_bg_tile_color(x);
@@ -155,9 +123,16 @@ impl Ppu {
             }
         }
 
-        self.palette.get_palette(
-            self.tiles[block][tile_idx as usize].buf[(y_pos % 8) as usize][(x_pos % 8) as usize],
-        )
+
+        let tile_color_base_addr = 0x8000 + (block as Word * 128 * 16 + tile_idx as Word * 16 + (y_pos % 8) as Word);
+        let lower = self.bus.as_ref().unwrap().borrow().read(tile_color_base_addr);
+        let upper = self.bus.as_ref().unwrap().borrow().read(tile_color_base_addr + 1);
+        // .read(0x8000 + (block * 128 * 16 + tile_idx * 16 + b) as Word);
+        let lb = bit(&lower, &(x_pos % 8));
+        let ub = bit(&upper, &(x_pos % 8));
+
+        let color = (ub << 1) + lb;
+        self.palette.get_palette(color)
     }
 
     pub fn transfer_oam(&mut self) {
@@ -506,7 +481,7 @@ impl Tile {
         Self { buf }
     }
 
-    pub fn get_tile_addr(y_pos: Byte, x_pos: Byte, base_addr: Word) -> Word{
+    pub fn get_tile_addr(y_pos: Byte, x_pos: Byte, base_addr: Word) -> Word {
         // https://gbdev.io/pandocs/pixel_fifo.html#get-tile
 
         // yTile is Tile corresponding at yPos
@@ -517,7 +492,7 @@ impl Tile {
         base_addr + y_tile * 32 + x_tile
     }
 
-    pub fn get(y_pos: Byte, x_pos: Byte, base_addr: Word) {
+    pub fn get(block: Byte, tile_idx: Byte, y_pos: Byte, x_pos: Byte) {
     }
 }
 
