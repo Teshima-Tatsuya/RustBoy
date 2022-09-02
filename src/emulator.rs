@@ -11,20 +11,21 @@ impl Emulator {
     }
 
     pub fn init(&self) {
-        App::new()
-            .insert_resource(WindowDescriptor {
-                title: "rustboy".to_string(),
-                width: SCREEN_WIDTH as f32,
-                height: SCREEN_HEIGHT as f32,
-                resize_constraints: WindowResizeConstraints {
-                    min_width: SCREEN_WIDTH as f32,
-                    min_height: SCREEN_HEIGHT as f32,
-                    ..default()
-                },
+        let window_descriptor = WindowDescriptor {
+            title: "rustboy".to_string(),
+            width: SCREEN_WIDTH as f32,
+            height: SCREEN_HEIGHT as f32,
+            resize_constraints: WindowResizeConstraints {
+                min_width: SCREEN_WIDTH as f32,
+                min_height: SCREEN_HEIGHT as f32,
                 ..default()
-            })
+            },
+            ..default()
+        };
+        App::new()
+            .insert_resource(window_descriptor)
+            .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
             .add_plugins(DefaultPlugins)
-            .add_system(bevy::input::system::exit_on_esc_system)
             .run();
     }
 }
