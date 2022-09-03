@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    rc::Rc,
+    sync::Arc,
 };
 
 use crate::{
@@ -16,11 +16,11 @@ pub struct Timer {
     tima: Byte,
     tma: Byte,
     tac: Byte,
-    interrupt: Rc<RefCell<Interrupt>>,
+    interrupt: Arc<RefCell<Interrupt>>,
 }
 
 impl Timer {
-    pub fn new(interrupt: Rc<RefCell<Interrupt>>) -> Self {
+    pub fn new(interrupt: Arc<RefCell<Interrupt>>) -> Self {
         Self {
             div: 0x19,
             interrupt: interrupt,

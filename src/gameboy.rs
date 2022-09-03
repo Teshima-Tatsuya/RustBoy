@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, sync::Arc};
 
 use crate::{
     bus::Bus, cartridge::Cartridge, constant::*, cpu::Cpu, interrupt::Interrupt, io::*, mbc::*,
@@ -8,9 +8,9 @@ use crate::{
 pub struct GameBoy {
     pub cpu: Cpu,
     cycle: u32,
-    ppu: Rc<RefCell<Ppu>>,
+    ppu: Arc<RefCell<Ppu>>,
     // apu: APU,
-    timer: Rc<RefCell<Timer>>,
+    timer: Arc<RefCell<Timer>>,
 }
 
 impl GameBoy {
@@ -18,24 +18,24 @@ impl GameBoy {
         let wraped_cartridge = Cartridge::new(buf);
         let cartridge = wraped_cartridge.unwrap();
 
-        let interrupt = Rc::new(RefCell::new(Interrupt::new()));
-        let ppu = Rc::new(RefCell::new(Ppu::new(Rc::clone(&interrupt))));
-        let timer = Rc::new(RefCell::new(Timer::new(Rc::clone(&interrupt))));
-        let bus = Rc::new(RefCell::new(Bus::new(
+        let interrupt = Arc::new(RefCell::new(Interrupt::new()));
+        let ppu = Arc::new(RefCell::new(Ppu::new(Arc::clone(&interrupt))));
+        let timer = Arc::new(RefCell::new(Timer::new(Arc::clone(&interrupt))));
+        let bus = Arc::new(RefCell::new(Bus::new(
             new_mbc(cartridge),
-            Rc::clone(&timer),
-            Rc::clone(&interrupt),
-            Rc::clone(&ppu),
+            Arc::clone(&timer),
+            Arc::clone(&interrupt),
+            Arc::clone(&ppu),
         )));
-        ppu.borrow_mut().init(Rc::clone(&bus));
+        ppu.borrow_mut().init(Arc::clone(&bus));
 
-        let cpu = Cpu::new(Rc::clone(&bus), Rc::clone(&interrupt));
+        let cpu = Cpu::new(Arc::clone(&bus), Arc::clone(&interrupt));
 
         Self {
             cpu,
             cycle: 0,
-            ppu: Rc::clone(&ppu),
-            timer: Rc::clone(&timer),
+            ppu: Arc::clone(&ppu),
+            timer: Arc::clone(&timer),
         }
     }
 

@@ -9,14 +9,14 @@ use crate::{
 use bitvec::prelude::*;
 use std::{
     fmt,
-    rc::Rc,
+    sync::Arc,
     cell::RefCell,
 };
 
 pub struct Cpu {
     pub reg: Register,
-    pub bus: Rc<RefCell<Box<dyn BusTrait>>>,
-    pub interrupt: Rc<RefCell<Interrupt>>,
+    pub bus: Arc<RefCell<Box<dyn BusTrait>>>,
+    pub interrupt: Arc<RefCell<Interrupt>>,
     pub halted: bool,
     pub ime: bool,
 }
@@ -227,7 +227,7 @@ impl fmt::Display for Flags {
 }
 
 impl Cpu {
-    pub fn new(bus: Rc<RefCell<Box<dyn BusTrait>>>, interrupt: Rc<RefCell<Interrupt>>) -> Self {
+    pub fn new(bus: Arc<RefCell<Box<dyn BusTrait>>>, interrupt: Arc<RefCell<Interrupt>>) -> Self {
         Self {
             bus: bus,
             interrupt: interrupt,

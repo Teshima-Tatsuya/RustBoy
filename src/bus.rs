@@ -1,6 +1,7 @@
 use std::{
     cell::RefCell,
     rc::Rc,
+    sync::Arc,
 };
 
 use crate::{
@@ -23,14 +24,14 @@ pub struct Bus {
     hram: RAM,
     eram: RAM,
     oam: RAM,
-    ppu: Rc<RefCell<Ppu>>,
-    interrupt: Rc<RefCell<Interrupt>>,
-    timer: Rc<RefCell<Timer>>,
+    ppu: Arc<RefCell<Ppu>>,
+    interrupt: Arc<RefCell<Interrupt>>,
+    timer: Arc<RefCell<Timer>>,
     io: Io,
 }
 
 impl Bus {
-    pub fn new(mbc: Mbc, timer: Rc<RefCell<Timer>>, interrupt: Rc<RefCell<Interrupt>>,ppu: Rc<RefCell<Ppu>>) -> Box<dyn BusTrait> {
+    pub fn new(mbc: Mbc, timer: Arc<RefCell<Timer>>, interrupt: Arc<RefCell<Interrupt>>,ppu: Arc<RefCell<Ppu>>) -> Box<dyn BusTrait> {
         Box::new(Bus {
             mbc,
             vram: RAM::new(0x2000),

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, sync::Arc};
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
@@ -16,7 +16,7 @@ enum Mode {
 pub struct Ppu {
     clock: u16,
     buf: RAM,
-    bus: Option<Rc<RefCell<Box<dyn BusTrait>>>>,
+    bus: Option<Arc<RefCell<Box<dyn BusTrait>>>>,
     lcdc: Lcdc,
     lcds: Lcds,
     scroll: Scroll,
@@ -24,11 +24,11 @@ pub struct Ppu {
     image_data: Vec<Vec<Color>>,
     dma: Byte,
     pub dma_started: bool,
-    interrupt: Rc<RefCell<Interrupt>>,
+    interrupt: Arc<RefCell<Interrupt>>,
 }
 
 impl Ppu {
-    pub fn new(interrupt: Rc<RefCell<Interrupt>>) -> Self {
+    pub fn new(interrupt: Arc<RefCell<Interrupt>>) -> Self {
         let mut image_data = Vec::new();
         for width in 0..SCREEN_WIDTH {
             image_data.push(Vec::new());
@@ -50,7 +50,7 @@ impl Ppu {
         }
     }
 
-    pub fn init(&mut self, bus: Rc<RefCell<Box<dyn BusTrait>>>) {
+    pub fn init(&mut self, bus: Arc<RefCell<Box<dyn BusTrait>>>) {
         self.bus = Option::Some(bus);
     }
 

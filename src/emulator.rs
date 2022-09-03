@@ -1,6 +1,19 @@
 use crate::{constant::*, gameboy::GameBoy};
 use bevy::{prelude::*, window::WindowResizeConstraints};
 
+pub struct EmulatorPlugin;
+
+impl Plugin for EmulatorPlugin {
+    fn build(&self, app: &mut App) {
+    }
+}
+
+fn emulator_system(
+    // mut emulator: ResMut<Emulator>,
+) {
+
+}
+
 pub struct Emulator {
     pub gb: GameBoy,
 }
