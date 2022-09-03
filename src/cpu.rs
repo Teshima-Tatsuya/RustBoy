@@ -14,7 +14,7 @@ use std::{
 
 pub struct Cpu {
     pub reg: Register,
-    pub bus: Arc<Mutex<Box<dyn BusTrait>>>,
+    pub bus: Arc<Mutex<Box<dyn BusTrait + Send>>>,
     pub interrupt: Arc<Mutex<Interrupt>>,
     pub halted: bool,
     pub ime: bool,
@@ -226,7 +226,7 @@ impl fmt::Display for Flags {
 }
 
 impl Cpu {
-    pub fn new(bus: Arc<Mutex<Box<dyn BusTrait>>>, interrupt: Arc<Mutex<Interrupt>>) -> Self {
+    pub fn new(bus: Arc<Mutex<Box<dyn BusTrait + Send>>>, interrupt: Arc<Mutex<Interrupt>>) -> Self {
         Self {
             bus: bus,
             interrupt: interrupt,

@@ -9,7 +9,7 @@ impl Plugin for EmulatorPlugin {
 }
 
 fn emulator_system(
-    // mut emulator: ResMut<Emulator>,
+    mut emulator: ResMut<Emulator>,
 ) {
 
 }

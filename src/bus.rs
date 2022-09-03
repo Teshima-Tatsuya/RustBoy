@@ -32,7 +32,7 @@ pub struct Bus {
 }
 
 impl Bus {
-    pub fn new(mbc: Mbc, timer: Arc<Mutex<Timer>>, interrupt: Arc<Mutex<Interrupt>>,ppu: Arc<Mutex<Ppu>>) -> Box<dyn BusTrait> {
+    pub fn new(mbc: Mbc, timer: Arc<Mutex<Timer>>, interrupt: Arc<Mutex<Interrupt>>,ppu: Arc<Mutex<Ppu>>) -> Box<dyn BusTrait + Send> {
         Box::new(Bus {
             mbc,
             vram: RAM::new(0x2000),

@@ -16,7 +16,7 @@ enum Mode {
 pub struct Ppu {
     clock: u16,
     buf: RAM,
-    bus: Option<Arc<Mutex<Box<dyn BusTrait>>>>,
+    bus: Option<Arc<Mutex<Box<dyn BusTrait + Send>>>>,
     lcdc: Lcdc,
     lcds: Lcds,
     scroll: Scroll,
@@ -50,7 +50,7 @@ impl Ppu {
         }
     }
 
-    pub fn init(&mut self, bus: Arc<Mutex<Box<dyn BusTrait>>>) {
+    pub fn init(&mut self, bus: Arc<Mutex<Box<dyn BusTrait + Send>>>) {
         self.bus = Option::Some(bus);
     }
 

@@ -8,7 +8,7 @@ pub struct MockBus {
 }
 
 impl MockBus {
-    pub fn new() -> Box<dyn BusTrait> {
+    pub fn new() -> Box<dyn BusTrait + Send> {
         Box::new(Self { buf: [0; 0xFFFF] })
     }
 }
