@@ -1,4 +1,4 @@
-use std::{cell::RefCell, sync::Arc};
+use std::{sync::{Arc, Mutex}};
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
@@ -16,7 +16,7 @@ enum Mode {
 pub struct Ppu {
     clock: u16,
     buf: RAM,
-    bus: Option<Arc<RefCell<Box<dyn BusTrait>>>>,
+    bus: Option<Arc<Mutex<Box<dyn BusTrait>>>>,
     lcdc: Lcdc,
     lcds: Lcds,
     scroll: Scroll,
@@ -24,11 +24,11 @@ pub struct Ppu {
     image_data: Vec<Vec<Color>>,
     dma: Byte,
     pub dma_started: bool,
-    interrupt: Arc<RefCell<Interrupt>>,
+    interrupt: Arc<Mutex<Interrupt>>,
 }
 
 impl Ppu {
-    pub fn new(interrupt: Arc<RefCell<Interrupt>>) -> Self {
+    pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
         let mut image_data = Vec::new();
         for width in 0..SCREEN_WIDTH {
             image_data.push(Vec::new());
@@ -50,7 +50,7 @@ impl Ppu {
         }
     }
 
-    pub fn init(&mut self, bus: Arc<RefCell<Box<dyn BusTrait>>>) {
+    pub fn init(&mut self, bus: Arc<Mutex<Box<dyn BusTrait>>>) {
         self.bus = Option::Some(bus);
     }
 
@@ -63,9 +63,9 @@ impl Ppu {
 
         if self.clock >= CYCLE_PER_LINE {
             if self.scroll.is_v_blank_start() {
-                self.interrupt.borrow_mut().request(INT_VBLANK_FLG);
+                self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
                 if self.lcds.mode1() {
-                    self.interrupt.borrow_mut().request(INT_LCD_STAT_FLG);
+                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
                 }
             } else if self.scroll.is_v_blank_period() {
             } else if self.scroll.is_h_blank_period() {
@@ -78,7 +78,7 @@ impl Ppu {
             if self.scroll.ly == self.scroll.scy {
                 self.lcds.buf |= 0x04;
                 if self.lcds.lyc() {
-                    self.interrupt.borrow_mut().request(INT_LCD_STAT_FLG);
+                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
                 }
             } else {
                 self.lcds.buf &= 0xFB;
@@ -104,7 +104,7 @@ impl Ppu {
 
     fn get_tile_color(&self, x_pos: u8, y_pos: u8, base_addr: Word) -> Color {
         let addr = Tile::get_tile_addr(y_pos, x_pos, base_addr);
-        let mut tile_idx = self.bus.as_ref().unwrap().borrow().read(addr) as i8 as i32;
+        let mut tile_idx = self.bus.as_ref().unwrap().lock().unwrap().read(addr) as i8 as i32;
 
         let mut block: usize = 0;
         if self.lcdc.bg_win_tile_data_area() == 0x8800 {
@@ -125,8 +125,8 @@ impl Ppu {
 
 
         let tile_color_base_addr = 0x8000 + (block as Word * 128 * 16 + tile_idx as Word * 16 + (y_pos % 8) as Word);
-        let lower = self.bus.as_ref().unwrap().borrow().read(tile_color_base_addr);
-        let upper = self.bus.as_ref().unwrap().borrow().read(tile_color_base_addr + 1);
+        let lower = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr);
+        let upper = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr + 1);
         // .read(0x8000 + (block * 128 * 16 + tile_idx * 16 + b) as Word);
         let lb = bit(&lower, &(x_pos % 8));
         let ub = bit(&upper, &(x_pos % 8));
@@ -138,11 +138,12 @@ impl Ppu {
     pub fn transfer_oam(&mut self) {
         for i in 0..0xA0 {
             let addr = self.dma as Word * 0x100;
-            let b = self.bus.as_ref().unwrap().borrow().read(addr + i as Word);
+            let b = self.bus.as_ref().unwrap().lock().unwrap().read(addr + i as Word);
             self.bus
                 .as_mut()
                 .unwrap()
-                .borrow_mut()
+                .lock()
+                .unwrap()
                 .write(ADDR_OAM_START + i as Word, b);
         }
 

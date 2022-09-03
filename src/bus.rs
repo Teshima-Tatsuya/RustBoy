@@ -1,7 +1,8 @@
 use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::Arc,
+    sync::{
+        Arc,
+        Mutex,
+    },
 };
 
 use crate::{
@@ -24,14 +25,14 @@ pub struct Bus {
     hram: RAM,
     eram: RAM,
     oam: RAM,
-    ppu: Arc<RefCell<Ppu>>,
-    interrupt: Arc<RefCell<Interrupt>>,
-    timer: Arc<RefCell<Timer>>,
+    ppu: Arc<Mutex<Ppu>>,
+    interrupt: Arc<Mutex<Interrupt>>,
+    timer: Arc<Mutex<Timer>>,
     io: Io,
 }
 
 impl Bus {
-    pub fn new(mbc: Mbc, timer: Arc<RefCell<Timer>>, interrupt: Arc<RefCell<Interrupt>>,ppu: Arc<RefCell<Ppu>>) -> Box<dyn BusTrait> {
+    pub fn new(mbc: Mbc, timer: Arc<Mutex<Timer>>, interrupt: Arc<Mutex<Interrupt>>,ppu: Arc<Mutex<Ppu>>) -> Box<dyn BusTrait> {
         Box::new(Bus {
             mbc,
             vram: RAM::new(0x2000),
@@ -59,9 +60,9 @@ impl Reader for Bus {
             0xE000..=0xFDFF => self.eram.read(addr - 0xE000),
             0xFE00..=0xFE9F => self.oam.read(addr - 0xFE00),
             0xFEA0..=0xFEFF => 0,
-            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow().read(addr),
-            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.borrow().read(addr),
-            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.borrow().read(addr),
+            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().read(addr),
+            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().read(addr),
+            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().read(addr),
             0xFF00..=0xFF70 | 0xFFFF => self.io.read(addr),
             0xFF80..=0xFFFE => self.hram.read(addr - 0xFF80),
             v => todo!("addr {:04X} is not readable", v),
@@ -80,9 +81,9 @@ impl Writer for Bus {
             0xE000..=0xFDFF => self.eram.write(addr - 0xE000, value),
             0xFE00..=0xFE9F => self.oam.write(addr - 0xFE00, value),
             0xFEA0..=0xFEFF => (),
-            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.borrow_mut().write(addr, value),
-            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.borrow_mut().write(addr, value),
-            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.borrow_mut().write(addr, value),
+            ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().write(addr, value),
+            ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().write(addr, value),
+            ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().write(addr, value),
             0xFF00..=0xFF70 | 0xFFFF => self.io.write(addr, value),
             0xFF80..=0xFFFE => self.hram.write(addr - 0xFF80, value),
             v => todo!("addr {:04X} is not writable", v),

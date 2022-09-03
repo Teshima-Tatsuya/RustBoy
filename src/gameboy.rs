@@ -1,4 +1,4 @@
-use std::{cell::RefCell, sync::Arc};
+use std::{sync::{Arc, Mutex}};
 
 use crate::{
     bus::Bus, cartridge::Cartridge, constant::*, cpu::Cpu, interrupt::Interrupt, io::*, mbc::*,
@@ -8,9 +8,9 @@ use crate::{
 pub struct GameBoy {
     pub cpu: Cpu,
     cycle: u32,
-    ppu: Arc<RefCell<Ppu>>,
+    ppu: Arc<Mutex<Ppu>>,
     // apu: APU,
-    timer: Arc<RefCell<Timer>>,
+    timer: Arc<Mutex<Timer>>,
 }
 
 impl GameBoy {
@@ -18,16 +18,16 @@ impl GameBoy {
         let wraped_cartridge = Cartridge::new(buf);
         let cartridge = wraped_cartridge.unwrap();
 
-        let interrupt = Arc::new(RefCell::new(Interrupt::new()));
-        let ppu = Arc::new(RefCell::new(Ppu::new(Arc::clone(&interrupt))));
-        let timer = Arc::new(RefCell::new(Timer::new(Arc::clone(&interrupt))));
-        let bus = Arc::new(RefCell::new(Bus::new(
+        let interrupt = Arc::new(Mutex::new(Interrupt::new()));
+        let ppu = Arc::new(Mutex::new(Ppu::new(Arc::clone(&interrupt))));
+        let timer = Arc::new(Mutex::new(Timer::new(Arc::clone(&interrupt))));
+        let bus = Arc::new(Mutex::new(Bus::new(
             new_mbc(cartridge),
             Arc::clone(&timer),
             Arc::clone(&interrupt),
             Arc::clone(&ppu),
         )));
-        ppu.borrow_mut().init(Arc::clone(&bus));
+        ppu.lock().unwrap().init(Arc::clone(&bus));
 
         let cpu = Cpu::new(Arc::clone(&bus), Arc::clone(&interrupt));
 
@@ -41,15 +41,15 @@ impl GameBoy {
 
     pub fn step(&mut self) {
         let cycle: u16;
-        if self.ppu.borrow().dma_started {
-            self.ppu.borrow_mut().transfer_oam();
+        if self.ppu.lock().unwrap().dma_started {
+            self.ppu.lock().unwrap().transfer_oam();
             cycle = 162;
         } else {
             cycle = self.cpu.step();
         }
         self.cycle += cycle as u32 * 4;
-        self.ppu.borrow_mut().step(cycle * 4);
-        self.timer.borrow_mut().tick(cycle);
+        self.ppu.lock().unwrap().step(cycle * 4);
+        self.timer.lock().unwrap().tick(cycle);
     }
 
     pub fn exec_frame(&mut self) {

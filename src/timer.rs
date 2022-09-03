@@ -1,6 +1,8 @@
 use std::{
-    cell::RefCell,
-    sync::Arc,
+    sync::{
+        Arc,
+        Mutex,
+    }
 };
 
 use crate::{
@@ -16,11 +18,11 @@ pub struct Timer {
     tima: Byte,
     tma: Byte,
     tac: Byte,
-    interrupt: Arc<RefCell<Interrupt>>,
+    interrupt: Arc<Mutex<Interrupt>>,
 }
 
 impl Timer {
-    pub fn new(interrupt: Arc<RefCell<Interrupt>>) -> Self {
+    pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
         Self {
             div: 0x19,
             interrupt: interrupt,
@@ -45,7 +47,7 @@ impl Timer {
 
             if self.tima == 0 {
                 self.tima = self.tma;
-                self.interrupt.borrow_mut().request(INT_TIMER_FLG);
+                self.interrupt.lock().unwrap().request(INT_TIMER_FLG);
             }
 
             if self.counter % (1 << (self.get_freq() + 1)) == 0 {

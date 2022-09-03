@@ -9,14 +9,13 @@ use crate::{
 use bitvec::prelude::*;
 use std::{
     fmt,
-    sync::Arc,
-    cell::RefCell,
+    sync::{Arc,Mutex},
 };
 
 pub struct Cpu {
     pub reg: Register,
-    pub bus: Arc<RefCell<Box<dyn BusTrait>>>,
-    pub interrupt: Arc<RefCell<Interrupt>>,
+    pub bus: Arc<Mutex<Box<dyn BusTrait>>>,
+    pub interrupt: Arc<Mutex<Interrupt>>,
     pub halted: bool,
     pub ime: bool,
 }
@@ -227,7 +226,7 @@ impl fmt::Display for Flags {
 }
 
 impl Cpu {
-    pub fn new(bus: Arc<RefCell<Box<dyn BusTrait>>>, interrupt: Arc<RefCell<Interrupt>>) -> Self {
+    pub fn new(bus: Arc<Mutex<Box<dyn BusTrait>>>, interrupt: Arc<Mutex<Interrupt>>) -> Self {
         Self {
             bus: bus,
             interrupt: interrupt,
@@ -239,7 +238,7 @@ impl Cpu {
 
     pub fn step(&mut self) -> u16 {
         if self.halted{
-            if self.interrupt.borrow().has() {
+            if self.interrupt.lock().unwrap().has() {
                 self.halted = false;
             }
             return 1;
@@ -268,7 +267,7 @@ impl Cpu {
     }
 
     pub fn fetch(&mut self) -> Byte {
-        let buf = self.bus.borrow().read(self.reg.PC);
+        let buf = self.bus.lock().unwrap().read(self.reg.PC);
         self.reg.PC += 1;
         return buf;
     }
@@ -281,7 +280,7 @@ impl Cpu {
 
     pub fn push(&mut self, buf: Byte) {
         self.reg.SP = self.reg.SP.wrapping_sub(1);
-        self.bus.borrow_mut().write(self.reg.SP, buf)
+        self.bus.lock().unwrap().write(self.reg.SP, buf)
     }
 
     // push PC
@@ -291,7 +290,7 @@ impl Cpu {
     }
 
     pub fn pop(&mut self) -> Byte {
-        let d = self.bus.borrow().read(self.reg.SP);
+        let d = self.bus.lock().unwrap().read(self.reg.SP);
         self.reg.SP += 1;
         return d;
     }
@@ -310,7 +309,7 @@ impl Cpu {
             // m
             "(C)" => {
                 let r = self.reg.C;
-                self.bus.borrow().read(bytes_2_word(0xFF, r)) as Word
+                self.bus.lock().unwrap().read(bytes_2_word(0xFF, r)) as Word
             },
             // d
             "d" => {
@@ -322,14 +321,14 @@ impl Cpu {
             // a
             "(a)" => {
                 let addr = self.fetch();
-                self.bus.borrow().read(bytes_2_word(0xFF as Byte, addr)) as Word
+                self.bus.lock().unwrap().read(bytes_2_word(0xFF as Byte, addr)) as Word
             },
             "aa" => {
                 self.fetch16()
             },
             "(aa)" => {
                 let addr = self.fetch16();
-                self.bus.borrow().read(addr) as Word
+                self.bus.lock().unwrap().read(addr) as Word
             },
             // rr
             "AF" | "BC" | "DE" | "HL" | "HLD" | "HLI" | "PC" | "SP" => self.reg.r16(reg),
@@ -337,7 +336,7 @@ impl Cpu {
             "(BC)" | "(DE)" | "(HL)" | "(HLI)" | "(HLD)" => {
                 let mut s = reg.replace("(", "");
                 s = s.replace(")", "");
-                self.bus.borrow().read(self.reg.r16(&s)) as Word
+                self.bus.lock().unwrap().read(self.reg.r16(&s)) as Word
             }, 
             &_ => unreachable!()
         }
@@ -352,16 +351,16 @@ impl Cpu {
                 let mut s = reg.replace("(", "");
                 s = s.replace(")", "");
                 let addr = bytes_2_word(0xFF, self.reg.r(&s));
-                self.bus.borrow_mut().write(addr, value as Byte);
+                self.bus.lock().unwrap().write(addr, value as Byte);
             },
             // a
             "(a)" => {
                 let addr = self.fetch();
-                self.bus.borrow_mut().write(bytes_2_word(0xFF as Byte, addr), value as Byte);
+                self.bus.lock().unwrap().write(bytes_2_word(0xFF as Byte, addr), value as Byte);
             },
             "(aa)" => {
                 let addr = self.fetch16();
-                self.bus.borrow_mut().write(addr, value as Byte);
+                self.bus.lock().unwrap().write(addr, value as Byte);
             },
             // rr
             "AF" | "BC" | "DE" | "HL" | "SP" | "PC" => self.reg.r16_mut(reg, value),
@@ -370,7 +369,7 @@ impl Cpu {
                 let mut s = reg.replace("(", "");
                 s = s.replace(")", "");
                 let addr = self.reg.r16(&s);
-                self.bus.borrow_mut().write(addr, value as Byte);
+                self.bus.lock().unwrap().write(addr, value as Byte);
             }, 
             &_ => unreachable!()
         }
@@ -387,11 +386,11 @@ impl Cpu {
     }
 
     fn exec_interrupt(&mut self) -> bool {
-        if !self.ime || !self.interrupt.borrow().has() {
+        if !self.ime || !self.interrupt.lock().unwrap().has() {
             return false
         }
     
-        let addr = self.interrupt.borrow_mut().interrupt_addr();
+        let addr = self.interrupt.lock().unwrap().interrupt_addr();
 
         self.push_pc();
         self.store(&"PC".to_string(), addr);
@@ -406,13 +405,13 @@ impl Cpu {
         println!("Cpu: halted:{} ime:{}",self.halted, self.ime);
         println!(
             "  data: {:02X}{:02X}",
-            self.bus.borrow().read(self.reg.PC),
-            self.bus.borrow().read(self.reg.PC + 1),
+            self.bus.lock().unwrap().read(self.reg.PC),
+            self.bus.lock().unwrap().read(self.reg.PC + 1),
         );
         
         if op.r2 == "(a)" {
             let a =self.load(&"(a)".to_string());
-            println!("(a:FF{:02X}) = {:02X}", self.bus.borrow().read(self.reg.PC), a);
+            println!("(a:FF{:02X}) = {:02X}", self.bus.lock().unwrap().read(self.reg.PC), a);
             self.reg.PC -= 1;
         }
         if op.r2 == "(HLD)" || op.r2 == "(HLI)" {
