@@ -52,6 +52,7 @@ speculate! {
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "09-op r,r".to_string(), frame: 8000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "10-bit ops".to_string(), frame: 8000000}),
                     case(Args{folder: "blargg/cpu_instrs/individual".to_string(), file: "11-op a,(hl)".to_string(), frame: 8000000}),
+                    case(Args{folder: "blargg/cpu_instrs".to_string(), file: "cpu_instrs".to_string(), frame: 8000000}),
                 )]
                 fn test(arg: Args) {
                     rom_test(arg.folder, arg.file, arg.frame, "Passed".to_string());

@@ -22,9 +22,8 @@ pub enum Mbc {
 
 pub fn new_mbc(cartridge: Cartridge) -> Mbc {
     match cartridge.cartridge_type.mbc {
-        Some(crate::cartridge::Mbc::NoMbc) => Mbc::NoMbc(no_mbc::NoMbc::new(cartridge)),
         Some(crate::cartridge::Mbc::Mbc1) => Mbc::Mbc1(mbc1::Mbc1::new(cartridge)),
+        None => Mbc::NoMbc(no_mbc::NoMbc::new(cartridge)),
         Some(v) => todo!("type {} hasn't implemented", v),
-        None => todo!("type hasn't implemented"),
     }
 }

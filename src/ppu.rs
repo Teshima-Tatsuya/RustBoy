@@ -77,7 +77,7 @@ impl Ppu {
             } else {
                 self.lcds.buf &= 0xFB;
             }
-            self.scroll.ly += 1;
+            self.scroll.ly = self.scroll.ly.wrapping_add(1);
             self.clock -= CYCLE_PER_LINE;
         }
     }
@@ -85,7 +85,6 @@ impl Ppu {
     fn draw_bg_line(&mut self) {
         for x in 0..SCREEN_WIDTH {
             self.image_data.put_pixel(x as u32, self.scroll.ly as u32, self.get_bg_tile_color(x))
-            // self.image_data[x as usize][self.scroll.ly as usize] = self.get_bg_tile_color(x);
         }
     }
     fn get_bg_tile_color(&self, lx: u8) -> image::Rgba<u8> {
@@ -200,6 +199,7 @@ impl Scroll {
 
         return false;
     }
+
     fn is_h_blank_period(&self) -> bool {
         if self.ly < SCREEN_HEIGHT {
             return true;
@@ -207,10 +207,12 @@ impl Scroll {
 
         return false;
     }
+
     fn is_v_blank_start(&self) -> bool {
         return self.ly == SCREEN_HEIGHT;
     }
 }
+
 impl Reader for Scroll {
     fn read(&self, addr: Word) -> Byte {
         match addr {

@@ -66,7 +66,6 @@ fn emulator_system(
 ) {
     emulator.gb.exec_frame();
     emulator.frame = emulator.frame.wrapping_add(1);
-    println!("current_frame = {}", emulator.frame);
 
     let image_data = emulator.gb.display();
 
