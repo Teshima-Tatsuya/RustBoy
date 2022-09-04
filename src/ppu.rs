@@ -90,8 +90,8 @@ impl Ppu {
     }
     fn get_bg_tile_color(&self, lx: u8) -> image::Rgba<u8> {
         // yPos is current pixel from top(0-255)
-        let y_pos = (self.scroll.ly.wrapping_add(self.scroll.scy)) & 255;
-        let x_pos = (lx.wrapping_add(self.scroll.scx)) & 255;
+        let y_pos = self.scroll.ly.wrapping_add(self.scroll.scy);
+        let x_pos = lx.wrapping_add(self.scroll.scx);
         let base_addr = self.lcdc.bg_tile_map_area();
 
         self.get_tile_color(x_pos, y_pos, base_addr)
@@ -122,8 +122,8 @@ impl Ppu {
         let tile_color_base_addr = 0x8000 + (block as Word * 128 * 16 + tile_idx as Word * 16 + (y_pos % 8) as Word);
         let lower = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr);
         let upper = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr + 1);
-        let lb = bit(&lower, &(x_pos % 8));
-        let ub = bit(&upper, &(x_pos % 8));
+        let lb = bit(&lower, &(7 - (x_pos % 8)));
+        let ub = bit(&upper, &(7 - (x_pos % 8)));
 
         let color = (ub << 1) + lb;
         self.palette.get_palette(color)
@@ -452,34 +452,9 @@ impl Writer for Palette {
 }
 
 #[derive(Default, Debug)]
-struct Tile {
-    pub buf: Vec<Vec<Byte>>,
-}
+struct Tile;
 
 impl Tile {
-    fn new(bytes16: &[Byte]) -> Self {
-        let mut buf: Vec<Vec<Byte>>;
-        buf = Vec::new();
-
-        for y in 0..8 {
-            let lower = bytes16[y * 2];
-            let upper = bytes16[y * 2 + 1];
-
-            let mut xs = Vec::new();
-
-            for x in (0..8).rev() {
-                let lb = bit(&lower, &x);
-                let ub = bit(&upper, &x);
-
-                let color = (ub << 1) + lb;
-                xs.push(color);
-            }
-            buf.push(xs);
-        }
-
-        Self { buf }
-    }
-
     pub fn get_tile_addr(y_pos: Byte, x_pos: Byte, base_addr: Word) -> Word {
         // https://gbdev.io/pandocs/pixel_fifo.html#get-tile
 
@@ -489,35 +464,5 @@ impl Tile {
         let x_tile: Word = x_pos as Word / 8;
 
         base_addr + y_tile * 32 + x_tile
-    }
-
-    pub fn get(block: Byte, tile_idx: Byte, y_pos: Byte, x_pos: Byte) {
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tile_new() {
-        let bytes = [
-            0xFF, 0x00, 0x7E, 0xFF, 0x85, 0x81, 0x89, 0x83, 0x93, 0x85, 0xA5, 0x8B, 0xC9, 0x97,
-            0x7E, 0xFF,
-        ];
-        let tile = Tile::new(&bytes);
-
-        let colors: Vec<Vec<Byte>> = vec![
-            vec![1, 1, 1, 1, 1, 1, 1, 1],
-            vec![2, 3, 3, 3, 3, 3, 3, 2],
-            vec![3, 0, 0, 0, 0, 1, 0, 3],
-            vec![3, 0, 0, 0, 1, 0, 2, 3],
-            vec![3, 0, 0, 1, 0, 2, 1, 3],
-            vec![3, 0, 1, 0, 2, 1, 2, 3],
-            vec![3, 1, 0, 2, 1, 2, 2, 3],
-            vec![2, 3, 3, 3, 3, 3, 3, 2],
-        ];
-
-        assert_eq!(colors, tile.buf);
     }
 }
