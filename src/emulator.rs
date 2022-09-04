@@ -91,7 +91,7 @@ impl Emulator {
         Self { gb: gb }
     }
 
-    pub fn init(&self) {
+    pub fn run() {
         let window_descriptor = WindowDescriptor {
             title: "rustboy".to_string(),
             width: SCREEN_WIDTH as f32,
