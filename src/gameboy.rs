@@ -2,7 +2,7 @@ use std::{sync::{Arc, Mutex}};
 
 use crate::{
     bus::Bus, cartridge::Cartridge, constant::*, cpu::Cpu, interrupt::Interrupt, io::*, mbc::*,
-    ppu::Ppu, timer::Timer, types::*,
+    ppu::{Ppu, Color}, timer::Timer, types::*,
 };
 
 pub struct GameBoy {
@@ -60,5 +60,9 @@ impl GameBoy {
                 return;
             }
         }
+    }
+
+    pub fn display(&self) -> Vec<Vec<Color>> {
+        self.ppu.lock().unwrap().display()
     }
 }

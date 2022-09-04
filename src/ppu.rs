@@ -2,8 +2,8 @@ use std::{sync::{Arc, Mutex}};
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
-#[derive(Debug, Default)]
-struct Color(u8, u8, u8, u8); // rgba
+#[derive(Clone, Debug, Default)]
+pub struct Color(pub u8,pub u8,pub u8,pub u8); // rgba
 
 enum Mode {
     HBlank,
@@ -148,6 +148,10 @@ impl Ppu {
         }
 
         self.dma_started = false;
+    }
+
+    pub fn display(&self) -> Vec<Vec<Color>> {
+        self.image_data.clone()
     }
 }
 
