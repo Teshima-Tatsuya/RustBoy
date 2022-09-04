@@ -9,6 +9,7 @@ edition = "2021"
 ambassador = "0.3.1"
 anyhow = "1.0.57"
 bevy = { version = "0.8.0" }
+bevy_tiled_camera = "0.4.1"
 bitvec = "1.0.0"
 image = "0.24.3"
 log = "0.4.17"

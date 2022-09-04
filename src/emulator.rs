@@ -4,7 +4,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     window::WindowResizeConstraints,
 };
-
+use bevy_tiled_camera::TiledCameraPlugin;
 pub struct EmulatorPlugin;
 
 impl Plugin for EmulatorPlugin {
@@ -65,6 +65,9 @@ fn emulator_system(
     mut images: ResMut<Assets<Image>>,
 ) {
     emulator.gb.exec_frame();
+    emulator.frame = emulator.frame.wrapping_add(1);
+    println!("current_frame = {}", emulator.frame);
+
     let image_data = emulator.gb.display();
 
     let image = images.get_mut(&screen.0).unwrap();
@@ -84,11 +87,12 @@ fn emulator_system(
 
 pub struct Emulator {
     pub gb: GameBoy,
+    pub frame: u32,
 }
 
 impl Emulator {
     pub fn new(gb: GameBoy) -> Self {
-        Self { gb: gb }
+        Self { gb: gb, frame: 0 }
     }
 
     pub fn run() {
@@ -105,9 +109,18 @@ impl Emulator {
         };
         App::new()
             .insert_resource(window_descriptor)
-            .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+            .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.5)))
             .add_plugins(DefaultPlugins)
+            .add_plugin(TiledCameraPlugin)
             .add_plugin(EmulatorPlugin)
+            .add_startup_system(setup)
             .run();
     }
+}
+fn setup(
+    mut commands: Commands,
+    mut fonts: ResMut<Assets<Font>>,
+) {
+    use bevy_tiled_camera::*;
+    commands.spawn_bundle(TiledCameraBundle::pixel_cam([SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32]).with_pixels_per_tile([1, 1]));
 }
