@@ -1,9 +1,7 @@
 use std::{sync::{Arc, Mutex}};
+use image::RgbaImage;
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
-
-#[derive(Clone, Debug, Default)]
-pub struct Color(pub u8,pub u8,pub u8,pub u8); // rgba
 
 enum Mode {
     HBlank,
@@ -21,7 +19,7 @@ pub struct Ppu {
     lcds: Lcds,
     scroll: Scroll,
     palette: Palette,
-    image_data: Vec<Vec<Color>>,
+    image_data: RgbaImage,
     dma: Byte,
     pub dma_started: bool,
     interrupt: Arc<Mutex<Interrupt>>,
@@ -29,14 +27,7 @@ pub struct Ppu {
 
 impl Ppu {
     pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
-        let mut image_data = Vec::new();
-        for width in 0..SCREEN_WIDTH {
-            image_data.push(Vec::new());
-            for _ in 0..SCREEN_HEIGHT {
-                let color = Color(0, 0, 0, 0);
-                image_data[width as usize].push(color);
-            }
-        }
+        let mut image_data = RgbaImage::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
 
         Self {
             clock: 0,
@@ -69,6 +60,9 @@ impl Ppu {
                 }
             } else if self.scroll.is_v_blank_period() {
             } else if self.scroll.is_h_blank_period() {
+                if self.lcds.mode0() {
+                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
+                }
                 self.draw_bg_line();
             } else {
                 self.scroll.ly = 0;
@@ -90,10 +84,11 @@ impl Ppu {
 
     fn draw_bg_line(&mut self) {
         for x in 0..SCREEN_WIDTH {
-            self.image_data[x as usize][self.scroll.ly as usize] = self.get_bg_tile_color(x);
+            self.image_data.put_pixel(x as u32, self.scroll.ly as u32, self.get_bg_tile_color(x))
+            // self.image_data[x as usize][self.scroll.ly as usize] = self.get_bg_tile_color(x);
         }
     }
-    fn get_bg_tile_color(&self, lx: u8) -> Color {
+    fn get_bg_tile_color(&self, lx: u8) -> image::Rgba<u8> {
         // yPos is current pixel from top(0-255)
         let y_pos = (self.scroll.ly.wrapping_add(self.scroll.scy)) & 255;
         let x_pos = (lx.wrapping_add(self.scroll.scx)) & 255;
@@ -102,7 +97,7 @@ impl Ppu {
         self.get_tile_color(x_pos, y_pos, base_addr)
     }
 
-    fn get_tile_color(&self, x_pos: u8, y_pos: u8, base_addr: Word) -> Color {
+    fn get_tile_color(&self, x_pos: u8, y_pos: u8, base_addr: Word) -> image::Rgba<u8> {
         let addr = Tile::get_tile_addr(y_pos, x_pos, base_addr);
         let mut tile_idx = self.bus.as_ref().unwrap().lock().unwrap().read(addr) as i8 as i32;
 
@@ -127,7 +122,6 @@ impl Ppu {
         let tile_color_base_addr = 0x8000 + (block as Word * 128 * 16 + tile_idx as Word * 16 + (y_pos % 8) as Word);
         let lower = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr);
         let upper = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr + 1);
-        // .read(0x8000 + (block * 128 * 16 + tile_idx * 16 + b) as Word);
         let lb = bit(&lower, &(x_pos % 8));
         let ub = bit(&upper, &(x_pos % 8));
 
@@ -150,7 +144,7 @@ impl Ppu {
         self.dma_started = false;
     }
 
-    pub fn display(&self) -> Vec<Vec<Color>> {
+    pub fn display(&self) -> image::RgbaImage {
         self.image_data.clone()
     }
 }
@@ -369,12 +363,12 @@ enum PaletteEnum {
 }
 
 impl PaletteEnum {
-    pub fn get_color(palette: PaletteEnum) -> Color {
+    pub fn get_color(palette: PaletteEnum) -> image::Rgba<u8> {
         match palette {
-            PaletteEnum::White => Color(175, 197, 160, 255),
-            PaletteEnum::LightGray => Color(93, 147, 66, 255),
-            PaletteEnum::DarkGray => Color(22, 63, 48, 255),
-            PaletteEnum::Black => Color(0, 40, 0, 255),
+            PaletteEnum::White => image::Rgba([175, 197, 160, 255]),
+            PaletteEnum::LightGray => image::Rgba([93, 147, 66, 255]),
+            PaletteEnum::DarkGray => image::Rgba([22, 63, 48, 255]),
+            PaletteEnum::Black => image::Rgba([0, 40, 0, 255]),
         }
     }
 
@@ -410,12 +404,12 @@ struct Palette {
 }
 
 impl Palette {
-    fn get_palette(&self, idx: u8) -> Color {
+    fn get_palette(&self, idx: u8) -> image::Rgba<u8> {
         let color: Byte = (self.bgp >> (idx * 2)) & 0x03;
         PaletteEnum::get_color(PaletteEnum::from_u8(color))
     }
 
-    fn get_obj_palette(&self, idx: u8, obp: u8) -> Color {
+    fn get_obj_palette(&self, idx: u8, obp: u8) -> image::Rgba<u8> {
         let color: Byte;
         if obp == 1 {
             color = (self.obp1 >> (idx * 2)) & 0x03;

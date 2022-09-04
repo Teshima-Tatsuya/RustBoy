@@ -73,10 +73,11 @@ fn emulator_system(
         for x in 0..SCREEN_WIDTH {
             let ix = y as usize * SCREEN_WIDTH as usize + x as usize;
             let pixel = &mut image.data[ix * 4..ix * 4 + 4];
-            pixel[0] = image_data[x as usize][y as usize].0;
-            pixel[1] = image_data[x as usize][y as usize].1;
-            pixel[2] = image_data[x as usize][y as usize].2;
-            pixel[3] = image_data[x as usize][y as usize].3;
+            let image_pixel: &[u8] = &image_data.get_pixel(x as u32, y as u32).0;
+            pixel[0] = image_pixel[0];
+            pixel[1] = image_pixel[1];
+            pixel[2] = image_pixel[2];
+            pixel[3] = image_pixel[3];
         }
     }
 }
