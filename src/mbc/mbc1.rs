@@ -27,7 +27,19 @@ impl Mbc1 {
 
 impl super::MbcTrait for Mbc1 {
     fn read(&self, addr: Word) -> Byte {
-        self.cartridge.rom.read(addr)
+        match addr {
+            0..=0x3FFF => self.cartridge.rom.read(addr),
+            0x4000..=0x7FFF => self.cartridge.rom.read((self.rom_bank as u16).wrapping_mul(0x4000).wrapping_add(addr).wrapping_sub(0x4000)),
+            0xA000..=0xC000 => {
+                if self.ram_enable {
+                    let read_addr = addr.wrapping_add(self.ram_bank as u16).wrapping_mul(0x2000).wrapping_sub(0xA000);
+                    self.cartridge.ram.read(read_addr)
+                } else {
+                    0xFF
+                }
+            },
+            v => unreachable!("{}", v),
+        }
     }
 
     fn write(&mut self, addr: Word, value: Byte) {
@@ -55,7 +67,7 @@ impl super::MbcTrait for Mbc1 {
             0x6000..=0x7FFF => self.mode = value,
             0xA000..=0xC000 => {
                 if self.ram_enable {
-                    let computed_addr = addr + (self.ram_bank as u16) * 0x2000 - 0xA000;
+                    let computed_addr = addr.wrapping_add((self.ram_bank as u16) * 0x2000).wrapping_sub(0xA000);
                     self.cartridge.ram.write(computed_addr, value)
                 }
             }
