@@ -118,7 +118,6 @@ impl Emulator {
 }
 fn setup(
     mut commands: Commands,
-    mut fonts: ResMut<Assets<Font>>,
 ) {
     use bevy_tiled_camera::*;
     commands.spawn_bundle(TiledCameraBundle::pixel_cam([SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32]).with_pixels_per_tile([1, 1]));

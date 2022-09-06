@@ -1,11 +1,6 @@
 mod serial;
 mod apu;
 
-use std::{
-    cell::RefCell,
-    rc::Rc,
-};
-
 use crate::{
     constant::*,
     types::*,

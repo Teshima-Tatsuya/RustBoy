@@ -27,7 +27,7 @@ pub struct Ppu {
 
 impl Ppu {
     pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
-        let mut image_data = RgbaImage::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
+        let image_data = RgbaImage::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
 
         Self {
             clock: 0,
@@ -49,7 +49,7 @@ impl Ppu {
         self.clock = self.clock.wrapping_add(cycle);
 
         if !self.lcdc.lcd_ppu_enable() {
-            return;
+           return;
         }
 
         if self.clock >= CYCLE_PER_LINE {
@@ -78,7 +78,7 @@ impl Ppu {
                 self.lcds.buf &= 0xFB;
             }
             self.scroll.ly = self.scroll.ly.wrapping_add(1);
-            self.clock -= CYCLE_PER_LINE;
+            self.clock = self.clock.wrapping_sub(CYCLE_PER_LINE);
         }
     }
 
@@ -87,6 +87,7 @@ impl Ppu {
             self.image_data.put_pixel(x as u32, self.scroll.ly as u32, self.get_bg_tile_color(x))
         }
     }
+
     fn get_bg_tile_color(&self, lx: u8) -> image::Rgba<u8> {
         // yPos is current pixel from top(0-255)
         let y_pos = self.scroll.ly.wrapping_add(self.scroll.scy);
@@ -101,7 +102,7 @@ impl Ppu {
         let mut tile_idx = self.bus.as_ref().unwrap().lock().unwrap().read(addr) as i8 as i32;
 
         let mut block: usize = 0;
-        if self.lcdc.bg_win_tile_data_area() == 0x8800 {
+        if self.lcdc.bg_win_tile_data_area() == BG_WINDOW_TILE_DATA_AREA_0 {
             if tile_idx < 0 {
                 block = 1;
                 tile_idx += 128;
@@ -118,7 +119,7 @@ impl Ppu {
         }
 
 
-        let tile_color_base_addr = 0x8000 + (block as Word * 128 * 16 + tile_idx as Word * 16 + (y_pos % 8) as Word);
+        let tile_color_base_addr = 0x8000 + (block as Word * 128 * 16 + tile_idx as Word * 16 + (y_pos % 8) as Word * 2);
         let lower = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr);
         let upper = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr + 1);
         let lb = bit(&lower, &(7 - (x_pos % 8)));
@@ -129,8 +130,8 @@ impl Ppu {
     }
 
     pub fn transfer_oam(&mut self) {
+        let addr = self.dma as Word * 0x100;
         for i in 0..0xA0 {
-            let addr = self.dma as Word * 0x100;
             let b = self.bus.as_ref().unwrap().lock().unwrap().read(addr + i as Word);
             self.bus
                 .as_mut()
@@ -193,23 +194,15 @@ struct Scroll {
 
 impl Scroll {
     fn is_v_blank_period(&self) -> bool {
-        if SCREEN_HEIGHT <= self.ly && self.ly <= 153 {
-            return true;
-        }
-
-        return false;
+        SCREEN_HEIGHT <= self.ly && self.ly <= 153
     }
 
     fn is_h_blank_period(&self) -> bool {
-        if self.ly < SCREEN_HEIGHT {
-            return true;
-        }
-
-        return false;
+        self.ly < SCREEN_HEIGHT
     }
 
     fn is_v_blank_start(&self) -> bool {
-        return self.ly == SCREEN_HEIGHT;
+        self.ly == SCREEN_HEIGHT
     }
 }
 

@@ -1,7 +1,7 @@
 use std::{sync::{Arc, Mutex}};
 
 use crate::{
-    bus::Bus, cartridge::Cartridge, constant::*, cpu::Cpu, interrupt::Interrupt, io::*, mbc::*,
+    bus::Bus, cartridge::Cartridge, cpu::Cpu, interrupt::Interrupt, mbc::*,
     ppu::Ppu, timer::Timer, types::*,
 };
 

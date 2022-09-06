@@ -63,7 +63,7 @@ impl Reader for Bus {
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().read(addr),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().read(addr),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().read(addr),
-            0xFF00..=0xFF70 | 0xFFFF => self.io.read(addr),
+            0xFF00..=0xFF70 => self.io.read(addr),
             0xFF80..=0xFFFE => self.hram.read(addr - 0xFF80),
             v => todo!("addr {:04X} is not readable", v),
         }
@@ -84,7 +84,7 @@ impl Writer for Bus {
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().write(addr, value),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().write(addr, value),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().write(addr, value),
-            0xFF00..=0xFF70 | 0xFFFF => self.io.write(addr, value),
+            0xFF00..=0xFF70 => self.io.write(addr, value),
             0xFF80..=0xFFFE => self.hram.write(addr - 0xFF80, value),
             v => todo!("addr {:04X} is not writable", v),
         }
