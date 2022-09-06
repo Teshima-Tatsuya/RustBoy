@@ -78,7 +78,8 @@ speculate! {
                 rom_test(&arg.folder, &arg.file, arg.frame, "Passed".to_string());
             }
         }
-        describe "cpu_instrs_with_image" {
+
+        describe "blargg" {
             struct Args {
                 folder: String,
                 file: String,
@@ -86,6 +87,39 @@ speculate! {
             }
             #[rstest(arg,
                 case(Args{folder: "blargg/cpu_instrs".to_string(), file: "cpu_instrs".to_string(), frame: 3200}),
+                case(Args{folder: "blargg/mem_timing".to_string(), file: "mem_timing".to_string(), frame: 2000}),
+                case(Args{folder: "blargg/mem_timing/individual".to_string(), file: "01-read_timing".to_string(), frame: 2000}),
+                case(Args{folder: "blargg/mem_timing/individual".to_string(), file: "02-write_timing".to_string(), frame: 2000}),
+                case(Args{folder: "blargg/mem_timing/individual".to_string(), file: "03-modify_timing".to_string(), frame: 2000}),
+            )]
+            fn test(arg: Args) {
+                rom_test_with_image(&arg.folder, &arg.file, arg.frame);
+            }
+        }
+    }
+
+    describe "mooneye-gb" {
+        describe "mooneye-gb" {
+            struct Args {
+                folder: String,
+                file: String,
+                frame: u64,
+            }
+            #[rstest(arg,
+                case(Args{folder: "mooneye-gb/acceptance/bits".to_string(), file: "mem_oam".to_string(), frame: 10}),
+                case(Args{folder: "mooneye-gb/acceptance/bits".to_string(), file: "reg_f".to_string(), frame: 10}),
+                case(Args{folder: "mooneye-gb/acceptance/bits".to_string(), file: "unused_hwio-GS".to_string(), frame: 10}),
+                case(Args{folder: "mooneye-gb/acceptance/instr".to_string(), file: "daa".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance/interrupts".to_string(), file: "ie_push".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance/oam_dma".to_string(), file: "basic".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance/oam_dma".to_string(), file: "reg_read".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance/oam_dma".to_string(), file: "sources-GS".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance/serial".to_string(), file: "boot_sclk_align-dmgABCmgb".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "add_sp_e_timing".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "boot_div-dmg0".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "boot_div-dmgABCmgb".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "boot_div-S".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "boot_div2-S".to_string(), frame: 100}),
             )]
             fn test(arg: Args) {
                 rom_test_with_image(&arg.folder, &arg.file, arg.frame);
