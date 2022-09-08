@@ -1,5 +1,5 @@
-use std::{sync::{Arc, Mutex}};
 use image::RgbaImage;
+use std::sync::{Arc, Mutex};
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
@@ -49,7 +49,7 @@ impl Ppu {
         self.clock = self.clock.wrapping_add(cycle);
 
         if !self.lcdc.lcd_ppu_enable() {
-           return;
+            return;
         }
 
         if self.clock >= CYCLE_PER_LINE {
@@ -64,6 +64,10 @@ impl Ppu {
                     self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
                 }
                 self.draw_bg_line();
+
+                if self.lcdc.window_enable() {
+                    //    self.draw_win_line();
+                }
             } else {
                 self.scroll.ly = 0;
                 self.draw_bg_line();
@@ -84,7 +88,77 @@ impl Ppu {
 
     fn draw_bg_line(&mut self) {
         for x in 0..SCREEN_WIDTH {
-            self.image_data.put_pixel(x as u32, self.scroll.ly as u32, self.get_bg_tile_color(x))
+            self.image_data
+                .put_pixel(x as u32, self.scroll.ly as u32, self.get_bg_tile_color(x))
+        }
+    }
+    fn draw_win_line(&mut self) {
+        if (self.scroll.wx < 0 || 167 <= self.scroll.wx)
+            || (self.scroll.wy < 0 || 144 <= self.scroll.wy)
+        {
+            return;
+        }
+        if self.scroll.ly < self.scroll.wy {
+            return;
+        }
+        for x in 0..SCREEN_WIDTH {
+            self.image_data
+                .put_pixel(x as u32, self.scroll.ly as u32, self.get_win_tile_color(x));
+        }
+    }
+
+    // not implemented
+    fn draw_sprite(&mut self) {
+        for i in 0..SPRITE_NUM {
+            let mut bytes4: [Byte; 4] = [0; 4];
+            for j in 0..4 {
+                let addr = ADDR_OAM_START
+                    .wrapping_add(i.wrapping_mul(4))
+                    .wrapping_add(j);
+                bytes4[j as usize] = self.bus.as_ref().unwrap().lock().unwrap().read(addr);
+            }
+            let s = Sprite::new(&bytes4);
+            // TODO long sprite
+            let obj_height: u8 = 8;
+            // if g.LCDC.OBJSize() == 1 {
+            // 	objHeight = 16
+            // } else {
+            // 	objHeight = 8
+            // }
+            for x in 0..8 {
+                for y in 0..obj_height {
+                    let x_pos = s.x + x;
+                    let y_pos = s.y + y;
+                    // ignore out of screen
+                    if (x_pos < 0 || SCREEN_WIDTH <= x_pos) || (y_pos < 0 || SCREEN_HEIGHT <= y_pos)
+                    {
+                        continue;
+                    }
+                    let block: u16;
+                    let tile_idx: Byte;
+                    if s.tile_idx >= 128 {
+                        block = 1;
+                        tile_idx = s.tile_idx - 128;
+                    } else {
+                        block = 0;
+                        tile_idx = s.tile_idx;
+                    }
+                    // tile := g.tiles[block][tileIdx]
+                    // if s.YFlip() {
+                    //     y = 7 - y
+                    // }
+                    // yPos = int(s.y) + y
+                    // if s.XFlip() {
+                    //     x = 7 - x
+                    // }
+                    // xPos = int(s.x) + x
+                    // c := tile.Data[x][y]
+                    // if c != 0 {
+                    //     p := g.palette.GetObjPalette(c, uint(s.MBGPalleteNo()))
+                    //     g.imageData[xPos][yPos] = p
+                    // }
+                }
+            }
         }
     }
 
@@ -94,6 +168,14 @@ impl Ppu {
         let x_pos = lx.wrapping_add(self.scroll.scx);
         let base_addr = self.lcdc.bg_tile_map_area();
 
+        self.get_tile_color(x_pos, y_pos, base_addr)
+    }
+
+    fn get_win_tile_color(&self, lx: u8) -> image::Rgba<u8> {
+        // yPos is current pixel from top(0-255)
+        let y_pos = self.scroll.ly.wrapping_sub(self.scroll.wy);
+        let x_pos = lx.wrapping_sub(self.scroll.wx.wrapping_sub(7));
+        let base_addr = self.lcdc.win_tile_map_area();
         self.get_tile_color(x_pos, y_pos, base_addr)
     }
 
@@ -118,10 +200,29 @@ impl Ppu {
             }
         }
 
-
-        let tile_color_base_addr = 0x8000 + (block as Word * 128 * 16 + tile_idx as Word * 16 + (y_pos % 8) as Word * 2);
-        let lower = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr);
-        let upper = self.bus.as_ref().unwrap().lock().unwrap().read(tile_color_base_addr + 1);
+        let tile_color_base_addr = (0x8000 as Word)
+            .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
+            .wrapping_add(
+                (tile_idx as Word)
+                    .wrapping_mul(16))
+                    .wrapping_add(
+                        ((y_pos % 8) as Word)
+                    .wrapping_mul(2))
+            ;
+        let lower = self
+            .bus
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .read(tile_color_base_addr);
+        let upper = self
+            .bus
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .read(tile_color_base_addr + 1);
         let lb = bit(&lower, &(7 - (x_pos % 8)));
         let ub = bit(&upper, &(7 - (x_pos % 8)));
 
@@ -132,7 +233,13 @@ impl Ppu {
     pub fn transfer_oam(&mut self) {
         let addr = self.dma as Word * 0x100;
         for i in 0..0xA0 {
-            let b = self.bus.as_ref().unwrap().lock().unwrap().read(addr + i as Word);
+            let b = self
+                .bus
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .read(addr + i as Word);
             self.bus
                 .as_mut()
                 .unwrap()
@@ -459,5 +566,23 @@ impl Tile {
         let x_tile: Word = x_pos as Word / 8;
 
         base_addr + y_tile * 32 + x_tile
+    }
+}
+
+struct Sprite {
+    y: Byte,
+    x: Byte,
+    tile_idx: Byte,
+    attr: Byte,
+}
+
+impl Sprite {
+    pub fn new(bytes4: &[Byte]) -> Self {
+        Self {
+            y: bytes4[0] - 16,
+            x: bytes4[1] - 8,
+            tile_idx: bytes4[2],
+            attr: bytes4[3],
+        }
     }
 }
