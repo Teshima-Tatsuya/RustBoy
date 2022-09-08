@@ -82,6 +82,7 @@ impl Writer for Bus {
             0xE000..=0xFDFF => self.eram.write(addr - 0xE000, value),
             0xFE00..=0xFE9F => self.oam.write(addr - 0xFE00, value),
             0xFEA0..=0xFEFF => (),
+            0xFF6C..=0xFF7F => (),
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().write(addr, value),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().write(addr, value),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().write(addr, value),

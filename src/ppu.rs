@@ -66,7 +66,7 @@ impl Ppu {
                 self.draw_bg_line();
 
                 if self.lcdc.window_enable() {
-                    //    self.draw_win_line();
+                    self.draw_win_line();
                 }
             } else {
                 self.scroll.ly = 0;
@@ -202,13 +202,8 @@ impl Ppu {
 
         let tile_color_base_addr = (0x8000 as Word)
             .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
-            .wrapping_add(
-                (tile_idx as Word)
-                    .wrapping_mul(16))
-                    .wrapping_add(
-                        ((y_pos % 8) as Word)
-                    .wrapping_mul(2))
-            ;
+            .wrapping_add((tile_idx as Word).wrapping_mul(16))
+            .wrapping_add(((y_pos % 8) as Word).wrapping_mul(2));
         let lower = self
             .bus
             .as_ref()
