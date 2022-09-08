@@ -255,7 +255,7 @@ impl Reader for Ppu {
     fn read(&self, addr: Word) -> Byte {
         match addr {
             ADDR_PPU_LCDC => self.lcdc.buf,
-            ADDR_PPU_LCDS => self.lcds.buf,
+            ADDR_PPU_LCDS => self.lcds.buf | 0x80,
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.read(addr),
             ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.read(addr),
             ADDR_PPU_DMA => self.dma,
@@ -268,7 +268,7 @@ impl Writer for Ppu {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
             ADDR_PPU_LCDC => self.lcdc.buf = value,
-            ADDR_PPU_LCDS => self.lcds.buf = value,
+            ADDR_PPU_LCDS => self.lcds.buf = value & 0x7F,
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => {
                 self.scroll.write(addr, value)
             }
