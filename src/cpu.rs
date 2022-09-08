@@ -268,7 +268,7 @@ impl Cpu {
 
     pub fn fetch(&mut self) -> Byte {
         let buf = self.bus.lock().unwrap().read(self.reg.PC);
-        self.reg.PC += 1;
+        self.reg.PC = self.reg.PC.wrapping_add(1);
         return buf;
     }
 

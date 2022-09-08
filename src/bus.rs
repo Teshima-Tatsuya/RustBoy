@@ -60,6 +60,7 @@ impl Reader for Bus {
             0xE000..=0xFDFF => self.eram.read(addr - 0xE000),
             0xFE00..=0xFE9F => self.oam.read(addr - 0xFE00),
             0xFEA0..=0xFEFF => 0,
+            0xFF6C..=0xFF7F => 0xFE, // Bit 0 (Read/Write) - CGB Mode Only
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().read(addr),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().read(addr),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().read(addr),
