@@ -6,8 +6,8 @@ use crate::{
 
 #[derive(Default)]
 pub struct Interrupt {
-    r#if: Byte,
-    ie: Byte,
+    pub r#if: Byte,
+    pub ie: Byte,
 }
 
 impl Interrupt {

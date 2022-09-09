@@ -55,14 +55,11 @@ impl Ppu {
         if self.clock >= CYCLE_PER_LINE {
             if self.scroll.is_v_blank_start() {
                 self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
-                if self.lcds.mode1() {
                     self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
-                }
             } else if self.scroll.is_v_blank_period() {
-            } else if self.scroll.is_h_blank_period() {
-                if self.lcds.mode0() {
                     self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
-                }
+            } else if self.scroll.is_h_blank_period() {
+                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
                 self.draw_bg_line();
 
                 if self.lcdc.window_enable() {
