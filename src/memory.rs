@@ -3,7 +3,7 @@ use crate::types::*;
 
 #[derive(Default)]
 pub struct ROM {
-    buf: Vec<Byte>,
+    pub buf: Vec<Byte>,
 }
 
 #[derive(Default)]
