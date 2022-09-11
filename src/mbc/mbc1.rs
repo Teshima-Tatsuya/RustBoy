@@ -29,16 +29,22 @@ impl super::MbcTrait for Mbc1 {
     fn read(&self, addr: Word) -> Byte {
         match addr {
             0..=0x3FFF => self.cartridge.rom.read(addr),
-            0x4000..=0x7FFF => self.cartridge.rom.buf[
+            0x4000..=0x7FFF => {
+                self.cartridge.rom.buf[
                 (self.rom_bank as usize)
                     .wrapping_mul(0x4000)
                     .wrapping_add(addr as usize)
                     .wrapping_sub(0x4000)
-            ],
+            ]},
             0xA000..=0xBFFF => {
                 if self.ram_enable {
+                    let ram_bank = if self.mode == SIMPLE_ROMBANKING_MODE {
+                        0
+                    } else {
+                        self.ram_bank
+                    };
                     let read_addr = addr
-                        .wrapping_add((self.ram_bank as u16).wrapping_mul(0x2000))
+                        .wrapping_add((ram_bank as u16).wrapping_mul(0x2000))
                         .wrapping_sub(0xA000);
                     self.cartridge.ram.read(read_addr)
                 } else {
@@ -52,6 +58,7 @@ impl super::MbcTrait for Mbc1 {
     fn write(&mut self, addr: Word, value: Byte) {
         // @see https://gbdev.io/pandocs/MBC1.html
         // Implement Write address range
+        //log::info!("write {:04X} ram_bank:{}", addr, self.ram_bank);
         match addr {
             0x0000..=0x1FFF => {
                 if value == 0x00 {
@@ -74,8 +81,13 @@ impl super::MbcTrait for Mbc1 {
             0x6000..=0x7FFF => self.mode = value,
             0xA000..=0xBFFF => {
                 if self.ram_enable {
+                    let ram_bank = if self.mode == SIMPLE_ROMBANKING_MODE {
+                        0
+                    } else {
+                        self.ram_bank
+                    };
                     let computed_addr = addr
-                        .wrapping_add((self.ram_bank as u16) * 0x2000)
+                        .wrapping_add((ram_bank as u16) * 0x2000)
                         .wrapping_sub(0xA000);
                     self.cartridge.ram.write(computed_addr, value)
                 }

@@ -178,6 +178,7 @@ impl fmt::Display for Cartridge {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::from("Cartridge:\n");
         result += format!(" title:{}\n", self.title).as_str();
+        result += format!(" ram_size:{}\n", self.ram_size).as_str();
         result += format!(" {}", self.cartridge_type).as_str();
         write!(f, "{}", &result.as_str())
     }
@@ -211,9 +212,13 @@ impl Cartridge {
             v => bail!("Invalid Cartridge Size ${v:02X}"),
         };
 
+        log::info!("ram_addr {:02X}", buf[0x0149]);
         let ram_size = match buf[0x0149] {
             0x00 => 0,
-            0x01 => 0,
+            0x01 => {
+                log::warn!("unused");
+                1 * 8 * 1024
+            },
             0x02 => 1 * 8 * 1024,
             0x03 => 4 * 8 * 1024,
             0x04 => 16 * 8 * 1024,
@@ -233,7 +238,7 @@ impl Cartridge {
         let header_checksum = buf[0x14D];
         let global_checksum: [u8; 2] = buf[0x014E..=0x014F].try_into()?;
 
-        Ok(Cartridge {
+        let cart = Cartridge {
             entry_point,
             logo,
             title,
@@ -249,6 +254,9 @@ impl Cartridge {
             global_checksum,
             rom: ROM::new(buf),
             ram: RAM::new(ram_size as usize),
-        })
+        };
+
+        log::info!("{}", cart);
+        Ok(cart)
     }
 }
