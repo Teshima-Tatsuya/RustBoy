@@ -256,7 +256,7 @@ impl Cartridge {
             ram: RAM::new(ram_size as usize),
         };
 
-        log::info!("{}", cart);
+        // log::info!("{}", cart);
         Ok(cart)
     }
 }

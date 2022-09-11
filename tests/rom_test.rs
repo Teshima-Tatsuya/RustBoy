@@ -158,7 +158,7 @@ speculate! {
                 case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "div_timing".to_string(), frame: 100}),
                 case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "ei_sequence".to_string(), frame: 100}),
                 case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "ei_timing".to_string(), frame: 100}),
-                case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "halt_ime0_ei".to_string(), frame: 100}),
+                case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "halt_ime0_ei".to_string(), frame: 200}),
                 case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "halt_ime0_nointr_timing".to_string(), frame: 100}),
                 case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "halt_ime1_timing".to_string(), frame: 100}),
                 case(Args{folder: "mooneye-gb/acceptance".to_string(), file: "halt_ime1_timing2-GS".to_string(), frame: 100}),

@@ -5,6 +5,7 @@ use crate::types::*;
 const SIMPLE_ROMBANKING_MODE: u8 = 0x00;
 const RAMBANKING_MODE_ADVANCED_ROMBANKING_MODE: u8 = 0x01;
 
+// https://gekkio.fi/files/gb-docs/gbctr.pdf
 pub struct Mbc1 {
     cartridge: Cartridge,
     rom_bank: u8,
@@ -116,7 +117,7 @@ impl Mbc1 {
         self.rom_bank &= 0x1F;
 
         // clear Low bit
-        let value2 = value & 0xE0;
+        let value2 = (value & 0x03) << 5;
 
         self.rom_bank |= value2;
     }

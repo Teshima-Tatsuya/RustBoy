@@ -33,7 +33,10 @@ impl Reader for Io {
             ADDR_JOYPAD => self.joypad.read(addr),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.read(addr),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.read(addr),
-            v => unreachable!("Cannot read addr {:04X} for Io",v)
+            v => {
+                // log::warn!("Cannot read addr {:04X} for Io",v);
+                0xFF
+            }
         }
     }
 }
@@ -44,7 +47,7 @@ impl Writer for Io {
             ADDR_JOYPAD => self.joypad.write(addr, value),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.write(addr, value),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.write(addr, value),
-            v => unreachable!("Cannot write addr {:04X} for Io",v)
+            v => () //log::warn!("Cannot write addr {:04X} for Io",v)
         }
 
     }
