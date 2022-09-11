@@ -8,7 +8,7 @@ pub struct ROM {
 
 #[derive(Default)]
 pub struct RAM {
-    buf: Vec<Byte>,
+    pub buf: Vec<Byte>,
 }
 
 impl ROM {

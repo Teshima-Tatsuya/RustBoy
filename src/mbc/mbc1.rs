@@ -9,17 +9,26 @@ const RAMBANKING_MODE_ADVANCED_ROMBANKING_MODE: u8 = 0x01;
 pub struct Mbc1 {
     cartridge: Cartridge,
     rom_bank: u8,
+    rom_bank_high: u8,
+    rom_bank_mask: u8,
     ram_bank: u8,
+    ram_bank_mask: u8,
     ram_enable: bool,
     mode: u8,
 }
 
 impl Mbc1 {
     pub fn new(cartridge: Cartridge) -> Self {
+        let rom_bank_mask = ((cartridge.rom_size / 0x4000) as u8).saturating_sub(1);
+        let ram_bank_mask = ((cartridge.ram_size / 0x2000) as u8).saturating_sub(1);
+
         Self {
             cartridge: cartridge,
             rom_bank: 1,
+            rom_bank_high: 0,
+            rom_bank_mask,
             ram_bank: 0,
+            ram_bank_mask,
             ram_enable: false,
             mode: SIMPLE_ROMBANKING_MODE,
         }
@@ -29,25 +38,32 @@ impl Mbc1 {
 impl super::MbcTrait for Mbc1 {
     fn read(&self, addr: Word) -> Byte {
         match addr {
-            0..=0x3FFF => self.cartridge.rom.read(addr),
+            0..=0x3FFF => {
+                let rom_bank = if self.mode == RAMBANKING_MODE_ADVANCED_ROMBANKING_MODE {
+                    self.rom_bank_high << 5 & self.rom_bank_mask
+                } else {
+                    0
+                };
+                self.cartridge.rom.buf
+                    [(addr as usize).wrapping_add((rom_bank as usize).wrapping_mul(0x4000))]
+            }
             0x4000..=0x7FFF => {
-                self.cartridge.rom.buf[
-                (self.rom_bank as usize)
-                    .wrapping_mul(0x4000)
-                    .wrapping_add(addr as usize)
-                    .wrapping_sub(0x4000)
-            ]},
+                let rom_bank = (self.rom_bank | (self.rom_bank_high << 5)) & self.rom_bank_mask;
+                // log::info!("{:X} {:X} {:X}", self.rom_bank, self.rom_bank_high, rom_bank);
+                self.cartridge.rom.buf[((addr & 0x3FFF) as usize)
+                    .wrapping_add((rom_bank as usize).wrapping_mul(0x4000))
+                ]
+            }
             0xA000..=0xBFFF => {
                 if self.ram_enable {
                     let ram_bank = if self.mode == SIMPLE_ROMBANKING_MODE {
                         0
                     } else {
-                        self.ram_bank
+                        self.ram_bank & self.ram_bank_mask
                     };
-                    let read_addr = addr
-                        .wrapping_add((ram_bank as u16).wrapping_mul(0x2000))
-                        .wrapping_sub(0xA000);
-                    self.cartridge.ram.read(read_addr)
+                    let computed_addr = ((addr & 0x1FFF) as usize)
+                        .wrapping_add((ram_bank as usize).wrapping_mul(0x2000));
+                    self.cartridge.ram.buf[computed_addr]
                 } else {
                     0xFF
                 }
@@ -59,7 +75,6 @@ impl super::MbcTrait for Mbc1 {
     fn write(&mut self, addr: Word, value: Byte) {
         // @see https://gbdev.io/pandocs/MBC1.html
         // Implement Write address range
-        //log::info!("write {:04X} ram_bank:{}", addr, self.ram_bank);
         match addr {
             0x0000..=0x1FFF => {
                 if value == 0x00 {
@@ -73,24 +88,24 @@ impl super::MbcTrait for Mbc1 {
             }
             0x4000..=0x5FFF => {
                 if self.mode == SIMPLE_ROMBANKING_MODE {
-                    self.switch_hi_rom_bank(value);
+                    self.rom_bank_high = value & 0x03;
                 } else if self.mode == RAMBANKING_MODE_ADVANCED_ROMBANKING_MODE {
                     // lower 2bit
                     self.switch_ram_bank((value & 0x03) as u16);
                 }
             }
-            0x6000..=0x7FFF => self.mode = value,
+            0x6000..=0x7FFF => self.mode = value & 0x01,
             0xA000..=0xBFFF => {
                 if self.ram_enable {
                     let ram_bank = if self.mode == SIMPLE_ROMBANKING_MODE {
                         0
                     } else {
-                        self.ram_bank
+                        self.ram_bank & self.ram_bank_mask
                     };
-                    let computed_addr = addr
-                        .wrapping_add((ram_bank as u16) * 0x2000)
-                        .wrapping_sub(0xA000);
-                    self.cartridge.ram.write(computed_addr, value)
+                    let computed_addr = ((addr & 0x1FFF) as usize)
+                        .wrapping_add((ram_bank as usize).wrapping_mul(0x2000));
+
+                    self.cartridge.ram.buf[computed_addr] = value;
                 }
             }
             v => unreachable!("{}", v),
@@ -99,7 +114,7 @@ impl super::MbcTrait for Mbc1 {
 
     fn switch_rom_bank(&mut self, bank: u16) {
         let mut bank2 = bank;
-        if bank == 0x00 || bank == 0x20 || bank == 0x40 || bank == 0x60 {
+        if bank == 0x00 {
             bank2 += 1;
         }
 
@@ -108,17 +123,5 @@ impl super::MbcTrait for Mbc1 {
 
     fn switch_ram_bank(&mut self, bank: u16) {
         self.ram_bank = bank as u8;
-    }
-}
-
-impl Mbc1 {
-    fn switch_hi_rom_bank(&mut self, value: Byte) {
-        // clear Hi bit
-        self.rom_bank &= 0x1F;
-
-        // clear Low bit
-        let value2 = (value & 0x03) << 5;
-
-        self.rom_bank |= value2;
     }
 }
