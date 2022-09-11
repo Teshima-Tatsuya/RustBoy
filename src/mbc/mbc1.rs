@@ -20,7 +20,7 @@ impl Mbc1 {
             rom_bank: 1,
             ram_bank: 0,
             ram_enable: false,
-            mode: 0x00,
+            mode: SIMPLE_ROMBANKING_MODE,
         }
     }
 }
