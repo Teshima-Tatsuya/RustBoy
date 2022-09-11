@@ -194,7 +194,7 @@ speculate! {
                 case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "bits_bank1".to_string(), frame: 300}),
                 case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "bits_bank2".to_string(), frame: 300}),
                 case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "bits_mode".to_string(), frame: 300}),
-                case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "bits_ramg".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "bits_ramg".to_string(), frame: 500}),
                 case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "multicart_rom_8Mb".to_string(), frame: 300}),
                 case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "ram_64kb".to_string(), frame: 300}),
                 case(Args{folder: "mooneye-gb/emulator-only/mbc1".to_string(), file: "ram_256kb".to_string(), frame: 300}),

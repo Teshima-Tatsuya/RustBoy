@@ -17,6 +17,7 @@ pub struct Mbc1 {
     mode: u8,
 }
 
+// TODO multicart
 impl Mbc1 {
     pub fn new(cartridge: Cartridge) -> Self {
         let rom_bank_mask = ((cartridge.rom_size / 0x4000) as u8).saturating_sub(1);
@@ -77,9 +78,9 @@ impl super::MbcTrait for Mbc1 {
         // Implement Write address range
         match addr {
             0x0000..=0x1FFF => {
-                if value == 0x00 {
+                if value & 0x0F == 0x00 {
                     self.ram_enable = false
-                } else if value == 0x0A {
+                } else if value & 0x0F == 0x0A {
                     self.ram_enable = true
                 }
             }
