@@ -128,8 +128,8 @@ impl Ppu {
                     let mut offset_x = x;
                     let mut offset_y = y;
 
-                    let mut x_pos = s.x + offset_x;
-                    let mut y_pos = s.y + offset_y;
+                    let mut x_pos = s.x.saturating_add(offset_x);
+                    let mut y_pos = s.y.saturating_add(offset_y);
                     // ignore out of screen
                     if (x_pos < 0 || SCREEN_WIDTH <= x_pos) || (y_pos < 0 || SCREEN_HEIGHT <= y_pos)
                     {
