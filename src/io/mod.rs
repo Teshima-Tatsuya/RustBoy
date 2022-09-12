@@ -1,6 +1,5 @@
 mod serial;
 mod apu;
-mod joypad;
 
 use crate::{
     constant::*,
@@ -11,7 +10,6 @@ use crate::{
 pub struct Io {
     serial: serial::Serial,
     apu: apu::Apu,
-    joypad: joypad::Joypad,
 }
 
 impl Io {
@@ -19,7 +17,6 @@ impl Io {
         Io {
             serial: serial::Serial::new(),
             apu: apu::Apu::new(),
-            joypad: joypad::Joypad::new(),
         }
     }
 }
@@ -27,7 +24,6 @@ impl Io {
 impl Reader for Io {
     fn read(&self, addr: Word) -> Byte {
         match addr {
-            ADDR_JOYPAD => self.joypad.read(addr),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.read(addr),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.read(addr),
             v => {
@@ -41,7 +37,6 @@ impl Reader for Io {
 impl Writer for Io {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
-            ADDR_JOYPAD => self.joypad.write(addr, value),
             ADDR_SERIAL_SB..=ADDR_SERIAL_SC => self.serial.write(addr, value),
             ADDR_APU_NR10..=ADDR_APU_NR52 => self.apu.write(addr, value),
             v => log::warn!("Cannot write addr {:04X} for Io",v)

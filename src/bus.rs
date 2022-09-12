@@ -14,6 +14,7 @@ use crate::{
     interrupt::Interrupt,
     timer::Timer,
     ppu::Ppu,
+    joypad::Joypad,
     constant::*,
 };
 
@@ -28,11 +29,12 @@ pub struct Bus {
     ppu: Arc<Mutex<Ppu>>,
     interrupt: Arc<Mutex<Interrupt>>,
     timer: Arc<Mutex<Timer>>,
+    joypad: Arc<Mutex<Joypad>>,
     io: Io,
 }
 
 impl Bus {
-    pub fn new(mbc: Mbc, timer: Arc<Mutex<Timer>>, interrupt: Arc<Mutex<Interrupt>>,ppu: Arc<Mutex<Ppu>>) -> Box<dyn BusTrait + Send> {
+    pub fn new(mbc: Mbc, timer: Arc<Mutex<Timer>>, interrupt: Arc<Mutex<Interrupt>>, ppu: Arc<Mutex<Ppu>>, joypad: Arc<Mutex<Joypad>>) -> Box<dyn BusTrait + Send> {
         Box::new(Bus {
             mbc,
             vram: RAM::new(0x2000),
@@ -41,9 +43,10 @@ impl Bus {
             hram: RAM::new(0x0080),
             eram: RAM::new(0x2000),
             oam: RAM::new(0x00A0),
-            ppu: ppu,
-            interrupt: interrupt,
-            timer: timer,
+            ppu,
+            interrupt,
+            timer,
+            joypad,
             io: Io::new(),
         })
     }
@@ -61,6 +64,7 @@ impl Reader for Bus {
             0xFE00..=0xFE9F => self.oam.read(addr - 0xFE00),
             0xFEA0..=0xFEFF => 0,
             0xFF4C..=0xFF7F => 0xFF, // unused
+            ADDR_JOYPAD => self.joypad.lock().unwrap().read(addr),
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().read(addr),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().read(addr),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().read(addr),
@@ -83,6 +87,7 @@ impl Writer for Bus {
             0xFE00..=0xFE9F => self.oam.write(addr - 0xFE00, value),
             0xFEA0..=0xFEFF => (),
             0xFF6C..=0xFF7F => (),
+            ADDR_JOYPAD => self.joypad.lock().unwrap().write(addr, value),
             ADDR_TIMER_DIV..=ADDR_TIMER_TAC => self.timer.lock().unwrap().write(addr, value),
             ADDR_PPU_LCDC..=ADDR_PPU_OCPD => self.ppu.lock().unwrap().write(addr, value),
             ADDR_INTERRUPT_IF | ADDR_INTERRUPT_IE => self.interrupt.lock().unwrap().write(addr, value),

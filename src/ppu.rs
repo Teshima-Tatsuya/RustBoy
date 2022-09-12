@@ -54,12 +54,13 @@ impl Ppu {
 
         if self.clock >= CYCLE_PER_LINE {
             if self.scroll.is_v_blank_start() {
+                self.draw_sprite();
                 self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
-                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
+                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
             } else if self.scroll.is_v_blank_period() {
-                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
+                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
             } else if self.scroll.is_h_blank_period() {
-                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
+                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
                 self.draw_bg_line();
 
                 if self.lcdc.window_enable() {
@@ -124,8 +125,11 @@ impl Ppu {
             // }
             for x in 0..8 {
                 for y in 0..obj_height {
-                    let x_pos = s.x + x;
-                    let y_pos = s.y + y;
+                    let mut offset_x = x;
+                    let mut offset_y = y;
+
+                    let mut x_pos = s.x + offset_x;
+                    let mut y_pos = s.y + offset_y;
                     // ignore out of screen
                     if (x_pos < 0 || SCREEN_WIDTH <= x_pos) || (y_pos < 0 || SCREEN_HEIGHT <= y_pos)
                     {
@@ -140,20 +144,41 @@ impl Ppu {
                         block = 0;
                         tile_idx = s.tile_idx;
                     }
-                    // tile := g.tiles[block][tileIdx]
-                    // if s.YFlip() {
-                    //     y = 7 - y
-                    // }
-                    // yPos = int(s.y) + y
-                    // if s.XFlip() {
-                    //     x = 7 - x
-                    // }
-                    // xPos = int(s.x) + x
-                    // c := tile.Data[x][y]
-                    // if c != 0 {
-                    //     p := g.palette.GetObjPalette(c, uint(s.MBGPalleteNo()))
-                    //     g.imageData[xPos][yPos] = p
-                    // }
+                    if s.y_flip() {
+                        offset_y = 7 - y;
+                    }
+                    y_pos = s.y + offset_y;
+                    if s.x_flip() {
+                        offset_x = 7 - x
+                    }
+                    x_pos = s.x + offset_x;
+                    let tile_color_base_addr = (0x8000 as Word)
+                        .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
+                        .wrapping_add((tile_idx as Word).wrapping_mul(16))
+                        .wrapping_add(((y_pos % 8) as Word).wrapping_mul(2));
+
+                    let lower = self
+                        .bus
+                        .as_ref()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .read(tile_color_base_addr);
+                    let upper = self
+                        .bus
+                        .as_ref()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .read(tile_color_base_addr + 1);
+                    let lb = bit(&lower, &(7 - (x_pos % 8)));
+                    let ub = bit(&upper, &(7 - (x_pos % 8)));
+
+                    let color = (ub << 1) + lb;
+                    if color != 0 {
+                        let c = self.palette.get_obj_palette(color, s.mgb_palette_no());
+                        self.image_data.put_pixel(x_pos as u32, y_pos as u32, c);
+                    }
                 }
             }
         }
@@ -572,10 +597,30 @@ struct Sprite {
 impl Sprite {
     pub fn new(bytes4: &[Byte]) -> Self {
         Self {
-            y: bytes4[0] - 16,
-            x: bytes4[1] - 8,
+            y: bytes4[0].wrapping_sub(16),
+            x: bytes4[1].wrapping_sub(8),
             tile_idx: bytes4[2],
             attr: bytes4[3],
         }
+    }
+
+    pub fn y_flip(&self) -> bool {
+        bit(&self.attr, &6) == 1
+    }
+
+    pub fn x_flip(&self) -> bool {
+        bit(&self.attr, &5) == 1
+    }
+
+    pub fn mgb_palette_no(&self) -> Byte {
+        bit(&self.attr, &4)
+    }
+
+    pub fn vram_bank(&self) -> bool {
+        bit(&self.attr, &3) == 1
+    }
+
+    pub fn cgb_palette_no(&self) -> Byte {
+        self.attr & 0x07
     }
 }

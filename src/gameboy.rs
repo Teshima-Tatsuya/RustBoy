@@ -2,7 +2,7 @@ use std::{sync::{Arc, Mutex}};
 
 use crate::{
     bus::Bus, cartridge::Cartridge, cpu::Cpu, interrupt::Interrupt, mbc::*,
-    ppu::Ppu, timer::Timer, types::*,
+    ppu::Ppu, timer::Timer, types::*, joypad::Joypad,
 };
 
 pub struct GameBoy {
@@ -11,6 +11,7 @@ pub struct GameBoy {
     ppu: Arc<Mutex<Ppu>>,
     // apu: APU,
     timer: Arc<Mutex<Timer>>,
+    pub joypad: Arc<Mutex<Joypad>>,
 }
 
 impl GameBoy {
@@ -19,6 +20,7 @@ impl GameBoy {
         let cartridge = wraped_cartridge.unwrap();
 
         let interrupt = Arc::new(Mutex::new(Interrupt::new()));
+        let joypad = Arc::new(Mutex::new(Joypad::new()));
         let ppu = Arc::new(Mutex::new(Ppu::new(Arc::clone(&interrupt))));
         let timer = Arc::new(Mutex::new(Timer::new(Arc::clone(&interrupt))));
         let bus = Arc::new(Mutex::new(Bus::new(
@@ -26,6 +28,7 @@ impl GameBoy {
             Arc::clone(&timer),
             Arc::clone(&interrupt),
             Arc::clone(&ppu),
+            Arc::clone(&joypad),
         )));
         ppu.lock().unwrap().init(Arc::clone(&bus));
 
@@ -36,6 +39,7 @@ impl GameBoy {
             cycle: 0,
             ppu: Arc::clone(&ppu),
             timer: Arc::clone(&timer),
+            joypad: Arc::clone(&joypad),
         }
     }
 
@@ -56,6 +60,8 @@ impl GameBoy {
         loop {
             self.step();
             if self.cycle >= 70224 {
+                self.joypad.lock().unwrap().press(0x00);
+                self.joypad.lock().unwrap().release(0x00);
                 self.cycle -= 70224;
                 return;
             }

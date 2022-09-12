@@ -6,6 +6,7 @@ pub mod emulator;
 pub mod gameboy;
 pub mod interrupt;
 pub mod io;
+pub mod joypad;
 pub mod mbc;
 pub mod memory;
 pub mod opcode;

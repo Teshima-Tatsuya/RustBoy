@@ -112,6 +112,7 @@ impl Emulator {
             .add_plugins(DefaultPlugins)
             .add_plugin(TiledCameraPlugin)
             .add_plugin(EmulatorPlugin)
+            .add_plugin(JoypadPlugin)
             .add_startup_system(setup)
             .run();
     }
@@ -121,4 +122,43 @@ fn setup(
 ) {
     use bevy_tiled_camera::*;
     commands.spawn_bundle(TiledCameraBundle::pixel_cam([SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32]).with_pixels_per_tile([1, 1]));
+}
+
+pub struct JoypadPlugin;
+
+impl Plugin for JoypadPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(joypad_system);
+    }
+}
+
+fn joypad_system(
+    emulator: Res<Emulator>,
+    keys: Res<Input<KeyCode>>,
+) {
+    if keys.just_pressed(KeyCode::A) {
+    println!("key a pressed");
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_A);
+    }
+    if keys.just_pressed(KeyCode::B) {
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_B);
+    }
+    if keys.just_pressed(KeyCode::Up) {
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_UP);
+    }
+    if keys.just_pressed(KeyCode::Left) {
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_LEFT);
+    }
+    if keys.just_pressed(KeyCode::Right) {
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_RIGHT);
+    }
+    if keys.just_pressed(KeyCode::Down) {
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_DOWN);
+    }
+    if keys.just_pressed(KeyCode::Return) {
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_START);
+    }
+    if keys.just_pressed(KeyCode::Space) {
+        emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_SELECT);
+    }
 }
