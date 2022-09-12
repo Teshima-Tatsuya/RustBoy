@@ -55,7 +55,7 @@ fn rom_test_with_image(folder: &String, file: &String, frame: u64) {
 
 speculate! {
     describe "Blargg" {
-        describe "cpu_instrs" {
+        describe "cpu_instrs_individual" {
             struct Args {
                 folder: String,
                 file: String,
@@ -79,7 +79,7 @@ speculate! {
             }
         }
 
-        describe "blargg" {
+        describe "cpu_instrs" {
             struct Args {
                 folder: String,
                 file: String,
@@ -87,10 +87,66 @@ speculate! {
             }
             #[rstest(arg,
                 case(Args{folder: "blargg/cpu_instrs".to_string(), file: "cpu_instrs".to_string(), frame: 3200}),
+            )]
+            fn test(arg: Args) {
+                rom_test_with_image(&arg.folder, &arg.file, arg.frame);
+            }
+        }
+
+        describe "mem_timing" {
+            struct Args {
+                folder: String,
+                file: String,
+                frame: u64,
+            }
+            #[rstest(arg,
                 case(Args{folder: "blargg/mem_timing".to_string(), file: "mem_timing".to_string(), frame: 2000}),
                 case(Args{folder: "blargg/mem_timing/individual".to_string(), file: "01-read_timing".to_string(), frame: 2000}),
                 case(Args{folder: "blargg/mem_timing/individual".to_string(), file: "02-write_timing".to_string(), frame: 2000}),
                 case(Args{folder: "blargg/mem_timing/individual".to_string(), file: "03-modify_timing".to_string(), frame: 2000}),
+                case(Args{folder: "blargg/mem_timing-2".to_string(), file: "mem_timing".to_string(), frame: 2000}),
+            )]
+            fn test(arg: Args) {
+                rom_test_with_image(&arg.folder, &arg.file, arg.frame);
+            }
+        }
+
+        describe "interrupt_time" {
+            struct Args {
+                folder: String,
+                file: String,
+                frame: u64,
+            }
+            #[rstest(arg,
+                case(Args{folder: "blargg/interrupt_time".to_string(), file: "interrupt_time".to_string(), frame: 2000}),
+            )]
+            fn test(arg: Args) {
+                rom_test_with_image(&arg.folder, &arg.file, arg.frame);
+            }
+        }
+
+        describe "oam_bug" {
+            struct Args {
+                folder: String,
+                file: String,
+                frame: u64,
+            }
+            #[rstest(arg,
+                case(Args{folder: "blargg/oam_bug".to_string(), file: "oam_bug".to_string(), frame: 2000}),
+            )]
+            fn test(arg: Args) {
+                rom_test_with_image(&arg.folder, &arg.file, arg.frame);
+            }
+        }
+
+        describe "halt_bug" {
+            struct Args {
+                folder: String,
+                file: String,
+                frame: u64,
+            }
+            #[rstest(arg,
+                case(Args{folder: "blargg".to_string(), file: "halt_bug".to_string(), frame: 2000}),
             )]
             fn test(arg: Args) {
                 rom_test_with_image(&arg.folder, &arg.file, arg.frame);
