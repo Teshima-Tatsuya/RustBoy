@@ -137,28 +137,51 @@ fn joypad_system(
     keys: Res<Input<KeyCode>>,
 ) {
     if keys.just_pressed(KeyCode::A) {
-    println!("key a pressed");
+        println!("key A pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_A);
-    }
+    } else if keys.just_released(KeyCode::A) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_A);
+    } 
     if keys.just_pressed(KeyCode::B) {
+        println!("key B pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_B);
-    }
+    } else if keys.just_released(KeyCode::B) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_B);
+    } 
     if keys.just_pressed(KeyCode::Up) {
+        println!("key Up pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_UP);
-    }
+    } else if keys.just_released(KeyCode::Up) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_UP);
+    } 
     if keys.just_pressed(KeyCode::Left) {
+        println!("key Left pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_LEFT);
-    }
+    } else if keys.just_released(KeyCode::Left) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_LEFT);
+    } 
     if keys.just_pressed(KeyCode::Right) {
+        println!("key Right pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_RIGHT);
-    }
+    } else if keys.just_released(KeyCode::Right) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_RIGHT);
+    } 
     if keys.just_pressed(KeyCode::Down) {
+        println!("key Down pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_DOWN);
-    }
+    } else if keys.just_released(KeyCode::Down) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_DOWN);
+    } 
     if keys.just_pressed(KeyCode::Return) {
+        println!("key START pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_START);
-    }
+    } else if keys.just_released(KeyCode::Return) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_START);
+    } 
     if keys.just_pressed(KeyCode::Space) {
+        println!("key SELECT pressed");
         emulator.gb.joypad.lock().unwrap().press(crate::joypad::BUTTON_SELECT);
-    }
+    } else if keys.just_released(KeyCode::Space) {
+        emulator.gb.joypad.lock().unwrap().release(crate::joypad::BUTTON_SELECT);
+    } 
 }
