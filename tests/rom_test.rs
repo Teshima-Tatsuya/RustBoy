@@ -211,6 +211,14 @@ speculate! {
                 case(Args{folder: "mooneye-gb/emulator-only/mbc2".to_string(), file: "rom_1Mb".to_string(), frame: 300}),
                 case(Args{folder: "mooneye-gb/emulator-only/mbc2".to_string(), file: "rom_2Mb".to_string(), frame: 300}),
                 case(Args{folder: "mooneye-gb/emulator-only/mbc2".to_string(), file: "rom_512kb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_1Mb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_2Mb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_4Mb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_8Mb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_16Mb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_32Mb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_64Mb".to_string(), frame: 300}),
+                case(Args{folder: "mooneye-gb/emulator-only/mbc5".to_string(), file: "rom_512kb".to_string(), frame: 300}),
             )]
             fn test(arg: Args) {
                 rom_test_with_image(&arg.folder, &arg.file, arg.frame);
