@@ -1,5 +1,4 @@
 use crate::cartridge::Cartridge;
-use crate::traits::*;
 use crate::types::*;
 
 const SIMPLE_ROMBANKING_MODE: u8 = 0x00;

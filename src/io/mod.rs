@@ -13,7 +13,6 @@ pub struct Io {
     serial: serial::Serial,
     apu: apu::Apu,
     joypad: joypad::Joypad,
-    tmp_buf: RAM,
 }
 
 impl Io {
@@ -22,7 +21,6 @@ impl Io {
             serial: serial::Serial::new(),
             apu: apu::Apu::new(),
             joypad: joypad::Joypad::new(),
-            tmp_buf: RAM::new(0x10000),
         }
     }
 }

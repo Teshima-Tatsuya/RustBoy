@@ -1,5 +1,4 @@
 use crate::cartridge::Cartridge;
-use crate::traits::*;
 use crate::types::*;
 
 // https://gekkio.fi/files/gb-docs/gbctr.pdf
@@ -51,7 +50,10 @@ impl super::MbcTrait for Mbc5 {
                     0xFF
                 }
             },
-            v => unreachable!("{}", v),
+            v => {
+                log::warn!("MBC5 doesn't support read addr:0x{:04X}", v);
+                0xFF
+            }
         }
     }
 
@@ -78,7 +80,7 @@ impl super::MbcTrait for Mbc5 {
                     self.cartridge.ram.buf[computed_addr] = value;
                 }
             }
-            v => unreachable!("{}", v),
+            v => log::warn!("MBC5 doesn't support write addr:0x{:04X}", v)
         }
     }
 
