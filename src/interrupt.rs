@@ -3,11 +3,22 @@ use crate::{
     constant::*,
     traits::*,
 };
+use std::fmt;
 
 #[derive(Default)]
 pub struct Interrupt {
     pub r#if: Byte,
     pub ie: Byte,
+}
+
+impl fmt::Display for Interrupt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Interrupt if:0x{:02X} ie:0x{:02X}",
+            self.r#if, self.ie
+        )
+    }
 }
 
 impl Interrupt {
