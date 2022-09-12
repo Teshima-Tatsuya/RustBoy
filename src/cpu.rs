@@ -257,11 +257,11 @@ impl Cpu {
         } else {
             op = &OPCODES[opcode as usize];
         }
-        //self.trace(op);
+        // self.trace(op);
 
         let handler = &op.handler;
         handler(self, op.r1.to_string(), op.r2.to_string());
-        //self.trace2(op);
+        // self.trace2(op);
 
         return op.cycles as u16;
     }

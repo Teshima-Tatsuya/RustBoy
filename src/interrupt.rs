@@ -34,7 +34,7 @@ impl Interrupt {
     }
 
     pub fn request(&mut self, value: Byte) {
-        self.write(ADDR_INTERRUPT_IF, value);
+        self.r#if |= value;
     }
 
     // @see https://gbdev.io/pandocs/interrupts.html#interrupt-priorities
@@ -76,7 +76,7 @@ impl Writer for Interrupt {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
             ADDR_INTERRUPT_IE => self.ie = value,
-            ADDR_INTERRUPT_IF => self.r#if |= value & 0x1F,
+            ADDR_INTERRUPT_IF => self.r#if = value & 0x1F,
             v => unreachable!("Invalid Addr {:04X} for Interrupt", v),
         }
     }
