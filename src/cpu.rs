@@ -257,11 +257,11 @@ impl Cpu {
         } else {
             op = &OPCODES[opcode as usize];
         }
-        // self.trace(op);
+        //self.trace(op);
 
         let handler = &op.handler;
         handler(self, op.r1.to_string(), op.r2.to_string());
-        // self.trace2(op);
+        //self.trace2(op);
 
         return op.cycles as u16;
     }
@@ -390,6 +390,7 @@ impl Cpu {
             return false
         }
     
+    
         let addr = self.interrupt.lock().unwrap().interrupt_addr();
 
         self.push_pc();
@@ -403,12 +404,9 @@ impl Cpu {
         println!(" {}", *op);
         println!("{}", self.reg);
         println!("Cpu: halted:{} ime:{}",self.halted, self.ime);
-        println!(
-            "  data: {:02X}{:02X}",
-            self.bus.lock().unwrap().read(self.reg.PC),
-            self.bus.lock().unwrap().read(self.reg.PC + 1),
-        );
-        
+        let lower = self.bus.lock().unwrap().read(self.reg.PC);
+        let upper = self.bus.lock().unwrap().read(self.reg.PC + 1);
+        println!( "  data: {:02X}{:02X}", lower, upper);
         if op.r2 == "(a)" {
             let a =self.load(&"(a)".to_string());
             println!("(a:FF{:02X}) = {:02X}", self.bus.lock().unwrap().read(self.reg.PC), a);
@@ -421,6 +419,7 @@ impl Cpu {
         if crate::constant::MM_ARR.contains(&op.r2.as_str()) {
             println!("{} = {:02X}", op.r2, self.load(&op.r2))
         }
+        println!("{}", self.interrupt.lock().unwrap());
         println!("");
     }
 

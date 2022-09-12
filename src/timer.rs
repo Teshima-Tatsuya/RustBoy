@@ -24,7 +24,7 @@ pub struct Timer {
 impl Timer {
     pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
         Self {
-            div: 0x19,
+            div: 0x00,
             interrupt: interrupt,
             counter: 0,
             tima: 0x00,
