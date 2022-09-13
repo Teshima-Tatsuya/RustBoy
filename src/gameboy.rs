@@ -60,8 +60,6 @@ impl GameBoy {
         loop {
             self.step();
             if self.cycle >= 70224 {
-                self.joypad.lock().unwrap().press(0x00);
-                self.joypad.lock().unwrap().release(0x00);
                 self.cycle -= 70224;
                 return;
             }
