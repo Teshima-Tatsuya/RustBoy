@@ -10,6 +10,12 @@ enum Mode {
     TransferringData,
 }
 
+impl Default for Mode {
+    fn default() -> Self {
+        Mode::HBlank
+    }
+}
+
 #[derive(Default)]
 pub struct Ppu {
     clock: u16,
@@ -22,6 +28,7 @@ pub struct Ppu {
     image_data: RgbaImage,
     dma: Byte,
     pub dma_started: bool,
+    mode: Mode,
     interrupt: Arc<Mutex<Interrupt>>,
 }
 
@@ -58,9 +65,7 @@ impl Ppu {
                 self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
                 self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
             } else if self.scroll.is_v_blank_period() {
-                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
             } else if self.scroll.is_h_blank_period() {
-                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
                 self.draw_bg_line();
 
                 if self.lcdc.window_enable() {
@@ -80,6 +85,7 @@ impl Ppu {
                 self.lcds.buf &= 0xFB;
             }
             self.scroll.ly = self.scroll.ly.wrapping_add(1);
+            self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
             self.clock = self.clock.wrapping_sub(CYCLE_PER_LINE);
         }
     }
@@ -117,24 +123,21 @@ impl Ppu {
             }
             let s = Sprite::new(&bytes4);
             // TODO long sprite
-            let obj_height: u8 = 8;
-            // if g.LCDC.OBJSize() == 1 {
-            // 	objHeight = 16
-            // } else {
-            // 	objHeight = 8
-            // }
+            let obj_height;
+            if self.lcdc.obj_size() == 1 {
+            	obj_height = 16;
+            } else {
+            	obj_height = 8;
+            }
             for x in 0..8 {
                 for y in 0..obj_height {
                     let mut offset_x = x;
                     let mut offset_y = y;
+                    let mut tile_x = x;
+                    let mut tile_y = y;
 
                     let mut x_pos = s.x.saturating_add(offset_x);
                     let mut y_pos = s.y.saturating_add(offset_y);
-                    // ignore out of screen
-                    if (x_pos < 0 || SCREEN_WIDTH <= x_pos) || (y_pos < 0 || SCREEN_HEIGHT <= y_pos)
-                    {
-                        continue;
-                    }
                     let block: u16;
                     let tile_idx: Byte;
                     if s.tile_idx >= 128 {
@@ -145,17 +148,20 @@ impl Ppu {
                         tile_idx = s.tile_idx;
                     }
                     if s.y_flip() {
-                        offset_y = 7 - y;
+                        tile_y = obj_height - 1  - y;
                     }
-                    y_pos = s.y + offset_y;
                     if s.x_flip() {
-                        offset_x = 7 - x
+                       tile_x = 7 - x;
                     }
-                    x_pos = s.x + offset_x;
+                    // ignore out of screen
+                    if (SCREEN_WIDTH <= x_pos) || (SCREEN_HEIGHT <= y_pos)
+                    {
+                        continue;
+                    }
                     let tile_color_base_addr = (0x8000 as Word)
                         .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
                         .wrapping_add((tile_idx as Word).wrapping_mul(16))
-                        .wrapping_add(((y_pos % 8) as Word).wrapping_mul(2));
+                        .wrapping_add((tile_y as Word).wrapping_mul(2));
 
                     let lower = self
                         .bus
@@ -171,8 +177,8 @@ impl Ppu {
                         .lock()
                         .unwrap()
                         .read(tile_color_base_addr + 1);
-                    let lb = bit(&lower, &(7 - (x_pos % 8)));
-                    let ub = bit(&upper, &(7 - (x_pos % 8)));
+                    let lb = bit(&lower, &(7 - tile_x));
+                    let ub = bit(&upper, &(7 - tile_x));
 
                     let color = (ub << 1) + lb;
                     if color != 0 {
