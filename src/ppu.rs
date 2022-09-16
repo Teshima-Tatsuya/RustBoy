@@ -1,5 +1,8 @@
 use image::RgbaImage;
-use std::sync::{Arc, Mutex};
+use std::{
+    fmt,
+    sync::{Arc, Mutex},
+};
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
@@ -32,6 +35,16 @@ pub struct Ppu {
     interrupt: Arc<Mutex<Interrupt>>,
 }
 
+impl fmt::Display for Ppu {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Ppu: clock:{:04X} Lcdc:{} Lcds:{} Scroll:{}",
+            self.clock, self.lcdc, self.lcds, self.scroll
+        )
+    }
+}
+
 impl Ppu {
     pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
         let image_data = RgbaImage::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
@@ -53,6 +66,7 @@ impl Ppu {
     }
 
     pub fn step(&mut self, cycle: u16) {
+        // println!("{}", self);
         self.clock = self.clock.wrapping_add(cycle);
 
         if !self.lcdc.lcd_ppu_enable() {
@@ -125,9 +139,9 @@ impl Ppu {
             // TODO long sprite
             let obj_height;
             if self.lcdc.obj_size() == 1 {
-            	obj_height = 16;
+                obj_height = 16;
             } else {
-            	obj_height = 8;
+                obj_height = 8;
             }
             for x in 0..8 {
                 for y in 0..obj_height {
@@ -148,14 +162,13 @@ impl Ppu {
                         tile_idx = s.tile_idx;
                     }
                     if s.y_flip() {
-                        tile_y = obj_height - 1  - y;
+                        tile_y = obj_height - 1 - y;
                     }
                     if s.x_flip() {
-                       tile_x = 7 - x;
+                        tile_x = 7 - x;
                     }
                     // ignore out of screen
-                    if (SCREEN_WIDTH <= x_pos) || (SCREEN_HEIGHT <= y_pos)
-                    {
+                    if (SCREEN_WIDTH <= x_pos) || (SCREEN_HEIGHT <= y_pos) {
                         continue;
                     }
                     let tile_color_base_addr = (0x8000 as Word)
@@ -323,6 +336,16 @@ struct Scroll {
     wy: Byte,
 }
 
+impl fmt::Display for Scroll {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Sroll: scy:{:02X} scx:{:02X} ly:{:02X} lyc:{:02X} wy:{:02X} wx:{:02X}",
+            self.scy, self.scx, self.ly, self.lyc, self.wy, self.wx,
+        )
+    }
+}
+
 impl Scroll {
     fn is_v_blank_period(&self) -> bool {
         SCREEN_HEIGHT <= self.ly && self.ly <= 153
@@ -367,6 +390,16 @@ impl Writer for Scroll {
 
 struct Lcdc {
     pub buf: Byte,
+}
+
+impl fmt::Display for Lcdc {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Lcdc: {:08b}",
+            self.buf
+        )
+    }
 }
 
 impl Lcdc {
@@ -447,6 +480,16 @@ impl Default for Lcdc {
 #[derive(Default)]
 struct Lcds {
     pub buf: Byte,
+}
+
+impl fmt::Display for Lcds {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Lcds: {:08b}",
+            self.buf
+        )
+    }
 }
 
 impl Lcds {
