@@ -93,6 +93,20 @@ speculate! {
             }
         }
 
+        describe "instr_timing" {
+            struct Args {
+                folder: String,
+                file: String,
+                frame: u64,
+            }
+            #[rstest(arg,
+                case(Args{folder: "blargg/instr_timing".to_string(), file: "instr_timing".to_string(), frame: 3200}),
+            )]
+            fn test(arg: Args) {
+                rom_test_with_image(&arg.folder, &arg.file, arg.frame);
+            }
+        }
+
         describe "mem_timing" {
             struct Args {
                 folder: String,
