@@ -13,7 +13,7 @@ pub struct OpCode {
 	pub r1: String,
 	pub r2: String,
 	pub cycles: u8,
-	pub handler: fn(c: &mut Cpu, String, String),
+	pub handler: fn(c: &mut Cpu, String, String) -> u8,
 }
 
 impl fmt::Display for OpCode {
@@ -299,31 +299,36 @@ pub static OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFF, "RST 38H", "56", "",   4, rst},
 ]);
 
-fn empty(_: &mut Cpu, _: String, _: String) {
-	unreachable!("this is empty!");
+fn empty(_: &mut Cpu, _: String, _: String) -> u8{
+	log::warn!("this is empty!");
+	0
 }
 
-fn nop(_: &mut Cpu, _: String, _: String) {
+fn nop(_: &mut Cpu, _: String, _: String) -> u8{
+	0
 }
 
-fn stop(_: &mut Cpu, _: String, _: String) {
-	println!("stop impl");
+fn stop(_: &mut Cpu, _: String, _: String) -> u8{
+	log::info!("stop impl");
+	0
 }
 
-fn ld(c: &mut Cpu, r1: String, r2: String) {
+fn ld(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let value = c.load(&r2);
 	c.store(&r1, value);
+	0
 }
 
-fn ldnnsp(c: &mut Cpu, _: String, r2: String) {
+fn ldnnsp(c: &mut Cpu, _: String, r2: String) -> u8{
 	let value = c.load(&r2);
 	let addr = c.fetch16();
 	c.bus.lock().unwrap().write(addr, extract_lower(value));
 	c.bus.lock().unwrap().write(addr + 1, extract_upper(value));
+	0
 }
 
 // LD r1, r2+r
-fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
+fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let r = c.fetch() as i8 as Word;
 	let sp = c.load(&r2);
 	let v = sp.wrapping_add(r);
@@ -333,10 +338,11 @@ fn ldr16r16d(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.n = false;
 	c.reg.F.h = (r ^ sp ^ v) & 0x10 != 0;
 	c.reg.F.c = (r ^ sp ^ v) & 0x100 != 0;
+	0
 }
 
 // arithmetic
-fn inc(c: &mut Cpu, r1: String, _: String) {
+fn inc(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let value = r.wrapping_add(0x01);
 
@@ -346,9 +352,10 @@ fn inc(c: &mut Cpu, r1: String, _: String) {
 		c.reg.F.h = (r as Byte ^ value as Byte) & 0x10 != 0;
 	}
 	c.store(&r1, value);
+	0
 }
 
-fn dec(c: &mut Cpu, r1: String, _: String) {
+fn dec(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let value = r.wrapping_sub(0x01);
 
@@ -358,9 +365,10 @@ fn dec(c: &mut Cpu, r1: String, _: String) {
 		c.reg.F.h = (r as Byte ^ value as Byte) & 0x10 != 0;
 	}
 	c.store(&r1, value);
+	0
 }
 
-fn and(c: &mut Cpu, r1: String, _: String) {
+fn and(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let a = c.load(&"A".to_string());
 	let value = a & r;
@@ -370,9 +378,10 @@ fn and(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.n = false;
 	c.reg.F.h = true;
 	c.reg.F.c = false;
+	0
 }
 
-fn or(c: &mut Cpu, r1: String, _: String) {
+fn or(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let a = c.load(&"A".to_string());
 	let value = a | r;
@@ -382,9 +391,10 @@ fn or(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.n = false;
 	c.reg.F.h = false;
 	c.reg.F.c = false;
+	0
 }
 
-fn xor(c: &mut Cpu, r1: String, _: String) {
+fn xor(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let a = c.load(&"A".to_string());
 	let value = a ^ r;
@@ -394,9 +404,10 @@ fn xor(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.n = false;
 	c.reg.F.h = false;
 	c.reg.F.c = false;
+	0
 }
 
-fn cp(c: &mut Cpu, r1: String, _: String) {
+fn cp(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let a = c.load(&"A".to_string());
 
@@ -406,9 +417,10 @@ fn cp(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.n = true;
 	c.reg.F.h = (a ^ r ^ res) & 0x10 != 0;
 	c.reg.F.c = overflow;
+	0
 }
 
-fn add(c: &mut Cpu, r1: String, r2: String) {
+fn add(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let a = c.load(&r1) as Byte;
 	let r = c.load(&r2) as Byte;
 
@@ -420,9 +432,10 @@ fn add(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.c = overflow;
 
 	c.store(&r1, v as Word);
+	0
 }
 
-fn addr16r16(c: &mut Cpu, r1: String, r2: String) {
+fn addr16r16(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let a = c.load(&r1);
 	let b = c.load(&r2);
 
@@ -433,9 +446,10 @@ fn addr16r16(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.c = overflow;
 
 	c.store(&r1, v);
+	0
 }
 
-fn addr16d(c: &mut Cpu, r1: String, r2: String) {
+fn addr16d(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let v1 = c.load(&r1);
 	let v2 = c.load(&r2) as i8 as Word;
 
@@ -447,9 +461,10 @@ fn addr16d(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.c = (v1 ^ v2 ^ v) & 0x100 != 0;
 
 	c.store(&r1, v);
+	0
 }
 
-fn adc(c: &mut Cpu, r1: String, r2: String) {
+fn adc(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let a = c.load(&r1) as Byte;
 	let r = c.load(&r2) as Byte;
 	let carry = if c.reg.F.c { 1 } else { 0 };
@@ -463,9 +478,10 @@ fn adc(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.c = overflow1 | overflow2;
 
 	c.store(&r1, v as Word);
+	0
 }
 
-fn sub(c: &mut Cpu, r1: String, r2: String) {
+fn sub(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let a = c.load(&r1) as Byte;
 	let r = c.load(&r2) as Byte;
 
@@ -477,9 +493,10 @@ fn sub(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.c = overflow;
 
 	c.store(&r1, v as Word);
+	0
 }
 
-fn sbc(c: &mut Cpu, r1: String, r2: String) {
+fn sbc(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let a = c.load(&r1) as Byte;
 	let r = c.load(&r2) as Byte;
 	let carry = if c.reg.F.c { 1 } else { 0 };
@@ -493,87 +510,107 @@ fn sbc(c: &mut Cpu, r1: String, r2: String) {
 	c.reg.F.c = overflow1 | overflow2;
 
 	c.store(&r1, v as Word);
+	0
 }
 
 // jp
-fn jp(c: &mut Cpu, r1: String, r2: String) {
+fn jp(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let addr: Word;
 	if COND_ARR.contains(&r1.as_str()) {
 		addr = c.load(&r2);
 		if c.cond(&r1) {
-			c.reg.PC = addr
+			c.reg.PC = addr;
+			1
+		} else {
+			0
 		}
 	} else {
 		addr = c.load(&r1);
-		c.reg.PC = addr
+		c.reg.PC = addr;
+		0
 	}
 }
 
-fn jr(c: &mut Cpu, r1: String, r2: String) {
+fn jr(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let addr: Word;
 	if COND_ARR.contains(&r1.as_str()) {
 		addr = c.load(&r2);
 		if c.cond(&r1) {
 			c.reg.PC = c.reg.PC.wrapping_add(addr as i8 as Word);
+			1
+		} else {
+			0
 		}
 	} else {
 		addr = c.load(&r1);
 		c.reg.PC = c.reg.PC.wrapping_add(addr as i8 as Word);
+		0
 	}
 }
 
-fn call(c: &mut Cpu, r1: String, r2: String) {
+fn call(c: &mut Cpu, r1: String, r2: String) -> u8{
 	let addr: Word;
 	if COND_ARR.contains(&r1.as_str()) {
 		addr = c.load(&r2);
 		if c.cond(&r1) {
 			c.push_pc();
 			c.reg.PC = addr;
+			1
+		} else {
+			0
 		}
 	} else {
 		addr = c.load(&r1);
 		c.push_pc();
 		c.reg.PC = addr;
+		0
 	}
 }
 
 // ret
-fn ret(c: &mut Cpu, r1: String, _: String) {
+fn ret(c: &mut Cpu, r1: String, _: String) -> u8{
 	if COND_ARR.contains(&r1.as_str()) {
 		if c.cond(&r1) {
-			c.pop_pc()
+			c.pop_pc();
+			1
+		} else {
+			0
 		}
 	} else {
-		c.pop_pc()
+		c.pop_pc();
+		0
 	}
 }
 
-fn reti(c: &mut Cpu, _: String, _: String) {
+fn reti(c: &mut Cpu, _: String, _: String) -> u8{
 	c.pop_pc();
 	c.ime = true;
+	0
 }
 
 // -----rst------
 
 // RST n
 // push and jump to n
-fn rst(c: &mut Cpu, n: String, _: String) {
+fn rst(c: &mut Cpu, n: String, _: String) -> u8{
 	c.push_pc();
 	let num: Word = n.parse().unwrap();
 	c.reg.PC = num;
+	0
 }
 
 // -----push-----
-fn push(c: &mut Cpu, r: String, _: String) {
+fn push(c: &mut Cpu, r: String, _: String) -> u8{
 	let buf = c.load(&r);
 	let upper = extract_upper(buf);
 	let lower = extract_lower(buf);
 	c.push(upper);
 	c.push(lower);
+	0
 }
 
 // -----pop------
-fn pop(c: &mut Cpu, r: String, _: String) {
+fn pop(c: &mut Cpu, r: String, _: String) -> u8{
 	let mut lower = c.pop();
 	let upper = c.pop();
 
@@ -583,10 +620,11 @@ fn pop(c: &mut Cpu, r: String, _: String) {
 
 	let value = bytes_2_word(upper, lower);
 	c.store(&r, value);
+	0
 }
 
 // -----misc-----
-fn rra(c: &mut Cpu, _: String, _: String) {
+fn rra(c: &mut Cpu, _: String, _: String) -> u8{
 	let r = c.load(&"A".to_string());
 	let carry = c.reg.F.c;
 	let mut value = r >> 1;
@@ -601,9 +639,10 @@ fn rra(c: &mut Cpu, _: String, _: String) {
 	c.reg.F.c = r & 0x01 == 0x01;
 
 	c.store(&"A".to_string(), value);
+	0
 }
 
-fn rla(c: &mut Cpu, _: String, _: String) {
+fn rla(c: &mut Cpu, _: String, _: String) -> u8{
 	let r = c.load(&"A".to_string()) as Byte;
 	let carry = c.reg.F.c;
 	let mut value = r << 1;
@@ -618,9 +657,10 @@ fn rla(c: &mut Cpu, _: String, _: String) {
 	c.reg.F.c = r & 0x80 == 0x80;
 
 	c.store(&"A".to_string(), value as Word);
+	0
 }
 
-fn rlca(c: &mut Cpu, _: String, _: String) {
+fn rlca(c: &mut Cpu, _: String, _: String) -> u8{
 	let r = c.load(&"A".to_string()) as Byte;
 	let value = r.rotate_left(1);
 
@@ -630,9 +670,10 @@ fn rlca(c: &mut Cpu, _: String, _: String) {
 	c.reg.F.c = (r & 0x80) == 0x80;
 
 	c.store(&"A".to_string(), value as Word);
+	0
 }
 
-fn rrca(c: &mut Cpu, _: String, _: String) {
+fn rrca(c: &mut Cpu, _: String, _: String) -> u8{
 	let r = c.load(&"A".to_string()) as Byte;
 	let value = r.rotate_right(1);
 
@@ -642,10 +683,11 @@ fn rrca(c: &mut Cpu, _: String, _: String) {
 	c.reg.F.c = r & 0x01 == 0x01;
 
 	c.store(&"A".to_string(), value as Word);
+	0
 }
 
 // @see https://donkeyhacks.zouri.jp/html/En-Us/snes/apu/spc700/daa.html
-fn daa(c: &mut Cpu, _: String, _: String) {
+fn daa(c: &mut Cpu, _: String, _: String) -> u8{
 	let mut a = c.load(&"A".to_string());
 
 	if !c.reg.F.n {
@@ -670,38 +712,45 @@ fn daa(c: &mut Cpu, _: String, _: String) {
 	if a & 0x100 == 0x100 {
 		c.reg.F.c = true;
 	}
+	0
 }
 
-fn cpl(c: &mut Cpu, _: String, _: String) {
+fn cpl(c: &mut Cpu, _: String, _: String) -> u8{
 	let a = c.load(&"A".to_string()) as Byte;
 	c.store(&"A".to_string(), (a ^ 0xFF) as Word);
 
 	c.reg.F.n = true;
 	c.reg.F.h = true;
+	0
 }
 
-fn scf(c: &mut Cpu, _: String, _: String) {
+fn scf(c: &mut Cpu, _: String, _: String) -> u8{
 	c.reg.F.n = false;
 	c.reg.F.h = false;
 	c.reg.F.c = true;
+	0
 }
 
-fn ccf(c: &mut Cpu, _: String, _: String) {
+fn ccf(c: &mut Cpu, _: String, _: String) -> u8{
 	c.reg.F.n = false;
 	c.reg.F.h = false;
 	c.reg.F.c = !c.reg.F.c;
+	0
 }
 
-fn di(c: &mut Cpu, _: String, _: String) {
+fn di(c: &mut Cpu, _: String, _: String) -> u8{
 	c.ime = false;
+	0
 }
 
-fn ei(c: &mut Cpu, _: String, _: String) {
+fn ei(c: &mut Cpu, _: String, _: String) -> u8{
 	c.ime = true;
+	0
 }
 
-fn halt(c: &mut Cpu, _: String, _: String) {
+fn halt(c: &mut Cpu, _: String, _: String) -> u8{
 	c.halted = true;
+	0
 }
 
 #[rustfmt::skip]
@@ -964,7 +1013,7 @@ pub static CB_OPCODES: Lazy<[OpCode; 256]> = Lazy::new(|| [
 	make_opcode! {0xFF, "SET 7,A", "7", "A", 2, set},
 ]);
 
-fn rlc(c: &mut Cpu, r1: String, _: String) {
+fn rlc(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1) as Byte;
 	let value = r.rotate_left(1);
 
@@ -974,9 +1023,10 @@ fn rlc(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = (r & 0x80) == 0x80;
 
 	c.store(&r1, value as Word);
+	0
 }
 
-fn rrc(c: &mut Cpu, r1: String, _: String) {
+fn rrc(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1) as Byte;
 	let value = r.rotate_right(1);
 
@@ -986,9 +1036,10 @@ fn rrc(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = r & 0x01 == 0x01;
 
 	c.store(&r1, value as Word);
+	0
 }
 
-fn rl(c: &mut Cpu, r1: String, _: String) {
+fn rl(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1) as Byte;
 	let carry = c.reg.F.c;
 	let mut value = r << 1;
@@ -1003,9 +1054,10 @@ fn rl(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = r & 0x80 == 0x80;
 
 	c.store(&r1, value as Word);
+	0
 }
 
-fn rr(c: &mut Cpu, r1: String, _: String) {
+fn rr(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let carry = c.reg.F.c;
 	let mut value = r >> 1;
@@ -1020,9 +1072,10 @@ fn rr(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = r & 0x01 == 0x01;
 
 	c.store(&r1, value);
+	0
 }
 
-fn sla(c: &mut Cpu, r1: String, _: String) {
+fn sla(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1) as Byte;
 	let value = r << 1;
 
@@ -1032,9 +1085,10 @@ fn sla(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = r & 0x80 == 0x80;
 
 	c.store(&r1, value as Word);
+	0
 }
 
-fn sra(c: &mut Cpu, r1: String, _: String) {
+fn sra(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let bit7 = crate::util::bit(&(r as Byte), &7);
 	let mut value = r >> 1;
@@ -1049,9 +1103,10 @@ fn sra(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = r & 0x01 == 0x01;
 
 	c.store(&r1, value);
+	0
 }
 
-fn swap(c: &mut Cpu, r1: String, _: String) {
+fn swap(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 
 	let upper = ((r >> 4) & 0x0F) as Byte;
@@ -1065,9 +1120,10 @@ fn swap(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = false;
 
 	c.store(&r1, value as Word);
+	0
 }
 
-fn srl(c: &mut Cpu, r1: String, _: String) {
+fn srl(c: &mut Cpu, r1: String, _: String) -> u8{
 	let r = c.load(&r1);
 	let value = r >> 1;
 
@@ -1077,9 +1133,10 @@ fn srl(c: &mut Cpu, r1: String, _: String) {
 	c.reg.F.c = r & 0x01 == 0x01;
 
 	c.store(&r1, value);
+	0
 }
 
-fn bit(c: &mut Cpu, str_i: String, r1: String) {
+fn bit(c: &mut Cpu, str_i: String, r1: String) -> u8{
 	let r = c.load(&r1);
 	let i: u8 = str_i.parse().unwrap();
 	let bit = crate::util::bit(&(r as Byte), &i);
@@ -1087,22 +1144,25 @@ fn bit(c: &mut Cpu, str_i: String, r1: String) {
 	c.reg.F.z = bit == 0;
 	c.reg.F.n = false;
 	c.reg.F.h = true;
+	0
 }
 
-fn res(c: &mut Cpu, str_i: String, r1: String) {
+fn res(c: &mut Cpu, str_i: String, r1: String) -> u8{
 	let r = c.load(&r1);
 	let i: u8 = str_i.parse().unwrap();
 
 	let value = r & !(1 << i);
 
 	c.store(&r1, value);
+	0
 }
 
-fn set(c: &mut Cpu, str_i: String, r1: String) {
+fn set(c: &mut Cpu, str_i: String, r1: String) -> u8{
 	let r = c.load(&r1);
 	let i: u8 = str_i.parse().unwrap();
 
 	let value = r | (1 << i);
 
 	c.store(&r1, value);
+	0
 }

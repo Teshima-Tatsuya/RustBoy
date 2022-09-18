@@ -245,7 +245,7 @@ impl Cpu {
         }
 
         if self.exec_interrupt() {
-            return 1;
+            return 5;
         }
 
         let mut opcode = self.fetch();
@@ -260,13 +260,13 @@ impl Cpu {
         // self.trace(op);
 
         let handler = &op.handler;
-        handler(self, op.r1.to_string(), op.r2.to_string());
+        let additional_cycle = handler(self, op.r1.to_string(), op.r2.to_string());
         if op.mnemonic.contains("LD B, B") {
           //  std::process::exit(0);
         }
         // self.trace2(op);
 
-        return op.cycles as u16;
+        return op.cycles as u16 + additional_cycle as u16;
     }
 
     pub fn fetch(&mut self) -> Byte {
