@@ -555,7 +555,7 @@ fn call(c: &mut Cpu, r1: String, r2: String) -> u8{
 		if c.cond(&r1) {
 			c.push_pc();
 			c.reg.PC = addr;
-			1
+			3
 		} else {
 			0
 		}
@@ -572,7 +572,7 @@ fn ret(c: &mut Cpu, r1: String, _: String) -> u8{
 	if COND_ARR.contains(&r1.as_str()) {
 		if c.cond(&r1) {
 			c.pop_pc();
-			1
+			3
 		} else {
 			0
 		}
