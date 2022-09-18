@@ -12,10 +12,12 @@ use crate::{
     interrupt::Interrupt,
 };
 
+#[derive(Default)]
 pub struct Timer {
     counter: u16,
     div: Byte,
     tima: Byte,
+    tima_ovewflowed: bool,
     tma: Byte,
     tac: Byte,
     interrupt: Arc<Mutex<Interrupt>>,
@@ -24,12 +26,8 @@ pub struct Timer {
 impl Timer {
     pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
         Self {
-            div: 0x00,
             interrupt: interrupt,
-            counter: 0,
-            tima: 0x00,
-            tma: 0x00,
-            tac: 0x00,
+            ..Default::default()
         }
     }
 
@@ -45,9 +43,12 @@ impl Timer {
                 continue;
             }
 
+            // tima overflow
+            self.tima_ovewflowed = false;
             if self.tima == 0 {
                 self.tima = self.tma;
                 self.interrupt.lock().unwrap().request(INT_TIMER_FLG);
+                self.tima_ovewflowed = true;
             }
 
             if self.counter % (1 << (self.get_freq() + 1)) == 0 {
@@ -93,8 +94,17 @@ impl Writer for Timer {
                 }
                 self.counter = 0;
             },
-            ADDR_TIMER_TIMA => self.tima = value,
-            ADDR_TIMER_TMA => self.tma = value,
+            ADDR_TIMER_TIMA => {
+                if !self.tima_ovewflowed {
+                    self.tima = value;
+                }
+            },
+            ADDR_TIMER_TMA => {
+                self.tma = value;
+                if self.tima_ovewflowed {
+                    self.tima = value;
+                }
+            },
             ADDR_TIMER_TAC => self.tac = value & 0x07,
             v => unreachable!("Non Supported addr {:04X}", v),
         }
