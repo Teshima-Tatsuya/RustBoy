@@ -55,7 +55,7 @@ impl super::MbcTrait for Mbc1 {
                 ]
             }
             0xA000..=0xBFFF => {
-                if self.ram_enable {
+                if self.ram_enable && self.cartridge.ram_size > 0 {
                     let ram_bank = if self.mode == SIMPLE_ROMBANKING_MODE {
                         0
                     } else {
@@ -63,7 +63,11 @@ impl super::MbcTrait for Mbc1 {
                     };
                     let computed_addr = ((addr & 0x1FFF) as usize)
                         .wrapping_add((ram_bank as usize).wrapping_mul(0x2000));
-                    self.cartridge.ram.buf[computed_addr]
+                    if self.cartridge.ram_size.saturating_sub(1) >= computed_addr as u64 {
+                        self.cartridge.ram.buf[computed_addr]
+                    } else {
+                        0xFF
+                    }
                 } else {
                     0xFF
                 }
@@ -96,7 +100,7 @@ impl super::MbcTrait for Mbc1 {
             }
             0x6000..=0x7FFF => self.mode = value & 0x01,
             0xA000..=0xBFFF => {
-                if self.ram_enable {
+                if self.ram_enable && self.cartridge.ram_size > 0 {
                     let ram_bank = if self.mode == SIMPLE_ROMBANKING_MODE {
                         0
                     } else {
@@ -105,7 +109,9 @@ impl super::MbcTrait for Mbc1 {
                     let computed_addr = ((addr & 0x1FFF) as usize)
                         .wrapping_add((ram_bank as usize).wrapping_mul(0x2000));
 
-                    self.cartridge.ram.buf[computed_addr] = value;
+                    if self.cartridge.ram_size.saturating_sub(1) >= computed_addr as u64 {
+                        self.cartridge.ram.buf[computed_addr] = value;
+                    }
                 }
             }
             v => unreachable!("{}", v),
