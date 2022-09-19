@@ -7,7 +7,7 @@ use std::{
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 enum Mode {
     HBlank,
     VBlank,
@@ -96,13 +96,8 @@ impl Ppu {
                 self.draw_bg_line();
             }
 
-            if self.scroll.ly == self.scroll.scy {
-                self.lcds.buf |= 0x04;
-                if self.lcds.lyc() {
-                    self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
-                }
-            } else {
-                self.lcds.buf &= 0xFB;
+            if self.lcds.lyc_interrupt_enable {
+                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
             }
             self.scroll.ly = self.scroll.ly.wrapping_add(1);
             self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
@@ -315,7 +310,19 @@ impl Reader for Ppu {
                 v.set(0, self.lcdc.bg_window_enable);
                 value
             },
-            ADDR_PPU_LCDS => self.lcds.buf | 0x80,
+            ADDR_PPU_LCDS => {
+                let mut value: Byte = 0;
+                let v = value.view_bits_mut::<Lsb0>();
+                v.set(7, true);
+                v.set(6, self.lcds.lyc_interrupt_enable);
+                v.set(5, self.lcds.oam_interrupt_enable);
+                v.set(4, self.lcds.vblank_interrupt_enable);
+                v.set(3, self.lcds.hblank_interrupt_enable);
+                v.set(2, self.scroll.lyc == self.scroll.ly);
+                v.set(1, (self.mode as u8 & 0b10) == 0b10);
+                v.set(0, (self.mode as u8 & 0b01) == 0b01);
+                value
+            },
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.read(addr),
             ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.read(addr),
             ADDR_PPU_DMA => self.dma,
@@ -343,7 +350,13 @@ impl Writer for Ppu {
                 self.lcdc.obj_enable = v[1];
                 self.lcdc.bg_window_enable = v[0];
             },
-            ADDR_PPU_LCDS => self.lcds.buf = value & 0x7F,
+            ADDR_PPU_LCDS => {
+                let v = value.view_bits::<Lsb0>();
+                self.lcds.lyc_interrupt_enable = v[6];
+                self.lcds.oam_interrupt_enable = v[5];
+                self.lcds.vblank_interrupt_enable = v[4];
+                self.lcds.hblank_interrupt_enable = v[3];
+            },
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => {
                 self.scroll.write(addr, value)
             }
@@ -483,50 +496,21 @@ impl Default for Lcdc {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct Lcds {
-    pub buf: Byte,
+    pub lyc_interrupt_enable: bool,
+    pub oam_interrupt_enable: bool,
+    pub vblank_interrupt_enable: bool,
+    pub hblank_interrupt_enable: bool,
 }
 
 impl fmt::Display for Lcds {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Lcds: {:08b}",
-            self.buf
+            "Lcds: {:?}",
+            self
         )
-    }
-}
-
-impl Lcds {
-    // Bit 6
-    // LY STAT Interrupt source
-    pub fn lyc(&self) -> bool {
-        return bit(&self.buf, &6) == 1;
-    }
-
-    // Bit 5
-    // OAM STAT Interrupt source
-    pub fn mode2(&self) -> bool {
-        return bit(&self.buf, &5) == 1;
-    }
-
-    // Bit 4
-    // VBlank STAT Interrupt source
-    pub fn mode1(&self) -> bool {
-        return bit(&self.buf, &4) == 1;
-    }
-
-    // Bit 3
-    // HBlank STAT Interrupt source
-    pub fn mode0(&self) -> bool {
-        return bit(&self.buf, &3) == 1;
-    }
-
-    // Bit 2
-    // OAM STAT Interrupt source
-    pub fn ly_lcy(&self) -> bool {
-        return bit(&self.buf, &2) == 1;
     }
 }
 
