@@ -1,3 +1,4 @@
+use bitvec::prelude::*;
 use image::RgbaImage;
 use std::{
     fmt,
@@ -69,7 +70,7 @@ impl Ppu {
         // println!("{}", self);
         self.clock = self.clock.wrapping_add(cycle);
 
-        if !self.lcdc.lcd_ppu_enable() {
+        if !self.lcdc.lcd_ppu_enable {
             return;
         }
 
@@ -82,7 +83,7 @@ impl Ppu {
             } else if self.scroll.is_h_blank_period() {
                 self.draw_bg_line();
 
-                if self.lcdc.window_enable() {
+                if self.lcdc.window_enable {
                     self.draw_win_line();
                 }
             } else {
@@ -138,7 +139,7 @@ impl Ppu {
             let s = Sprite::new(&bytes4);
             // TODO long sprite
             let obj_height;
-            if self.lcdc.obj_size() == 1 {
+            if self.lcdc.obj_size {
                 obj_height = 16;
             } else {
                 obj_height = 8;
@@ -207,7 +208,7 @@ impl Ppu {
         // yPos is current pixel from top(0-255)
         let y_pos = self.scroll.ly.wrapping_add(self.scroll.scy);
         let x_pos = lx.wrapping_add(self.scroll.scx);
-        let base_addr = self.lcdc.bg_tile_map_area();
+        let base_addr = if self.lcdc.bg_tile_map_area {BG_TILE_MAP_AREA_1} else {BG_TILE_MAP_AREA_0};
 
         self.get_tile_color(x_pos, y_pos, base_addr)
     }
@@ -216,7 +217,7 @@ impl Ppu {
         // yPos is current pixel from top(0-255)
         let y_pos = self.scroll.ly.wrapping_sub(self.scroll.wy);
         let x_pos = lx.wrapping_sub(self.scroll.wx.wrapping_sub(7));
-        let base_addr = self.lcdc.win_tile_map_area();
+        let base_addr = if self.lcdc.window_tile_map_area {WINDOW_TILE_MAP_AREA_1} else {WINDOW_TILE_MAP_AREA_0};
         self.get_tile_color(x_pos, y_pos, base_addr)
     }
 
@@ -225,7 +226,7 @@ impl Ppu {
         let mut tile_idx = self.bus.as_ref().unwrap().lock().unwrap().read(addr) as i8 as i32;
 
         let mut block: usize = 0;
-        if self.lcdc.bg_win_tile_data_area() == BG_WINDOW_TILE_DATA_AREA_0 {
+        if !self.lcdc.bg_window_tile_data_area {
             if tile_idx < 0 {
                 block = 1;
                 tile_idx += 128;
@@ -296,7 +297,19 @@ impl Ppu {
 impl Reader for Ppu {
     fn read(&self, addr: Word) -> Byte {
         match addr {
-            ADDR_PPU_LCDC => self.lcdc.buf,
+            ADDR_PPU_LCDC =>  {
+                let mut value: Byte = 0;
+                let v = value.view_bits_mut::<Lsb0>();
+                v.set(7, self.lcdc.lcd_ppu_enable);
+                v.set(6, self.lcdc.window_tile_map_area);
+                v.set(5, self.lcdc.window_enable);
+                v.set(4, self.lcdc.bg_window_tile_data_area);
+                v.set(3, self.lcdc.bg_tile_map_area);
+                v.set(2, self.lcdc.obj_size);
+                v.set(1, self.lcdc.obj_enable);
+                v.set(0, self.lcdc.bg_window_enable);
+                value
+            },
             ADDR_PPU_LCDS => self.lcds.buf | 0x80,
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.read(addr),
             ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.read(addr),
@@ -309,7 +322,18 @@ impl Reader for Ppu {
 impl Writer for Ppu {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
-            ADDR_PPU_LCDC => self.lcdc.buf = value,
+            ADDR_PPU_LCDC => {
+                // TODO
+                let v = value.view_bits::<Lsb0>();
+                self.lcdc.lcd_ppu_enable = v[7];
+                self.lcdc.window_tile_map_area = v[6];
+                self.lcdc.window_enable = v[5];
+                self.lcdc.bg_window_tile_data_area = v[4];
+                self.lcdc.bg_tile_map_area = v[3];
+                self.lcdc.obj_size = v[2];
+                self.lcdc.obj_enable = v[1];
+                self.lcdc.bg_window_enable = v[0];
+            },
             ADDR_PPU_LCDS => self.lcds.buf = value & 0x7F,
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => {
                 self.scroll.write(addr, value)
@@ -388,92 +412,65 @@ impl Writer for Scroll {
     }
 }
 
+#[derive(Debug)]
 struct Lcdc {
-    pub buf: Byte,
+    /// Bit 7  
+    /// LCD and PPU enable  
+    /// false=Off, true=On  
+    pub lcd_ppu_enable: bool,
+
+    /// Bit 6  
+    /// Window tile map area  
+    /// false=9800-9BFF, true=9C00-9FFF  
+    pub window_tile_map_area: bool,
+
+    /// Bit 5  
+    pub window_enable: bool,
+
+    /// Bit 4  
+    /// BG and Window tile data area  
+    /// false=8800-97FF, true=8000-8FFF  
+    pub bg_window_tile_data_area: bool,
+
+    /// Bit 3  
+    /// BG tile map area  
+    /// false=9800-9BFF, true=9C00-9FFF  
+    pub bg_tile_map_area: bool,
+    
+    /// Bit 2  
+    /// OBJ size  
+    /// false=8x8, true=8x16  
+    pub obj_size: bool,
+
+    /// Bit 1  
+    pub obj_enable: bool,
+
+    /// Bit 0  
+    pub bg_window_enable: bool,
 }
 
 impl fmt::Display for Lcdc {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Lcdc: {:08b}",
-            self.buf
+            "Lcdc: {:?}",
+            self
         )
-    }
-}
-
-impl Lcdc {
-    // LCD and PPU enable
-    fn lcd_ppu_enable(&self) -> bool {
-        bit(&self.buf, &7) == 1
-    }
-
-    /*
-    Window tile map area
-     0=9800-9BFF, 1=9C00-9FFF
-    */
-    fn win_tile_map_area(&self) -> Word {
-        let area = bit(&self.buf, &6);
-        if area == 0 {
-            return WINDOW_TILE_MAP_AREA_0;
-        }
-
-        return WINDOW_TILE_MAP_AREA_1;
-    }
-
-    // Window enable
-    fn window_enable(&self) -> bool {
-        bit(&self.buf, &5) == 1
-    }
-
-    /*
-    BG and Window tile data area
-     0=8800-97FF, 1=8000-8FFF
-    */
-    fn bg_win_tile_data_area(&self) -> Word {
-        let area = bit(&self.buf, &4);
-        if area == 0 {
-            return BG_WINDOW_TILE_DATA_AREA_0;
-        }
-
-        return BG_WINDOW_TILE_DATA_AREA_1;
-    }
-
-    /*
-    BG tile map area
-     0=9800-9BFF, 1=9C00-9FFF
-    */
-    fn bg_tile_map_area(&self) -> Word {
-        let area = bit(&self.buf, &3);
-        if area == 0 {
-            return BG_TILE_MAP_AREA_0;
-        }
-
-        return BG_TILE_MAP_AREA_1;
-    }
-
-    /*
-    OBJ size
-     0=8x8, 1=8x16
-    */
-    fn obj_size(&self) -> u8 {
-        bit(&self.buf, &2)
-    }
-
-    // OBJ enable
-    fn obj_enable(&self) -> bool {
-        bit(&self.buf, &1) == 1
-    }
-
-    // BG and Window enable/priority
-    fn bg_win_enable(&self) -> bool {
-        bit(&self.buf, &0) == 1
     }
 }
 
 impl Default for Lcdc {
     fn default() -> Self {
-        Self { buf: 0x91 }
+        Self { 
+            lcd_ppu_enable: true,
+            window_tile_map_area: false,
+            window_enable: false,
+            bg_window_tile_data_area: true,
+            bg_tile_map_area: false,
+            obj_size: false,
+            obj_enable: false,
+            bg_window_enable: true,
+        }
     }
 }
 
