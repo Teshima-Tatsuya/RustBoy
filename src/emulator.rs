@@ -3,6 +3,9 @@ use bevy::{
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     window::WindowResizeConstraints,
+    diagnostic::{
+        FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin
+    },
 };
 use bevy_tiled_camera::TiledCameraPlugin;
 pub struct EmulatorPlugin;
@@ -110,6 +113,8 @@ impl Emulator {
             .insert_resource(window_descriptor)
             .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.5)))
             .add_plugins(DefaultPlugins)
+            .add_plugin(LogDiagnosticsPlugin::default())
+            .add_plugin(FrameTimeDiagnosticsPlugin::default())
             .add_plugin(TiledCameraPlugin)
             .add_plugin(EmulatorPlugin)
             .add_plugin(JoypadPlugin)
