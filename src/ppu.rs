@@ -29,11 +29,13 @@ pub struct Ppu {
     lcdc: Lcdc,
     lcds: Lcds,
     scroll: Scroll,
+    lx: u16,
     palette: Palette,
     image_data: RgbaImage,
     dma: Byte,
     pub dma_started: bool,
     mode: Mode,
+    prev_mode: Mode,
     interrupt: Arc<Mutex<Interrupt>>,
 }
 
@@ -69,40 +71,52 @@ impl Ppu {
 
     pub fn step(&mut self, cycle: u16) {
         // println!("{}", self);
-        self.clock = self.clock.wrapping_add(cycle);
+        self.lx = self.lx.wrapping_add(1);
+        if self.lx == 456 {
+            self.lx = 0;
+
+            self.scroll.ly = self.scroll.ly.wrapping_add(1);
+            if self.scroll.ly == 154 {
+                self.scroll.ly = 0;
+            }
+        }
 
         if !self.lcdc.lcd_ppu_enable {
             return;
         }
 
-        if self.clock >= CYCLE_PER_LINE {
-            if self.scroll.is_v_blank_start() {
-                self.mode = Mode::HBlank; // tmp settings!!
-                self.draw_sprite();
-                self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
-                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
-            } else if self.scroll.is_v_blank_period() {
-                self.mode = Mode::VBlank;
-            } else if self.scroll.is_h_blank_period() {
-                self.mode = Mode::HBlank; // tmp settings!!
+        if self.lx < 80 {
+            self.mode = Mode::SearchingOAM;
+        } else if self.lx < 289 {
+            self.mode = Mode::TransferringData;
+        } else {
+            self.mode = Mode::HBlank;
+        }
+
+        if self.scroll.ly >= 144 {
+            self.mode = Mode::VBlank;
+        }
+
+        if self.scroll.is_v_blank_start() {
+            self.draw_sprite();
+            self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
+            self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
+        } else if self.scroll.is_h_blank_period() {
+            // draw for first_time
+            if self.prev_mode == Mode::SearchingOAM && self.mode == Mode::TransferringData {
                 self.draw_bg_line();
 
                 if self.lcdc.window_enable {
                     self.draw_win_line();
                 }
-            } else {
-                self.mode = Mode::HBlank; // tmp settings!!
-                self.scroll.ly = 0;
-                self.draw_bg_line();
             }
-
-            if self.lcds.lyc_interrupt_enable {
-                self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
-            }
-            self.scroll.ly = self.scroll.ly.wrapping_add(1);
-            self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
-            self.clock = self.clock.wrapping_sub(CYCLE_PER_LINE);
         }
+
+        if self.lcds.lyc_interrupt_enable && self.scroll.ly == self.scroll.lyc {
+            self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
+        }
+        
+        self.prev_mode = self.mode;
     }
 
     fn draw_bg_line(&mut self) {
@@ -208,7 +222,11 @@ impl Ppu {
         // yPos is current pixel from top(0-255)
         let y_pos = self.scroll.ly.wrapping_add(self.scroll.scy);
         let x_pos = lx.wrapping_add(self.scroll.scx);
-        let base_addr = if self.lcdc.bg_tile_map_area {BG_TILE_MAP_AREA_1} else {BG_TILE_MAP_AREA_0};
+        let base_addr = if self.lcdc.bg_tile_map_area {
+            BG_TILE_MAP_AREA_1
+        } else {
+            BG_TILE_MAP_AREA_0
+        };
 
         self.get_tile_color(x_pos, y_pos, base_addr)
     }
@@ -217,7 +235,11 @@ impl Ppu {
         // yPos is current pixel from top(0-255)
         let y_pos = self.scroll.ly.wrapping_sub(self.scroll.wy);
         let x_pos = lx.wrapping_sub(self.scroll.wx.wrapping_sub(7));
-        let base_addr = if self.lcdc.window_tile_map_area {WINDOW_TILE_MAP_AREA_1} else {WINDOW_TILE_MAP_AREA_0};
+        let base_addr = if self.lcdc.window_tile_map_area {
+            WINDOW_TILE_MAP_AREA_1
+        } else {
+            WINDOW_TILE_MAP_AREA_0
+        };
         self.get_tile_color(x_pos, y_pos, base_addr)
     }
 
@@ -297,7 +319,7 @@ impl Ppu {
 impl Reader for Ppu {
     fn read(&self, addr: Word) -> Byte {
         match addr {
-            ADDR_PPU_LCDC =>  {
+            ADDR_PPU_LCDC => {
                 let mut value: Byte = 0;
                 let v = value.view_bits_mut::<Lsb0>();
                 v.set(7, self.lcdc.lcd_ppu_enable);
@@ -309,7 +331,7 @@ impl Reader for Ppu {
                 v.set(1, self.lcdc.obj_enable);
                 v.set(0, self.lcdc.bg_window_enable);
                 value
-            },
+            }
             ADDR_PPU_LCDS => {
                 let mut value: Byte = 0;
                 let v = value.view_bits_mut::<Lsb0>();
@@ -322,7 +344,7 @@ impl Reader for Ppu {
                 v.set(1, (self.mode as u8 & 0b10) == 0b10);
                 v.set(0, (self.mode as u8 & 0b01) == 0b01);
                 value
-            },
+            }
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => self.scroll.read(addr),
             ADDR_PPU_BGP..=ADDR_PPU_OBP1 | ADDR_PPU_BCPS..=ADDR_PPU_OCPD => self.palette.read(addr),
             ADDR_PPU_DMA => self.dma,
@@ -349,14 +371,14 @@ impl Writer for Ppu {
                 self.lcdc.obj_size = v[2];
                 self.lcdc.obj_enable = v[1];
                 self.lcdc.bg_window_enable = v[0];
-            },
+            }
             ADDR_PPU_LCDS => {
                 let v = value.view_bits::<Lsb0>();
                 self.lcds.lyc_interrupt_enable = v[6];
                 self.lcds.oam_interrupt_enable = v[5];
                 self.lcds.vblank_interrupt_enable = v[4];
                 self.lcds.hblank_interrupt_enable = v[3];
-            },
+            }
             ADDR_PPU_SCY..=ADDR_PPU_LYC | ADDR_PPU_WY | ADDR_PPU_WX => {
                 self.scroll.write(addr, value)
             }
@@ -458,7 +480,6 @@ struct Lcdc {
     /// BG tile map area  
     /// false=9800-9BFF, true=9C00-9FFF  
     pub bg_tile_map_area: bool,
-    
     /// Bit 2  
     /// OBJ size  
     /// false=8x8, true=8x16  
@@ -473,17 +494,13 @@ struct Lcdc {
 
 impl fmt::Display for Lcdc {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Lcdc: {:?}",
-            self
-        )
+        write!(f, "Lcdc: {:?}", self)
     }
 }
 
 impl Default for Lcdc {
     fn default() -> Self {
-        Self { 
+        Self {
             lcd_ppu_enable: true,
             window_tile_map_area: false,
             window_enable: false,
@@ -506,11 +523,7 @@ struct Lcds {
 
 impl fmt::Display for Lcds {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Lcds: {:?}",
-            self
-        )
+        write!(f, "Lcds: {:?}", self)
     }
 }
 
