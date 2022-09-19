@@ -294,7 +294,7 @@ impl Cpu {
 
     pub fn pop(&mut self) -> Byte {
         let d = self.bus.lock().unwrap().read(self.reg.SP);
-        self.reg.SP += 1;
+        self.reg.SP = self.reg.SP.wrapping_add(1);
         return d;
     }
 
