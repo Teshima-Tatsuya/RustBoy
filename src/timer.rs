@@ -17,7 +17,7 @@ pub struct Timer {
     counter: u16,
     div: Byte,
     tima: Byte,
-    tima_ovewflowed: bool,
+    tima_overflowed: bool,
     tma: Byte,
     tac: Byte,
     interrupt: Arc<Mutex<Interrupt>>,
@@ -56,11 +56,11 @@ impl Timer {
             }
 
             // tima overflow
-            self.tima_ovewflowed = false;
+            self.tima_overflowed = false;
             if self.tima == 0 {
                 self.tima = self.tma;
                 self.interrupt.lock().unwrap().request(INT_TIMER_FLG);
-                self.tima_ovewflowed = true;
+                self.tima_overflowed = true;
             }
 
             if self.counter % (1 << (self.get_freq() + 1)) == 0 {
@@ -107,13 +107,13 @@ impl Writer for Timer {
                 self.counter = 0;
             },
             ADDR_TIMER_TIMA => {
-                if !self.tima_ovewflowed {
+                if !self.tima_overflowed {
                     self.tima = value;
                 }
             },
             ADDR_TIMER_TMA => {
                 self.tma = value;
-                if self.tima_ovewflowed {
+                if self.tima_overflowed {
                     self.tima = value;
                 }
             },
