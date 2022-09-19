@@ -31,11 +31,13 @@ pub struct Ppu {
     scroll: Scroll,
     lx: u16,
     palette: Palette,
+    scan_line: RgbaImage,
     image_data: RgbaImage,
     dma: Byte,
     pub dma_started: bool,
     mode: Mode,
     prev_mode: Mode,
+    prev_lcd_interrupt: bool,
     interrupt: Arc<Mutex<Interrupt>>,
 }
 
@@ -52,6 +54,7 @@ impl fmt::Display for Ppu {
 impl Ppu {
     pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
         let image_data = RgbaImage::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32);
+        let scan_line = RgbaImage::new(SCREEN_WIDTH as u32, 1);
 
         Self {
             clock: 0,
@@ -61,6 +64,7 @@ impl Ppu {
             dma_started: false,
             interrupt,
             image_data,
+            scan_line,
             ..Default::default()
         }
     }
@@ -97,32 +101,58 @@ impl Ppu {
             self.mode = Mode::VBlank;
         }
 
-        if self.scroll.is_v_blank_start() {
-            self.draw_sprite();
-            self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
-            self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
-        } else if self.scroll.is_h_blank_period() {
+        if self.scroll.is_h_blank_period() {
             // draw for first_time
             if self.prev_mode == Mode::SearchingOAM && self.mode == Mode::TransferringData {
-                self.draw_bg_line();
-
-                if self.lcdc.window_enable {
-                    self.draw_win_line();
+                if self.lcdc.bg_window_enable {
+                    self.draw_bg_line();
+                    if self.lcdc.obj_enable {
+                        self.draw_sprite();
+                    }
+                    if self.lcdc.window_enable {
+                        self.draw_win_line();
+                    }
+                } else {
+                    self.draw_bg_line_white();
                 }
             }
         }
 
-        if self.lcds.lyc_interrupt_enable && self.scroll.ly == self.scroll.lyc {
+        self.prev_mode = self.mode;
+
+        self.update_lcd_interrupt();
+    }
+
+    fn update_lcd_interrupt(&mut self) {
+        let cur_lcd_interrupt = match self.mode {
+            Mode::HBlank => self.lcds.hblank_interrupt_enable,
+            Mode::VBlank => {
+                self.lcds.vblank_interrupt_enable
+                    || (self.scroll.ly >= 144
+                        && self.lx < 80
+                        && self.lcds.oam_interrupt_enable)
+            }
+            Mode::SearchingOAM => self.lcds.oam_interrupt_enable,
+            _ => false,
+        } || (self.lcds.lyc_interrupt_enable && self.scroll.ly == self.scroll.lyc);
+
+        if !self.prev_lcd_interrupt && cur_lcd_interrupt {
             self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
         }
-        
-        self.prev_mode = self.mode;
+        self.prev_lcd_interrupt = cur_lcd_interrupt;
     }
 
     fn draw_bg_line(&mut self) {
         for x in 0..SCREEN_WIDTH {
             self.image_data
                 .put_pixel(x as u32, self.scroll.ly as u32, self.get_bg_tile_color(x))
+        }
+    }
+
+    fn draw_bg_line_white(&mut self) {
+        for x in 0..SCREEN_WIDTH {
+            self.image_data
+                .put_pixel(x as u32, self.scroll.ly as u32, self.palette.get_palette(0))
         }
     }
     fn draw_win_line(&mut self) {
@@ -362,6 +392,10 @@ impl Writer for Ppu {
 
                 if self.lcdc.lcd_ppu_enable && !v[7] && self.mode != Mode::VBlank {
                     log::warn!("Stopping LCD operation (Bit 7 from 1 to 0) may be performed during VBlank ONLY");
+                }
+
+                if !self.lcdc.lcd_ppu_enable && v[7] {
+                    self.scroll.ly = 0;
                 }
                 self.lcdc.lcd_ppu_enable = v[7];
                 self.lcdc.window_tile_map_area = v[6];
