@@ -7,6 +7,7 @@ use std::{
 
 use crate::{constant::*, interrupt::Interrupt, memory::*, traits::*, types::*, util::*};
 
+#[derive(PartialEq)]
 enum Mode {
     HBlank,
     VBlank,
@@ -76,17 +77,21 @@ impl Ppu {
 
         if self.clock >= CYCLE_PER_LINE {
             if self.scroll.is_v_blank_start() {
+                self.mode = Mode::HBlank; // tmp settings!!
                 self.draw_sprite();
                 self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
                 self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
             } else if self.scroll.is_v_blank_period() {
+                self.mode = Mode::VBlank;
             } else if self.scroll.is_h_blank_period() {
+                self.mode = Mode::HBlank; // tmp settings!!
                 self.draw_bg_line();
 
                 if self.lcdc.window_enable {
                     self.draw_win_line();
                 }
             } else {
+                self.mode = Mode::HBlank; // tmp settings!!
                 self.scroll.ly = 0;
                 self.draw_bg_line();
             }
@@ -325,6 +330,10 @@ impl Writer for Ppu {
             ADDR_PPU_LCDC => {
                 // TODO
                 let v = value.view_bits::<Lsb0>();
+
+                if self.lcdc.lcd_ppu_enable && !v[7] && self.mode != Mode::VBlank {
+                    log::warn!("Stopping LCD operation (Bit 7 from 1 to 0) may be performed during VBlank ONLY");
+                }
                 self.lcdc.lcd_ppu_enable = v[7];
                 self.lcdc.window_tile_map_area = v[6];
                 self.lcdc.window_enable = v[5];
