@@ -86,6 +86,8 @@ impl Ppu {
         }
 
         if !self.lcdc.lcd_ppu_enable {
+            self.mode = Mode::HBlank;
+            self.prev_lcd_interrupt = false;
             return;
         }
 
@@ -104,17 +106,7 @@ impl Ppu {
         if self.scroll.is_h_blank_period() {
             // draw for first_time
             if self.prev_mode == Mode::SearchingOAM && self.mode == Mode::TransferringData {
-                if self.lcdc.bg_window_enable {
-                    self.draw_bg_line();
-                    if self.lcdc.obj_enable {
-                        self.draw_sprite();
-                    }
-                    if self.lcdc.window_enable {
-                        self.draw_win_line();
-                    }
-                } else {
-                    self.draw_bg_line_white();
-                }
+                self.render_line();
             }
         }
 
@@ -128,18 +120,32 @@ impl Ppu {
             Mode::HBlank => self.lcds.hblank_interrupt_enable,
             Mode::VBlank => {
                 self.lcds.vblank_interrupt_enable
-                    || (self.scroll.ly >= 144
-                        && self.lx < 80
-                        && self.lcds.oam_interrupt_enable)
+                    || (self.scroll.ly >= 144 && self.lx < 80 && self.lcds.oam_interrupt_enable)
             }
             Mode::SearchingOAM => self.lcds.oam_interrupt_enable,
             _ => false,
-        } || (self.lcds.lyc_interrupt_enable && self.scroll.ly == self.scroll.lyc);
+        } || (self.lcds.lyc_interrupt_enable
+            && self.scroll.ly == self.scroll.lyc);
 
         if !self.prev_lcd_interrupt && cur_lcd_interrupt {
             self.interrupt.lock().unwrap().request(INT_LCD_STAT_FLG);
         }
         self.prev_lcd_interrupt = cur_lcd_interrupt;
+    }
+
+    fn render_line(&mut self) {
+        self.scan_line.fill(0);
+        if self.lcdc.bg_window_enable {
+            self.draw_bg_line();
+            if self.lcdc.obj_enable {
+                self.draw_sprite();
+            }
+            if self.lcdc.window_enable {
+                self.draw_win_line();
+            }
+        } else {
+            self.draw_bg_line_white();
+        }
     }
 
     fn draw_bg_line(&mut self) {
