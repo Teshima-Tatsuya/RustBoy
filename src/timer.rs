@@ -23,6 +23,17 @@ pub struct Timer {
     interrupt: Arc<Mutex<Interrupt>>,
 }
 
+impl std::fmt::Display for Timer {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "Timer: counter:{:04X} div:{:02X} tima:{:02X} tma:{:02X} tac:{:02X}",
+            self.counter, self.div, self.tima, self.tma, self.tac
+        )
+    }
+
+}
+
 impl Timer {
     pub fn new(interrupt: Arc<Mutex<Interrupt>>) -> Self {
         Self {
@@ -33,6 +44,7 @@ impl Timer {
 
     pub fn tick(&mut self, cycle: u16) {
         for _ in 0..cycle {
+            log::trace!("{}", self);
             self.counter = self.counter.wrapping_add(4);
 
             if self.counter % 256 == 0 {
