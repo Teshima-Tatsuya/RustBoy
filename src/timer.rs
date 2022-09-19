@@ -47,7 +47,7 @@ impl Timer {
             log::trace!("{}", self);
             self.counter = self.counter.wrapping_add(4);
 
-            if self.counter % 256 == 0 {
+            if self.counter % (1 << 8) == 0 {
                 self.div = self.div.wrapping_add(1);
             }
 
@@ -70,11 +70,11 @@ impl Timer {
     }
 
     fn get_freq(&self) -> u16 {
-        match self.tac & 0x03 {
-            0 => 9,
-            1 => 3,
-            2 => 5,
-            3 => 7,
+        match self.tac & 0b11 {
+            0b00 => 9,
+            0b01 => 3,
+            0b10 => 5,
+            0b11 => 7,
             v => unreachable!("Illegal TAC with {}", v),
         }
     }
