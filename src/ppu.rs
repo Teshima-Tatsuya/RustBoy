@@ -1,6 +1,7 @@
 use bitvec::prelude::*;
 use image::RgbaImage;
 use std::{
+    f32::consts::E,
     fmt,
     sync::{Arc, Mutex},
 };
@@ -135,13 +136,16 @@ impl Ppu {
 
     fn render_line(&mut self) {
         self.scan_line.fill(0);
-        if self.lcdc.bg_window_enable {
+        if self.lcdc.lcd_ppu_enable && self.lcdc.bg_window_enable {
             self.draw_bg_line();
+        }
+
+        if self.lcdc.lcd_ppu_enable {
             if self.lcdc.obj_enable {
-                self.draw_sprite();
+                   self.draw_sprite_line();
             }
             if self.lcdc.window_enable {
-                self.draw_win_line();
+                //    self.draw_win_line();
             }
         } else {
             self.draw_bg_line_white();
@@ -177,6 +181,91 @@ impl Ppu {
     }
 
     // not implemented
+    fn draw_sprite_line(&mut self) {
+        let obj_height = if self.lcdc.obj_size { 16 } else { 8 };
+        let mut obj_count = 0;
+        let mut writable_objs: Vec<Sprite> = vec![];
+
+        for i in 0..SPRITE_NUM {
+            let mut bytes4: [Byte; 4] = [0; 4];
+            for j in 0..4 {
+                let addr = ADDR_OAM_START
+                    .wrapping_add(i.wrapping_mul(4))
+                    .wrapping_add(j);
+                bytes4[j as usize] = self.bus.as_ref().unwrap().lock().unwrap().read(addr);
+            }
+            let s = Sprite::new(&bytes4);
+
+            if (s.y..s.y.saturating_add(obj_height)).contains(&(self.scroll.ly + 16)) {
+                writable_objs.push(s);
+                obj_count += 1;
+
+                // one line objects max 10
+                if obj_count >= 10 {
+                    break;
+                }
+            }
+        }
+
+        for obj in writable_objs {
+            for x in 0..8 {
+                let mut offset_x = x;
+                let mut offset_y = self.scroll.ly + 16 - obj.y;
+                let mut tile_x = x;
+                let mut tile_y = offset_y;
+
+                let mut x_pos = obj.x.saturating_add(offset_x);
+                let mut y_pos = obj.y.saturating_add(offset_y);
+                let block: u16;
+                let tile_idx: Byte;
+                if obj.tile_idx >= 128 {
+                    block = 1;
+                    tile_idx = obj.tile_idx - 128;
+                } else {
+                    block = 0;
+                    tile_idx = obj.tile_idx;
+                }
+                if obj.y_flip() {
+                    tile_y = obj_height - 1 - offset_y;
+                }
+                if obj.x_flip() {
+                    tile_x = 7 - offset_x;
+                }
+                // ignore out of screen
+                if (SCREEN_WIDTH <= x_pos) || (SCREEN_HEIGHT <= y_pos) {
+                    continue;
+                }
+                let tile_color_base_addr = (0x8000 as Word)
+                    .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
+                    .wrapping_add((tile_idx as Word).wrapping_mul(16))
+                    .wrapping_add((tile_y as Word).wrapping_mul(2));
+
+                let lower = self
+                    .bus
+                    .as_ref()
+                    .unwrap()
+                    .lock()
+                    .unwrap()
+                    .read(tile_color_base_addr);
+                let upper = self
+                    .bus
+                    .as_ref()
+                    .unwrap()
+                    .lock()
+                    .unwrap()
+                    .read(tile_color_base_addr + 1);
+                let lb = bit(&lower, &(7 - tile_x));
+                let ub = bit(&upper, &(7 - tile_x));
+
+                let color = (ub << 1) + lb;
+                if color != 0 {
+                    let c = self.palette.get_obj_palette(color, obj.mgb_palette_no());
+                    self.image_data.put_pixel(x_pos as u32, self.scroll.ly as u32, c);
+                }
+            }
+        }
+    }
+
     fn draw_sprite(&mut self) {
         for i in 0..SPRITE_NUM {
             let mut bytes4: [Byte; 4] = [0; 4];
