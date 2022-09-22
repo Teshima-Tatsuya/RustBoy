@@ -1,7 +1,6 @@
 use bitvec::prelude::*;
 use image::RgbaImage;
 use std::{
-    f32::consts::E,
     fmt,
     sync::{Arc, Mutex},
 };
@@ -30,7 +29,7 @@ pub struct Ppu {
     lcdc: Lcdc,
     lcds: Lcds,
     scroll: Scroll,
-    lx: u16,
+    dots: u16,
     palette: Palette,
     scan_line: RgbaImage,
     image_data: RgbaImage,
@@ -39,6 +38,7 @@ pub struct Ppu {
     mode: Mode,
     prev_mode: Mode,
     prev_lcd_interrupt: bool,
+    window_rendering_counter: u8,
     interrupt: Arc<Mutex<Interrupt>>,
 }
 
@@ -75,45 +75,43 @@ impl Ppu {
     }
 
     pub fn step(&mut self, cycle: u16) {
-        // println!("{}", self);
-        self.lx = self.lx.wrapping_add(1);
-        if self.lx == 456 {
-            self.lx = 0;
-
-            self.scroll.ly = self.scroll.ly.wrapping_add(1);
-            if self.scroll.ly == 154 {
-                self.scroll.ly = 0;
-            }
-        }
-
         if !self.lcdc.lcd_ppu_enable {
-            self.mode = Mode::HBlank;
-            self.prev_lcd_interrupt = false;
             return;
         }
+        self.dots = self.dots.wrapping_add(cycle);
 
-        if self.lx < 80 {
-            self.mode = Mode::SearchingOAM;
-        } else if self.lx < 289 {
+        if self.mode == Mode::SearchingOAM && self.dots >= 80 {
+            self.dots -= 80;
             self.mode = Mode::TransferringData;
-        } else {
+        } else if self.mode == Mode::TransferringData && self.dots >= 168 {
+            self.dots -= 168;
             self.mode = Mode::HBlank;
-        }
+            self.update_lcd_interrupt();
+            self.render_line();
 
-        if self.scroll.ly >= 144 {
-            self.mode = Mode::VBlank;
-        }
-
-        if self.scroll.is_h_blank_period() {
-            // draw for first_time
-            if self.prev_mode == Mode::SearchingOAM && self.mode == Mode::TransferringData {
-                self.render_line();
+            if self.scroll.wx.saturating_sub(7) < SCREEN_WIDTH && self.scroll.wy <= self.scroll.ly {
+                self.window_rendering_counter += 1;
+            }
+        } else if self.mode == Mode::HBlank && self.dots >= 208 {
+            self.dots -= 208;
+            self.scroll.ly += 1;
+            if self.scroll.ly >= 144 {
+                self.mode = Mode::VBlank;
+            } else {
+                self.mode = Mode::SearchingOAM;
+            }
+            
+            self.update_lcd_interrupt();
+        } else if self.mode == Mode::VBlank && self.dots >= 456 {
+            self.dots -= 456;
+            self.scroll.ly += 1;
+            if self.scroll.ly == 154 {
+                self.scroll.ly = 0;
+                self.window_rendering_counter = 0;
+                self.mode = Mode::SearchingOAM;
+                self.update_lcd_interrupt();
             }
         }
-
-        self.prev_mode = self.mode;
-
-        self.update_lcd_interrupt();
     }
 
     fn update_lcd_interrupt(&mut self) {
@@ -121,7 +119,7 @@ impl Ppu {
             Mode::HBlank => self.lcds.hblank_interrupt_enable,
             Mode::VBlank => {
                 self.lcds.vblank_interrupt_enable
-                    || (self.scroll.ly >= 144 && self.lx < 80 && self.lcds.oam_interrupt_enable)
+                    || (self.scroll.ly >= 144 && self.dots < 80 && self.lcds.oam_interrupt_enable)
             }
             Mode::SearchingOAM => self.lcds.oam_interrupt_enable,
             _ => false,
@@ -135,27 +133,24 @@ impl Ppu {
     }
 
     fn render_line(&mut self) {
-        self.scan_line.fill(0);
         if self.lcdc.lcd_ppu_enable && self.lcdc.bg_window_enable {
-            self.draw_bg_line();
+            self.draw_bg_win_line();
+        } else {
+            self.draw_bg_line_white();
         }
 
         if self.lcdc.lcd_ppu_enable {
             if self.lcdc.obj_enable {
-                   self.draw_sprite_line();
+                self.draw_sprite_line();
             }
-            if self.lcdc.window_enable {
-                //    self.draw_win_line();
-            }
-        } else {
-            self.draw_bg_line_white();
         }
     }
 
-    fn draw_bg_line(&mut self) {
+    fn draw_bg_win_line(&mut self) {
         for x in 0..SCREEN_WIDTH {
+            let c = self.get_bg_win_tile_color(x);
             self.image_data
-                .put_pixel(x as u32, self.scroll.ly as u32, self.get_bg_tile_color(x))
+                .put_pixel(x as u32, self.scroll.ly as u32, c)
         }
     }
 
@@ -163,20 +158,6 @@ impl Ppu {
         for x in 0..SCREEN_WIDTH {
             self.image_data
                 .put_pixel(x as u32, self.scroll.ly as u32, self.palette.get_palette(0))
-        }
-    }
-    fn draw_win_line(&mut self) {
-        if (self.scroll.wx < 0 || 167 <= self.scroll.wx)
-            || (self.scroll.wy < 0 || 144 <= self.scroll.wy)
-        {
-            return;
-        }
-        if self.scroll.ly < self.scroll.wy {
-            return;
-        }
-        for x in 0..SCREEN_WIDTH {
-            self.image_data
-                .put_pixel(x as u32, self.scroll.ly as u32, self.get_win_tile_color(x));
         }
     }
 
@@ -240,174 +221,74 @@ impl Ppu {
                     .wrapping_add((tile_idx as Word).wrapping_mul(16))
                     .wrapping_add((tile_y as Word).wrapping_mul(2));
 
-                let lower = self
-                    .bus
-                    .as_ref()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .read(tile_color_base_addr);
-                let upper = self
-                    .bus
-                    .as_ref()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .read(tile_color_base_addr + 1);
+                let lower = self.bus_read(tile_color_base_addr);
+                let upper = self.bus_read(tile_color_base_addr + 1);
                 let lb = bit(&lower, &(7 - tile_x));
                 let ub = bit(&upper, &(7 - tile_x));
 
                 let color = (ub << 1) + lb;
                 if color != 0 {
                     let c = self.palette.get_obj_palette(color, obj.mgb_palette_no());
-                    self.image_data.put_pixel(x_pos as u32, self.scroll.ly as u32, c);
+                    self.image_data
+                        .put_pixel(x_pos as u32, self.scroll.ly as u32, c);
                 }
             }
         }
     }
 
-    fn draw_sprite(&mut self) {
-        for i in 0..SPRITE_NUM {
-            let mut bytes4: [Byte; 4] = [0; 4];
-            for j in 0..4 {
-                let addr = ADDR_OAM_START
-                    .wrapping_add(i.wrapping_mul(4))
-                    .wrapping_add(j);
-                bytes4[j as usize] = self.bus.as_ref().unwrap().lock().unwrap().read(addr);
-            }
-            let s = Sprite::new(&bytes4);
-            // TODO long sprite
-            let obj_height;
-            if self.lcdc.obj_size {
-                obj_height = 16;
+    fn get_bg_win_tile_color(&mut self, lx: u8) -> image::Rgba<u8> {
+        let window_writable = self.lcdc.window_enable
+            && (self.scroll.ly >= self.scroll.wy)
+            && (lx + 7 >= self.scroll.wx);
+        let y_pos: Byte;
+        let x_pos: Byte;
+        let base_addr: Word;
+
+        if window_writable {
+            y_pos = self.window_rendering_counter;
+            x_pos = lx.wrapping_sub(self.scroll.wx);
+            base_addr = if self.lcdc.window_tile_map_area {
+                WINDOW_TILE_MAP_AREA_1
             } else {
-                obj_height = 8;
-            }
-            for x in 0..8 {
-                for y in 0..obj_height {
-                    let mut offset_x = x;
-                    let mut offset_y = y;
-                    let mut tile_x = x;
-                    let mut tile_y = y;
+                WINDOW_TILE_MAP_AREA_0
+            };
 
-                    let mut x_pos = s.x.saturating_add(offset_x);
-                    let mut y_pos = s.y.saturating_add(offset_y);
-                    let block: u16;
-                    let tile_idx: Byte;
-                    if s.tile_idx >= 128 {
-                        block = 1;
-                        tile_idx = s.tile_idx - 128;
-                    } else {
-                        block = 0;
-                        tile_idx = s.tile_idx;
-                    }
-                    if s.y_flip() {
-                        tile_y = obj_height - 1 - y;
-                    }
-                    if s.x_flip() {
-                        tile_x = 7 - x;
-                    }
-                    // ignore out of screen
-                    if (SCREEN_WIDTH <= x_pos) || (SCREEN_HEIGHT <= y_pos) {
-                        continue;
-                    }
-                    let tile_color_base_addr = (0x8000 as Word)
-                        .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
-                        .wrapping_add((tile_idx as Word).wrapping_mul(16))
-                        .wrapping_add((tile_y as Word).wrapping_mul(2));
-
-                    let lower = self
-                        .bus
-                        .as_ref()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .read(tile_color_base_addr);
-                    let upper = self
-                        .bus
-                        .as_ref()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .read(tile_color_base_addr + 1);
-                    let lb = bit(&lower, &(7 - tile_x));
-                    let ub = bit(&upper, &(7 - tile_x));
-
-                    let color = (ub << 1) + lb;
-                    if color != 0 {
-                        let c = self.palette.get_obj_palette(color, s.mgb_palette_no());
-                        self.image_data.put_pixel(x_pos as u32, y_pos as u32, c);
-                    }
-                }
-            }
+        } else {
+            y_pos = self.scroll.ly.wrapping_add(self.scroll.scy);
+            x_pos = lx.wrapping_add(self.scroll.scx);
+            base_addr = if self.lcdc.bg_tile_map_area {
+                BG_TILE_MAP_AREA_1
+            } else {
+                BG_TILE_MAP_AREA_0
+            };
         }
-    }
 
-    fn get_bg_tile_color(&self, lx: u8) -> image::Rgba<u8> {
-        // yPos is current pixel from top(0-255)
-        let y_pos = self.scroll.ly.wrapping_add(self.scroll.scy);
-        let x_pos = lx.wrapping_add(self.scroll.scx);
-        let base_addr = if self.lcdc.bg_tile_map_area {
-            BG_TILE_MAP_AREA_1
-        } else {
-            BG_TILE_MAP_AREA_0
-        };
-
-        self.get_tile_color(x_pos, y_pos, base_addr)
-    }
-
-    fn get_win_tile_color(&self, lx: u8) -> image::Rgba<u8> {
-        // yPos is current pixel from top(0-255)
-        let y_pos = self.scroll.ly.wrapping_sub(self.scroll.wy);
-        let x_pos = lx.wrapping_sub(self.scroll.wx.wrapping_sub(7));
-        let base_addr = if self.lcdc.window_tile_map_area {
-            WINDOW_TILE_MAP_AREA_1
-        } else {
-            WINDOW_TILE_MAP_AREA_0
+        if self.scroll.wx.saturating_sub(7) < SCREEN_WIDTH && self.scroll.wy <= self.scroll.ly {
+            self.window_rendering_counter = self.window_rendering_counter.wrapping_add(1);
         };
         self.get_tile_color(x_pos, y_pos, base_addr)
+            
     }
 
     fn get_tile_color(&self, x_pos: u8, y_pos: u8, base_addr: Word) -> image::Rgba<u8> {
         let addr = Tile::get_tile_addr(y_pos, x_pos, base_addr);
-        let mut tile_idx = self.bus.as_ref().unwrap().lock().unwrap().read(addr) as i8 as i32;
+        let tile_idx = self.bus_read(addr);
 
-        let mut block: usize = 0;
+        let offset;
         if !self.lcdc.bg_window_tile_data_area {
-            if tile_idx < 0 {
-                block = 1;
-                tile_idx += 128;
-            } else {
-                block = 2;
-            }
+            offset = (0x1000 as u16)
+                .wrapping_add((tile_idx as i8 as i16).wrapping_mul(16) as u16)
+                .wrapping_add((y_pos % 8).wrapping_mul(2) as u16);
         } else {
-            if tile_idx < 128 {
-                block = 0;
-            } else {
-                block = 1;
-                tile_idx -= 128;
-            }
+            offset = (tile_idx as i16)
+                .wrapping_mul(16)
+                .wrapping_add((y_pos % 8).wrapping_mul(2) as i16) as u16;
         }
 
-        let tile_color_base_addr = (0x8000 as Word)
-            .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
-            .wrapping_add((tile_idx as Word).wrapping_mul(16))
-            .wrapping_add(((y_pos % 8) as Word).wrapping_mul(2));
+        let tile_color_base_addr = (0x8000 as Word).wrapping_add(offset);
 
-        let lower = self
-            .bus
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .read(tile_color_base_addr);
-        let upper = self
-            .bus
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .read(tile_color_base_addr + 1);
+        let lower = self.bus_read(tile_color_base_addr);
+        let upper = self.bus_read(tile_color_base_addr + 1);
         let lb = bit(&lower, &(7 - (x_pos % 8)));
         let ub = bit(&upper, &(7 - (x_pos % 8)));
 
@@ -418,22 +299,24 @@ impl Ppu {
     pub fn transfer_oam(&mut self) {
         let addr = self.dma as Word * 0x100;
         for i in 0..0xA0 {
-            let b = self
-                .bus
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .read(addr + i as Word);
-            self.bus
-                .as_mut()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .write(ADDR_OAM_START + i as Word, b);
+            let b = self.bus_read(addr + i);
+            self.bus_write(ADDR_OAM_START + i, b);
         }
 
         self.dma_started = false;
+    }
+
+    fn bus_read(&self, addr: Word) -> Byte {
+        self.bus.as_ref().unwrap().lock().unwrap().read(addr)
+    }
+
+    fn bus_write(&self, addr: Word, value: Byte) {
+        self.bus
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .write(addr, value);
     }
 
     pub fn display(&self) -> image::RgbaImage {
@@ -482,15 +365,16 @@ impl Writer for Ppu {
     fn write(&mut self, addr: Word, value: Byte) {
         match addr {
             ADDR_PPU_LCDC => {
-                // TODO
                 let v = value.view_bits::<Lsb0>();
 
                 if self.lcdc.lcd_ppu_enable && !v[7] && self.mode != Mode::VBlank {
                     log::warn!("Stopping LCD operation (Bit 7 from 1 to 0) may be performed during VBlank ONLY");
                 }
 
+                // initialize scrolling data
                 if !self.lcdc.lcd_ppu_enable && v[7] {
                     self.scroll.ly = 0;
+                    self.dots = 0;
                 }
                 self.lcdc.lcd_ppu_enable = v[7];
                 self.lcdc.window_tile_map_area = v[6];
@@ -778,8 +662,8 @@ struct Sprite {
 impl Sprite {
     pub fn new(bytes4: &[Byte]) -> Self {
         Self {
-            y: bytes4[0].wrapping_sub(16),
-            x: bytes4[1].wrapping_sub(8),
+            y: bytes4[0],
+            x: bytes4[1],
             tile_idx: bytes4[2],
             attr: bytes4[3],
         }
