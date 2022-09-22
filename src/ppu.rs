@@ -177,7 +177,9 @@ impl Ppu {
             }
             let s = Sprite::new(&bytes4);
 
-            if ((s.y as i16 - 16)..(s.y as i16 - 16).saturating_add(obj_height)).contains(&(self.scroll.ly as i16)) {
+            if ((s.y as i16 - 16)..(s.y as i16 - 16).saturating_add(obj_height))
+                .contains(&(self.scroll.ly as i16))
+            {
                 writable_objs.push(s);
                 obj_count += 1;
 
@@ -194,31 +196,26 @@ impl Ppu {
             for x in 0..8 {
                 let x_pos = (obj.x as i8) - 8 + x as i8;
                 // ignore out of screen
-                if !(0 <= x_pos as i16 && x_pos as i16 <= SCREEN_WIDTH as i16) {
+                if !(0 <= x_pos as i16 && (x_pos as i16) < SCREEN_WIDTH as i16) {
                     continue;
                 }
 
-                let offset_x = x;
-                let offset_y: i8 = self.scroll.ly as i8 + 16 - obj.y as i8;
-                let mut tile_x: u8 = x;
-                let mut tile_y: i8 = offset_y as i8;
-
-                let tile_idx = obj.tile_idx & !1;
+                let offset_x = if obj.x_flip() { 7 - x } else { x };
+                let mut offset_y: i8 = self.scroll.ly as i8 + 16 - obj.y as i8;
                 if obj.y_flip() {
-                    tile_y = obj_height as i8 - 1 - offset_y;
-                }
-                if obj.x_flip() {
-                    tile_x = 8 - 1 - offset_x;
-                }
+                    offset_y = obj_height as i8 - 1 - offset_y;
+                };
+
+                let tile_idx = if obj_height == 16 { obj.tile_idx & !1} else {obj.tile_idx};
 
                 let tile_color_base_addr = (0x8000 as Word)
                     .wrapping_add((tile_idx as i16).wrapping_mul(16) as Word)
-                    .wrapping_add(tile_y.wrapping_mul(2) as Word);
+                    .wrapping_add(offset_y.wrapping_mul(2) as Word);
 
                 let lower = self.bus_read(tile_color_base_addr);
                 let upper = self.bus_read(tile_color_base_addr + 1);
-                let lb = bit(&lower, &(7 - tile_x));
-                let ub = bit(&upper, &(7 - tile_x));
+                let lb = bit(&lower, &(7 - offset_x));
+                let ub = bit(&upper, &(7 - offset_x));
 
                 let color = (ub << 1) + lb;
                 if color != 0 {
