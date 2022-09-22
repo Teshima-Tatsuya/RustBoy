@@ -75,10 +75,13 @@ impl Ppu {
     }
 
     pub fn step(&mut self, cycle: u16) {
-        if !self.lcdc.lcd_ppu_enable {
-            return;
-        }
         self.dots = self.dots.wrapping_add(cycle);
+
+        if !self.lcdc.lcd_ppu_enable {
+            self.mode = Mode::HBlank;
+            self.prev_lcd_interrupt = false;
+            return
+        }
 
         if self.mode == Mode::SearchingOAM && self.dots >= 80 {
             self.dots -= 80;
@@ -90,13 +93,14 @@ impl Ppu {
             self.render_line();
 
             if self.scroll.wx.saturating_sub(7) < SCREEN_WIDTH && self.scroll.wy <= self.scroll.ly {
-                self.window_rendering_counter += 1;
+                self.window_rendering_counter = self.window_rendering_counter.wrapping_add(1);
             }
         } else if self.mode == Mode::HBlank && self.dots >= 208 {
             self.dots -= 208;
             self.scroll.ly += 1;
             if self.scroll.ly >= 144 {
                 self.mode = Mode::VBlank;
+                self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
             } else {
                 self.mode = Mode::SearchingOAM;
             }
@@ -112,9 +116,6 @@ impl Ppu {
                 self.update_lcd_interrupt();
             }
 
-            if self.prev_mode != Mode::VBlank && self.scroll.ly == 144 {
-                self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
-            }
         }
 
         self.prev_mode = self.mode;
@@ -192,16 +193,16 @@ impl Ppu {
 
         for obj in writable_objs {
             for x in 0..8 {
-                let x_pos = (obj.x as i8) - 8 + x as i8;
+                let x_pos = (obj.x as i16) - 8 + x as i16;
                 // ignore out of screen
-                if !(0 <= x_pos as i16 && (x_pos as i16) < SCREEN_WIDTH as i16) {
+                if !(0 <= x_pos && x_pos < SCREEN_WIDTH as i16) {
                     continue;
                 }
 
                 let offset_x = if obj.x_flip() { 7 - x } else { x };
-                let mut offset_y: i8 = self.scroll.ly as i8 + 16 - obj.y as i8;
+                let mut offset_y: i16 = self.scroll.ly as i16 + 16 - obj.y as i16;
                 if obj.y_flip() {
-                    offset_y = obj_height as i8 - 1 - offset_y;
+                    offset_y = obj_height as i16 - 1 - offset_y;
                 };
 
                 let tile_idx = if obj_height == 16 { obj.tile_idx & !1} else {obj.tile_idx};

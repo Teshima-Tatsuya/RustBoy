@@ -261,9 +261,6 @@ impl Cpu {
 
         let handler = &op.handler;
         let additional_cycle = handler(self, op.r1.to_string(), op.r2.to_string());
-        if op.mnemonic.contains("LD B, B") {
-          //  std::process::exit(0);
-        }
         // self.trace2(op);
 
         return op.cycles as u16 + additional_cycle as u16;
