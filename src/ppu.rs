@@ -100,7 +100,7 @@ impl Ppu {
             } else {
                 self.mode = Mode::SearchingOAM;
             }
-            
+
             self.update_lcd_interrupt();
         } else if self.mode == Mode::VBlank && self.dots >= 456 {
             self.dots -= 456;
@@ -111,16 +111,19 @@ impl Ppu {
                 self.mode = Mode::SearchingOAM;
                 self.update_lcd_interrupt();
             }
+
+            if self.prev_mode != Mode::VBlank && self.scroll.ly == 144 {
+                self.interrupt.lock().unwrap().request(INT_VBLANK_FLG);
+            }
         }
+
+        self.prev_mode = self.mode;
     }
 
     fn update_lcd_interrupt(&mut self) {
         let cur_lcd_interrupt = match self.mode {
             Mode::HBlank => self.lcds.hblank_interrupt_enable,
-            Mode::VBlank => {
-                self.lcds.vblank_interrupt_enable
-                    || (self.scroll.ly >= 144 && self.dots < 80 && self.lcds.oam_interrupt_enable)
-            }
+            Mode::VBlank => self.lcds.vblank_interrupt_enable,
             Mode::SearchingOAM => self.lcds.oam_interrupt_enable,
             _ => false,
         } || (self.lcds.lyc_interrupt_enable
@@ -141,7 +144,7 @@ impl Ppu {
 
         if self.lcdc.lcd_ppu_enable {
             if self.lcdc.obj_enable {
-                self.draw_sprite_line();
+            //    self.draw_sprite_line();
             }
         }
     }
@@ -246,13 +249,12 @@ impl Ppu {
 
         if window_writable {
             y_pos = self.window_rendering_counter;
-            x_pos = lx.wrapping_sub(self.scroll.wx);
+            x_pos = lx.wrapping_sub(self.scroll.wx.wrapping_sub(7));
             base_addr = if self.lcdc.window_tile_map_area {
                 WINDOW_TILE_MAP_AREA_1
             } else {
                 WINDOW_TILE_MAP_AREA_0
             };
-
         } else {
             y_pos = self.scroll.ly.wrapping_add(self.scroll.scy);
             x_pos = lx.wrapping_add(self.scroll.scx);
@@ -263,11 +265,7 @@ impl Ppu {
             };
         }
 
-        if self.scroll.wx.saturating_sub(7) < SCREEN_WIDTH && self.scroll.wy <= self.scroll.ly {
-            self.window_rendering_counter = self.window_rendering_counter.wrapping_add(1);
-        };
         self.get_tile_color(x_pos, y_pos, base_addr)
-            
     }
 
     fn get_tile_color(&self, x_pos: u8, y_pos: u8, base_addr: Word) -> image::Rgba<u8> {
@@ -276,13 +274,13 @@ impl Ppu {
 
         let offset;
         if !self.lcdc.bg_window_tile_data_area {
-            offset = (0x1000 as u16)
-                .wrapping_add((tile_idx as i8 as i16).wrapping_mul(16) as u16)
-                .wrapping_add((y_pos % 8).wrapping_mul(2) as u16);
+            offset = (0x1000 as i16)
+                .wrapping_add((tile_idx as i8 as i16).wrapping_mul(16))
+                .wrapping_add((y_pos % 8).wrapping_mul(2) as i16) as Word;
         } else {
             offset = (tile_idx as i16)
                 .wrapping_mul(16)
-                .wrapping_add((y_pos % 8).wrapping_mul(2) as i16) as u16;
+                .wrapping_add((y_pos % 8).wrapping_mul(2) as i16) as Word;
         }
 
         let tile_color_base_addr = (0x8000 as Word).wrapping_add(offset);
@@ -424,20 +422,6 @@ impl fmt::Display for Scroll {
             "Sroll: scy:{:02X} scx:{:02X} ly:{:02X} lyc:{:02X} wy:{:02X} wx:{:02X}",
             self.scy, self.scx, self.ly, self.lyc, self.wy, self.wx,
         )
-    }
-}
-
-impl Scroll {
-    fn is_v_blank_period(&self) -> bool {
-        SCREEN_HEIGHT <= self.ly && self.ly <= 153
-    }
-
-    fn is_h_blank_period(&self) -> bool {
-        self.ly < SCREEN_HEIGHT
-    }
-
-    fn is_v_blank_start(&self) -> bool {
-        self.ly == SCREEN_HEIGHT
     }
 }
 
