@@ -136,29 +136,27 @@ impl Ppu {
     }
 
     fn render_line(&mut self) {
+        for x in 0..SCREEN_WIDTH {
+            self.scan_line.put_pixel(x as u32, 0, self.palette.get_palette(0));
+        }
         if self.lcdc.bg_window_enable {
             self.draw_bg_win_line();
-        } else {
-            self.draw_bg_line_white();
         }
 
         if self.lcdc.obj_enable {
             self.draw_sprite_line();
+        }
+
+        for x in 0..SCREEN_WIDTH {
+            let c = self.scan_line.get_pixel(x as u32, 0);
+            self.image_data.put_pixel(x as u32, self.scroll.ly as u32, *c);
         }
     }
 
     fn draw_bg_win_line(&mut self) {
         for x in 0..SCREEN_WIDTH {
             let c = self.get_bg_win_tile_color(x);
-            self.image_data
-                .put_pixel(x as u32, self.scroll.ly as u32, c)
-        }
-    }
-
-    fn draw_bg_line_white(&mut self) {
-        for x in 0..SCREEN_WIDTH {
-            self.image_data
-                .put_pixel(x as u32, self.scroll.ly as u32, self.palette.get_palette(0))
+            self.scan_line.put_pixel(x as u32, 0, c);
         }
     }
 
@@ -220,8 +218,9 @@ impl Ppu {
                 let color = (ub << 1) + lb;
                 if color != 0 {
                     let c = self.palette.get_obj_palette(color, obj.mgb_palette_no());
-                    self.image_data
-                        .put_pixel(x_pos as u32, self.scroll.ly as u32, c);
+                    // self.image_data
+                    //     .put_pixel(x_pos as u32, self.scroll.ly as u32, c);
+                    self.scan_line.put_pixel(x_pos as u32, 0, c);
                 }
             }
         }
