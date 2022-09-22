@@ -136,16 +136,14 @@ impl Ppu {
     }
 
     fn render_line(&mut self) {
-        if self.lcdc.lcd_ppu_enable && self.lcdc.bg_window_enable {
+        if self.lcdc.bg_window_enable {
             self.draw_bg_win_line();
         } else {
             self.draw_bg_line_white();
         }
 
-        if self.lcdc.lcd_ppu_enable {
-            if self.lcdc.obj_enable {
-            //    self.draw_sprite_line();
-            }
+        if self.lcdc.obj_enable {
+            self.draw_sprite_line();
         }
     }
 
@@ -164,7 +162,6 @@ impl Ppu {
         }
     }
 
-    // not implemented
     fn draw_sprite_line(&mut self) {
         let obj_height = if self.lcdc.obj_size { 16 } else { 8 };
         let mut obj_count = 0;
@@ -176,11 +173,11 @@ impl Ppu {
                 let addr = ADDR_OAM_START
                     .wrapping_add(i.wrapping_mul(4))
                     .wrapping_add(j);
-                bytes4[j as usize] = self.bus.as_ref().unwrap().lock().unwrap().read(addr);
+                bytes4[j as usize] = self.bus_read(addr);
             }
             let s = Sprite::new(&bytes4);
 
-            if (s.y..s.y.saturating_add(obj_height)).contains(&(self.scroll.ly + 16)) {
+            if ((s.y as i16 - 16)..(s.y as i16 - 16).saturating_add(obj_height)).contains(&(self.scroll.ly as i16)) {
                 writable_objs.push(s);
                 obj_count += 1;
 
@@ -191,38 +188,32 @@ impl Ppu {
             }
         }
 
+        writable_objs.sort_by_key(|s| s.x);
+
         for obj in writable_objs {
             for x in 0..8 {
-                let mut offset_x = x;
-                let mut offset_y = self.scroll.ly + 16 - obj.y;
-                let mut tile_x = x;
-                let mut tile_y = offset_y;
-
-                let mut x_pos = obj.x.saturating_add(offset_x);
-                let mut y_pos = obj.y.saturating_add(offset_y);
-                let block: u16;
-                let tile_idx: Byte;
-                if obj.tile_idx >= 128 {
-                    block = 1;
-                    tile_idx = obj.tile_idx - 128;
-                } else {
-                    block = 0;
-                    tile_idx = obj.tile_idx;
-                }
-                if obj.y_flip() {
-                    tile_y = obj_height - 1 - offset_y;
-                }
-                if obj.x_flip() {
-                    tile_x = 7 - offset_x;
-                }
+                let x_pos = (obj.x as i8) - 8 + x as i8;
                 // ignore out of screen
-                if (SCREEN_WIDTH <= x_pos) || (SCREEN_HEIGHT <= y_pos) {
+                if !(0 <= x_pos as i16 && x_pos as i16 <= SCREEN_WIDTH as i16) {
                     continue;
                 }
+
+                let offset_x = x;
+                let offset_y: i8 = self.scroll.ly as i8 + 16 - obj.y as i8;
+                let mut tile_x: u8 = x;
+                let mut tile_y: i8 = offset_y as i8;
+
+                let tile_idx = obj.tile_idx & !1;
+                if obj.y_flip() {
+                    tile_y = obj_height as i8 - 1 - offset_y;
+                }
+                if obj.x_flip() {
+                    tile_x = 8 - 1 - offset_x;
+                }
+
                 let tile_color_base_addr = (0x8000 as Word)
-                    .wrapping_add((block as Word).wrapping_mul(128).wrapping_mul(16))
-                    .wrapping_add((tile_idx as Word).wrapping_mul(16))
-                    .wrapping_add((tile_y as Word).wrapping_mul(2));
+                    .wrapping_add((tile_idx as i16).wrapping_mul(16) as Word)
+                    .wrapping_add(tile_y.wrapping_mul(2) as Word);
 
                 let lower = self.bus_read(tile_color_base_addr);
                 let upper = self.bus_read(tile_color_base_addr + 1);
