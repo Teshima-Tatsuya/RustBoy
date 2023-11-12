@@ -12,8 +12,8 @@ pub struct EmulatorPlugin;
 
 impl Plugin for EmulatorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_emulator_system)
-            .add_system(emulator_system);
+        app.add_systems(Startup, setup_emulator_system)
+            .add_systems(Update, emulator_system);
     }
 }
 
@@ -48,7 +48,7 @@ fn setup_emulator_system(
     let texture = images.add(img);
 
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             texture: texture.clone(),
             ..Default::default()
         })
@@ -60,6 +60,7 @@ fn setup_emulator_system(
 #[derive(Component)]
 pub struct ScreenSprite;
 
+#[derive(Resource)]
 pub struct GameScreen(pub Handle<Image>);
 
 fn emulator_system(
@@ -87,6 +88,8 @@ fn emulator_system(
     }
 }
 
+
+#[derive(Resource)]
 pub struct Emulator {
     pub gb: GameBoy,
     pub frame: u32,
@@ -98,7 +101,7 @@ impl Emulator {
     }
 
     pub fn run() {
-        let window_descriptor = Window {
+        let window = Window {
             title: "rustboy".to_string(),
             resolution: (SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32).into(),
             resize_constraints: WindowResizeConstraints {
@@ -108,16 +111,18 @@ impl Emulator {
             },
             ..default()
         };
+
+        let primary_window = Some(window);
         App::new()
-            .insert_resource(window_descriptor)
+            // .add_plugins(DefaultPlugins)
+            .add_plugins(DefaultPlugins.set(WindowPlugin { primary_window, ..default()}))
             .insert_resource(ClearColor(Color::rgb(0.5, 0.5, 0.5)))
-            .add_plugins(DefaultPlugins)
-            .add_plugin(LogDiagnosticsPlugin::default())
-            .add_plugin(FrameTimeDiagnosticsPlugin::default())
-            .add_plugin(TiledCameraPlugin)
-            .add_plugin(EmulatorPlugin)
-            .add_plugin(JoypadPlugin)
-            .add_startup_system(setup)
+            .add_plugins(LogDiagnosticsPlugin::default())
+            .add_plugins(FrameTimeDiagnosticsPlugin::default())
+            .add_plugins(TiledCameraPlugin)
+            .add_plugins(EmulatorPlugin)
+            .add_systems(Startup, setup)
+            .add_plugins(JoypadPlugin)
             .run();
     }
 }
@@ -125,14 +130,14 @@ fn setup(
     mut commands: Commands,
 ) {
     use bevy_tiled_camera::*;
-    commands.spawn_bundle(TiledCameraBundle::pixel_cam([SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32]).with_pixels_per_tile([1, 1]));
+    commands.spawn(TiledCameraBundle::pixel_cam([SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32]).with_pixels_per_tile([1, 1]));
 }
 
 pub struct JoypadPlugin;
 
 impl Plugin for JoypadPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(joypad_system);
+        app.add_systems(Update, joypad_system);
     }
 }
 
