@@ -2,7 +2,7 @@ pub mod bus;
 pub mod cartridge;
 pub mod constant;
 pub mod cpu;
-pub mod emulator;
+// pub mod emulator;
 pub mod gameboy;
 pub mod interrupt;
 pub mod io;
