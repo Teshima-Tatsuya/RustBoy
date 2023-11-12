@@ -98,10 +98,9 @@ impl Emulator {
     }
 
     pub fn run() {
-        let window_descriptor = WindowDescriptor {
+        let window_descriptor = Window {
             title: "rustboy".to_string(),
-            width: SCREEN_WIDTH as f32,
-            height: SCREEN_HEIGHT as f32,
+            resolution: (SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32).into(),
             resize_constraints: WindowResizeConstraints {
                 min_width: SCREEN_WIDTH as f32,
                 min_height: SCREEN_HEIGHT as f32,
